@@ -128,7 +128,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 .seg button[aria-pressed="true"]{border-color:var(--team);background:linear-gradient(180deg,#24466e,#142a44);color:#fff}
 .seg button:disabled{cursor:default}
 .seg button:disabled:not([aria-pressed="true"]){opacity:.45}
-.seg4{grid-template-columns:repeat(4,1fr)}
+.seg4{grid-template-columns:repeat(3,1fr)}
 .mapdesc{font-size:13px;color:var(--dim);margin:-6px 0 14px;line-height:1.4}
 #slots{display:grid;gap:5px;margin-bottom:10px}
 .slot{display:flex;align-items:center;gap:10px;padding:7px 10px;background:#0b1219;border:1px solid #2c3f53}
@@ -222,7 +222,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
         </div>
         <div class="fl">Kaart</div>
         <div class="seg seg4" id="map-seg">
-          <button data-k="river">Rivierdal</button><button data-k="big">Grote vlakte</button><button data-k="islands">Eilanden</button><button data-k="winter">Winterfront</button>
+          <button data-k="river">Rivierdal</button><button data-k="big">Grote vlakte</button><button data-k="islands">Eilanden</button><button data-k="winter">Winterfront</button><button data-k="coast">Kustoorlog</button>
         </div>
         <div class="mapdesc" id="map-desc"></div>
         <div class="fl">Spelers</div>
@@ -299,12 +299,15 @@ const MAPS={
   river:{n:'Rivierdal',size:100,d:'De standaardkaart: meren, bossen en rotsen, met wegen naar het midden en naar je buren.',water:.34,rock:.71,tree:.64,lane:1,ore:1,ns:10,theme:'green'},
   big:{n:'Grote vlakte',size:136,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,theme:'green'},
   islands:{n:'Eilanden',size:112,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,theme:'green'},
+  coast:{n:'Kustoorlog',size:112,d:'Eén groot eiland met open zee eromheen. Bouw een scheepswerf aan je kust en val de vijand ook vanaf het water aan.',water:.2,rock:.77,tree:.66,lane:1,ore:1.15,ns:11,theme:'green',ocean:.37},
   winter:{n:'Winterfront',size:100,d:'Besneeuwd en rotsachtig, met bevroren meren en smalle doorgangen.',water:.31,rock:.63,tree:.6,lane:.9,ore:1,ns:9,theme:'snow'},
 };
 let MAPK='river';
-function setMapSize(sz){
+function setMapSize(sz,ring){
   MAP=sz;OX=MAP*HW;N=MAP*MAP;const a=Math.round(sz*.15),b=Math.round(sz*.8);
   START=[{x:a,y:b},{x:b,y:a},{x:a,y:a},{x:b,y:b}];
+  // op de kustkaart liggen de bases op een ring rond het midden, vlak bij de kust
+  if(ring){const r=sz*ring/Math.SQRT2,c=sz/2-1.5;START=[[-1,1],[1,-1],[-1,-1],[1,1]].map(([dx,dy])=>({x:Math.round(c+dx*r),y:Math.round(c+dy*r)}))}
   gS=new Float32Array(N);fS=new Float32Array(N);came=new Int32Array(N);stamp=new Uint32Array(N);closed=new Uint32Array(N);gen=0;
 }
 const SPOT_N=['West','Oost','Noord','Zuid'];
@@ -431,7 +434,7 @@ function s2w(sx,sy){const wx=sx+cam.x-OX,wy=sy+cam.y;return[(wx/HW+wy/HH)/2,(wy/
 let terr,ore,gem,bmap,expl,seed=1337,TECH=[];
 const GEM_MUL=3;
 function genMap(s,mk){
-  MAPK=MAPS[mk]?mk:'river';const MP=MAPS[MAPK];setMapSize(MP.size);
+  MAPK=MAPS[mk]?mk:'river';const MP=MAPS[MAPK];setMapSize(MP.size,MP.ocean?MP.ocean-.075:0);
   seed=s;terr=new Uint8Array(N);ore=new Uint16Array(N);gem=new Uint8Array(N);bmap=new Int32Array(N);expl=new Uint8Array(N);
   const R=mulberry(s),C={x:MAP/2+(R()-.5)*3,y:MAP/2+(R()-.5)*3},B=START.map(p=>({x:p.x+1.5,y:p.y+1.5}));
   const mids=RING.map(([a,b])=>({x:(B[a].x+B[b].x)/2+(C.x-(B[a].x+B[b].x)/2)*.18+(R()-.5)*5,y:(B[a].y+B[b].y)/2+(C.y-(B[a].y+B[b].y)/2)*.18+(R()-.5)*5}));
@@ -448,6 +451,8 @@ function genMap(s,mk){
     if((x<1||y<1||x>MAP-2||y>MAP-2)&&t===GRASS&&hash(x,y,s)<.6)t=TREE;
     terr[y*MAP+x]=t;
   }
+  if(MP.ocean){const R0=MP.ocean*MAP;for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){const d=Math.hypot(x+.5-MAP/2,y+.5-MAP/2),wob=(fbm(x/7,y/7,s+55)-.5)*MAP*.1;
+    if(d>R0+wob&&B.every(p=>Math.hypot(x+.5-p.x,y+.5-p.y)>7))terr[y*MAP+x]=WATER}}
   const nearBase=(x,y)=>B.some(p=>Math.hypot(x+.5-p.x,y+.5-p.y)<5.5),fr=MP.ore;
   const fields=[[C.x,C.y,4.6*fr]];
   for(const b of B){const dx=C.x-b.x,dy=C.y-b.y,l=Math.hypot(dx,dy),ux=dx/l,uy=dy/l;
@@ -964,7 +969,7 @@ function canPlace(o,type,x,y,gap){
   const T=BT[type];
   for(let yy=y;yy<y+T.h;yy++)for(let xx=x;xx<x+T.w;xx++)if(!tileFree(o,xx,yy,T.water))return false;
   if(gap){for(let yy=y-1;yy<=y+T.h;yy++)for(let xx=x-1;xx<=x+T.w;xx++){if(xx<0||yy<0||xx>=MAP||yy>=MAP)continue;if(bmap[yy*MAP+xx])return false}}
-  let near=false;for(const b of G.blds)if(b.o===o&&!BT[b.type].tech&&rectDist(x,y,T.w,T.h,b.x,b.y,b.w,b.h)<=(isAI(o)?6:4)){near=true;break}
+  let near=false;for(const b of G.blds)if(b.o===o&&!BT[b.type].tech&&rectDist(x,y,T.w,T.h,b.x,b.y,b.w,b.h)<=(T.water?7:isAI(o)?6:4)){near=true;break}
   return near;
 }
 function power(o){let prod=0,use=0;for(const b of G.blds){if(b.o!==o||b.bt<1)continue;const p=BT[b.type].pow;if(p>0)prod+=p*(.5+.5*b.hp/BT[b.type].hp);else use-=p}return{prod:Math.round(prod),use}}
