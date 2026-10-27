@@ -291,10 +291,10 @@ const GRASS=0,WATER=1,ROCK=2,TREE=3;
 let START=[{x:12,y:64},{x:64,y:12},{x:12,y:12},{x:64,y:64}];
 // kaarten: grootte, hoeveel water/rots/bos, hoe breed de wegen, hoeveel erts en welk jaargetijde
 const MAPS={
-  river:{n:'Rivierdal',size:80,d:'De standaardkaart: meren, bossen en rotsen, met wegen naar het midden en naar je buren.',water:.34,rock:.71,tree:.64,lane:1,ore:1,ns:10,theme:'green'},
-  big:{n:'Grote vlakte',size:112,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,theme:'green'},
-  islands:{n:'Eilanden',size:88,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,theme:'green'},
-  winter:{n:'Winterfront',size:80,d:'Besneeuwd en rotsachtig, met bevroren meren en smalle doorgangen.',water:.31,rock:.63,tree:.6,lane:.9,ore:1,ns:9,theme:'snow'},
+  river:{n:'Rivierdal',size:100,d:'De standaardkaart: meren, bossen en rotsen, met wegen naar het midden en naar je buren.',water:.34,rock:.71,tree:.64,lane:1,ore:1,ns:10,theme:'green'},
+  big:{n:'Grote vlakte',size:136,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,theme:'green'},
+  islands:{n:'Eilanden',size:112,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,theme:'green'},
+  winter:{n:'Winterfront',size:100,d:'Besneeuwd en rotsachtig, met bevroren meren en smalle doorgangen.',water:.31,rock:.63,tree:.6,lane:.9,ore:1,ns:9,theme:'snow'},
 };
 let MAPK='river';
 function setMapSize(sz){
@@ -430,7 +430,7 @@ function genMap(s,mk){
     fields.push([b.x+ux*6-uy*6,b.y+uy*6+ux*6,3.1*fr],[b.x+ux*6+uy*6,b.y+uy*6-ux*6,2.7*fr]);
     if(MP.extra)fields.push([b.x+ux*13,b.y+uy*13,3.2*fr],[b.x-uy*9,b.y+ux*9,2.6*fr],[b.x+uy*9,b.y-ux*9,2.6*fr])}
   for(const m of mids)fields.push([m.x,m.y,2.9*fr]);
-  if(MP.extra)for(let k=0;k<8;k++){const a=k/8*Math.PI*2+.4,rr=MAP*.2;fields.push([C.x+Math.cos(a)*rr,C.y+Math.sin(a)*rr,2.8*fr])}
+  const ringN=Math.max(0,Math.round((MAP-70)/5));for(let k=0;k<ringN;k++){const a=k/ringN*Math.PI*2+.4,rr=MAP*(k%2?.17:.24);fields.push([C.x+Math.cos(a)*rr,C.y+Math.sin(a)*rr,2.8*fr])}
   for(const[cx,cy,r]of fields){
     for(let y=Math.floor(cy-r-1);y<=cy+r+1;y++)for(let x=Math.floor(cx-r-1);x<=cx+r+1;x++){
       if(x<1||y<1||x>MAP-2||y>MAP-2)continue;const i=y*MAP+x;
@@ -454,6 +454,9 @@ const walkable=(x,y)=>x>=0&&y>=0&&x<MAP&&y<MAP&&terr[y*MAP+x]===GRASS&&bmap[y*MA
 // De grond wordt in stukken van 2048 px getekend, zodat ook de grote kaart binnen de grenzen van elke browser blijft
 let gch=[],mmBase=null;const GCH=2048,GP=2;
 function tilePath(c,px,py,e=0){c.beginPath();c.moveTo(px,py-e);c.lineTo(px+HW+e*2,py+HH);c.lineTo(px,py+TH+e);c.lineTo(px-HW-e*2,py+HH);c.closePath()}
+let GRAIN=null;
+function grainTile(){if(GRAIN)return GRAIN;GRAIN=document.createElement('canvas');GRAIN.width=GRAIN.height=128;const c=GRAIN.getContext('2d'),im=c.createImageData(128,128),d=im.data,R=mulberry(99);
+  for(let i=0;i<128*128;i++){const v=R(),o=i*4,w=v>.5;d[o]=d[o+1]=d[o+2]=w?255:0;d[o+3]=Math.abs(v-.5)*34}c.putImageData(im,0,0);return GRAIN}
 function hsl2rgb(h,s,l){h=((h%360)+360)%360/360;const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q,f=t=>{t=(t+1)%1;return t<1/6?p+(q-p)*6*t:t<.5?q:t<2/3?p+(q-p)*(2/3-t)*6:p};return[f(h+1/3)*255,f(h)*255,f(h-1/3)*255]}
 function adjWater(x,y){for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<MAP&&Y<MAP&&terr[Y*MAP+X]===WATER)return true}return false}
 function renderGround(){
@@ -474,11 +477,11 @@ function renderGround(){
     const g=ch.g;g.setTransform(1,0,0,1,GP-ch.x,GP-ch.y);g.fillStyle='#030405';g.fillRect(ch.x-GP,ch.y-GP,ch.w+GP*2,ch.h+GP*2);
     const inCh=(x,y,up)=>{const px=(x-y)*HW+OX,py=(x+y)*HH;return px+HW+8>=ch.x-GP&&px-HW-8<=ch.x+ch.w+GP&&py+TH+8>=ch.y-GP&&py-up<=ch.y+ch.h+GP};
     // grond per pixel: kleuren van de vier dichtstbijzijnde vakjes mengen, land en water apart, met een scherpe kust en schuim
-    {const cw=ch.w+GP*2,chh=ch.h+GP*2,img=g.createImageData(cw,chh),D=img.data;
+    {const CW=ch.w+GP*2,CH=ch.h+GP*2,cw=Math.ceil(CW/2),chh=Math.ceil(CH/2),img=g.createImageData(cw,chh),D=img.data;
       let lr,lg,lb,lw,wr,wg,wb,wwt;
       const add=(ti,w)=>{const q=ti*3;if(GW[ti]){wr+=TCOL[q]*w;wg+=TCOL[q+1]*w;wb+=TCOL[q+2]*w;wwt+=w}else{lr+=TCOL[q]*w;lg+=TCOL[q+1]*w;lb+=TCOL[q+2]*w;lw+=w}};
-      for(let py=0;py<chh;py++){const gy=ch.y-GP+py,fy=gy/HH;
-        for(let px=0;px<cw;px++){const gxp=ch.x-GP+px,fx=(gxp-OX)/HW,X=(fx+fy)/2-.5,Y=(fy-fx)/2-.5,o=(py*cw+px)*4;D[o+3]=255;
+      for(let py=0;py<chh;py++){const gy=ch.y-GP+py*2+1,fy=gy/HH;
+        for(let px=0;px<cw;px++){const gxp=ch.x-GP+px*2+1,fx=(gxp-OX)/HW,X=(fx+fy)/2-.5,Y=(fy-fx)/2-.5,o=(py*cw+px)*4;D[o+3]=255;
           if(X<-.5||Y<-.5||X>MAP-.5||Y>MAP-.5){D[o]=3;D[o+1]=4;D[o+2]=5;continue}
           let x0=Math.floor(X),y0=Math.floor(Y);let ax=X-x0,ay=Y-y0;ax=ax*ax*(3-2*ax);ay=ay*ay*(3-2*ay);
           let x1=x0+1,y1=y0+1;if(x0<0)x0=0;if(y0<0)y0=0;if(x1>MAP-1)x1=MAP-1;if(y1>MAP-1)y1=MAP-1;
@@ -489,11 +492,13 @@ function renderGround(){
           let r=lr+(wr-lr)*sm,gg=lg+(wg-lg)*sm,b=lb+(wb-lb)*sm;
           let hsh=Math.imul(gxp,374761393)+Math.imul(gy,668265263);hsh=Math.imul(hsh^(hsh>>>13),1274126177);hsh=(hsh^(hsh>>>16))>>>0;
           if(wwt>.3&&wwt<.72){const f=1-Math.abs(wwt-.5)/.22,fo=f*f*(.45+.55*((hsh>>>8)&255)/255)*(snow?.35:.55);r+=(240-r)*fo;gg+=(246-gg)*fo;b+=(250-b)*fo}
-          const gr=(hsh&15)-7.5;r+=gr;gg+=gr;b+=gr;
           D[o]=r;D[o+1]=gg;D[o+2]=b;
         }
       }
-      g.putImageData(img,0,0);
+      // op halve resolutie berekend en vergroot; daarna een fijne korrel erover
+      const tmp=document.createElement('canvas');tmp.width=cw;tmp.height=chh;tmp.getContext('2d').putImageData(img,0,0);
+      g.save();g.setTransform(1,0,0,1,0,0);g.imageSmoothingEnabled=true;g.imageSmoothingQuality='high';g.drawImage(tmp,0,0,cw*2,chh*2);
+      g.fillStyle=g.createPattern(grainTile(),'repeat');g.fillRect(0,0,CW,CH);g.restore();
     }
     for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){
       if(!inCh(x,y,30))continue;
@@ -620,7 +625,7 @@ function findPath(fx,fy,gx_,gy_){
   let best=s,bestH=fS[s],it=0;
   while(heap.length){
     const c=hpop();if(closed[c]===gen)continue;closed[c]=gen;
-    if(c===t){best=c;break}if(++it>4500)break;
+    if(c===t){best=c;break}if(++it>16000)break;
     const cx=c%MAP,cy=(c/MAP)|0,h=oct(cx,cy,tx,ty);if(h<bestH){bestH=h;best=c}
     for(let k=0;k<8;k++){
       const nx=cx+DX[k],ny=cy+DY[k];if(!walkable(nx,ny))continue;
@@ -638,7 +643,7 @@ function los(x0,y0,x1,y1){const d=Math.hypot(x1-x0,y1-y0),n=Math.ceil(d/.25);for
 
 // ---------- orders & movement
 function setPath(u,x,y){u.gx=x;u.gy=y;u.path=UT[u.type].air?[{x:clamp(x,.3,MAP-.3),y:clamp(y,.3,MAP-.3)}]:findPath(u.x,u.y,x,y);u.stuckN=0;u.pt=0;u.lx=u.x;u.ly=u.y;u.los=0}
-function orderMove(u,x,y,am){u.st='move';u.am=!!am;u.tid=0;u.resume=null;u.auto=false;u.dx=x;u.dy=y;setPath(u,x,y)}
+function orderMove(u,x,y,am){u.rt=0;u.st='move';u.am=!!am;u.tid=0;u.resume=null;u.auto=false;u.dx=x;u.dy=y;setPath(u,x,y)}
 function orderGroup(us,tx,ty,am){
   if(!us.length)return;tx=clamp(tx,.5,MAP-.5);ty=clamp(ty,.5,MAP-.5);
   if(us.length===1){orderMove(us[0],tx,ty,am);return}
@@ -707,7 +712,7 @@ function updUnit(u,dt){
       if(T.cat==='inf')u.tur=u.face;else u.tur=turn(u.tur,a,4*dt);
     }
   }else if(u.st==='move'){
-    if(moveAlong(u,dt)){u.st='idle';u.am=false}
+    if(moveAlong(u,dt)){if(Math.hypot(u.x-u.dx,u.y-u.dy)>2.5&&(u.rt=(u.rt||0)+1)<4)setPath(u,u.dx,u.dy);else{u.st='idle';u.am=false;u.rt=0}}
     if(T.cat==='inf')u.tur=u.face;else u.tur=turn(u.tur,u.face,4*dt);
   }else if(T.cat!=='inf')u.tur=turn(u.tur,u.face,2*dt);
 }
