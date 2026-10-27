@@ -126,6 +126,8 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 .seg button[aria-pressed="true"]{border-color:var(--team);background:linear-gradient(180deg,#24466e,#142a44);color:#fff}
 .seg button:disabled{cursor:default}
 .seg button:disabled:not([aria-pressed="true"]){opacity:.45}
+.seg4{grid-template-columns:repeat(4,1fr)}
+.mapdesc{font-size:13px;color:var(--dim);margin:-6px 0 14px;line-height:1.4}
 #slots{display:grid;gap:5px;margin-bottom:10px}
 .slot{display:flex;align-items:center;gap:10px;padding:7px 10px;background:#0b1219;border:1px solid #2c3f53}
 .slot i{width:12px;height:30px;flex:none}
@@ -144,7 +146,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 #roster .ro em{font-style:normal;color:var(--dim);font-weight:500}
 #roster .ro.me{box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
 #roster .ro.out{opacity:.45;text-decoration:line-through}
-@media (max-width:520px){.seg{grid-template-columns:1fr}.menu-btns{grid-template-columns:1fr}.join-row{grid-template-columns:1fr}}
+@media (max-width:520px){.seg{grid-template-columns:1fr}.seg4{grid-template-columns:1fr 1fr}.menu-btns{grid-template-columns:1fr}.join-row{grid-template-columns:1fr}}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0 0 18px;font-size:14px;color:#b7c7d6}
 .keys dt{font-weight:700;color:#fff;white-space:nowrap}
 .keys dd{margin:0}
@@ -215,6 +217,11 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
         <div class="seg" id="diff-seg">
           <button data-d="0">Makkelijk</button><button data-d="1">Normaal</button><button data-d="2">Zwaar</button>
         </div>
+        <div class="fl">Kaart</div>
+        <div class="seg seg4" id="map-seg">
+          <button data-k="river">Rivierdal</button><button data-k="big">Grote vlakte</button><button data-k="islands">Eilanden</button><button data-k="winter">Winterfront</button>
+        </div>
+        <div class="mapdesc" id="map-desc"></div>
         <div class="fl">Spelers</div>
         <div id="slots"></div>
         <div id="pending"></div>
@@ -273,14 +280,28 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 (()=>{
 'use strict';
 const $=s=>document.getElementById(s);
-const TW=64,TH=32,HW=32,HH=16,MAP=80,OX=MAP*HW,N=MAP*MAP;
+const TW=64,TH=32,HW=32,HH=16;
+let MAP=80,OX=MAP*HW,N=MAP*MAP;
 const cv=$('game'),ctx=cv.getContext('2d');
 let DPR=1,VW=800,VH=600;
 const cam={x:0,y:0};
 const TEAM=[{main:'#3f8cff',dark:'#1d4fa8',light:'#a9cbff',n:'Blauw'},{main:'#e0402f',dark:'#8e1d14',light:'#ffab9d',n:'Rood'},{main:'#e8b02a',dark:'#8a6410',light:'#ffe08a',n:'Geel'},{main:'#3fbf5a',dark:'#1e6e30',light:'#a6f0b4',n:'Groen'}];
 const GRASS=0,WATER=1,ROCK=2,TREE=3;
 // startplekken: links, rechts, boven, onder (0 en 1 liggen tegenover elkaar, net als 2 en 3)
-const START=[{x:12,y:64},{x:64,y:12},{x:12,y:12},{x:64,y:64}];
+let START=[{x:12,y:64},{x:64,y:12},{x:12,y:12},{x:64,y:64}];
+// kaarten: grootte, hoeveel water/rots/bos, hoe breed de wegen, hoeveel erts en welk jaargetijde
+const MAPS={
+  river:{n:'Rivierdal',size:80,d:'De standaardkaart: meren, bossen en rotsen, met wegen naar het midden en naar je buren.',water:.34,rock:.71,tree:.64,lane:1,ore:1,ns:10,theme:'green'},
+  big:{n:'Grote vlakte',size:112,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,theme:'green'},
+  islands:{n:'Eilanden',size:88,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,theme:'green'},
+  winter:{n:'Winterfront',size:80,d:'Besneeuwd en rotsachtig, met bevroren meren en smalle doorgangen.',water:.31,rock:.63,tree:.6,lane:.9,ore:1,ns:9,theme:'snow'},
+};
+let MAPK='river';
+function setMapSize(sz){
+  MAP=sz;OX=MAP*HW;N=MAP*MAP;const a=Math.round(sz*.15),b=Math.round(sz*.8);
+  START=[{x:a,y:b},{x:b,y:a},{x:a,y:a},{x:b,y:b}];
+  gS=new Float32Array(N);fS=new Float32Array(N);came=new Int32Array(N);stamp=new Uint32Array(N);closed=new Uint32Array(N);gen=0;
+}
 const SPOT_N=['West','Oost','Noord','Zuid'];
 const RING=[[2,1],[1,3],[3,0],[0,2]];
 const HCAP=600;
@@ -385,33 +406,36 @@ function s2w(sx,sy){const wx=sx+cam.x-OX,wy=sy+cam.y;return[(wx/HW+wy/HH)/2,(wy/
 // ---------- map
 let terr,ore,gem,bmap,expl,seed=1337;
 const GEM_MUL=3;
-function genMap(s){
+function genMap(s,mk){
+  MAPK=MAPS[mk]?mk:'river';const MP=MAPS[MAPK];setMapSize(MP.size);
   seed=s;terr=new Uint8Array(N);ore=new Uint16Array(N);gem=new Uint8Array(N);bmap=new Int32Array(N);expl=new Uint8Array(N);
   const R=mulberry(s),C={x:MAP/2+(R()-.5)*3,y:MAP/2+(R()-.5)*3},B=START.map(p=>({x:p.x+1.5,y:p.y+1.5}));
   const mids=RING.map(([a,b])=>({x:(B[a].x+B[b].x)/2+(C.x-(B[a].x+B[b].x)/2)*.18+(R()-.5)*5,y:(B[a].y+B[b].y)/2+(C.y-(B[a].y+B[b].y)/2)*.18+(R()-.5)*5}));
-  const lanes=[];
-  B.forEach(b=>lanes.push([b,C,2.4]));
-  RING.forEach(([a,b],i)=>{lanes.push([B[a],mids[i],1.6]);lanes.push([mids[i],B[b],1.6])});
+  const lanes=[],lw=MP.lane;
+  B.forEach(b=>lanes.push([b,C,2.4*lw]));
+  RING.forEach(([a,b],i)=>{lanes.push([B[a],mids[i],1.6*lw]);lanes.push([mids[i],B[b],1.6*lw])});
   for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){
-    const n=fbm(x/10,y/10,s),m=fbm(x/4.5,y/4.5,s+31);
+    const n=fbm(x/MP.ns,y/MP.ns,s),m=fbm(x/4.5,y/4.5,s+31);
     let t=GRASS;
-    if(n<.34)t=WATER;else if(n>.71)t=ROCK;else if(m>.64)t=TREE;
+    if(n<MP.water)t=WATER;else if(n>MP.rock)t=ROCK;else if(m>MP.tree)t=TREE;
     let ln=99;for(const[p,q,w]of lanes)ln=Math.min(ln,segDist(x+.5,y+.5,p.x,p.y,q.x,q.y)-w);
-    if(ln<0)t=GRASS;else if(ln<1.2&&t!==TREE)t=GRASS;
-    for(const p of B)if(Math.hypot(x+.5-p.x,y+.5-p.y)<10.5)t=GRASS;
+    if(ln<0)t=GRASS;else if(ln<(MP.margin??1.2)*lw&&t!==TREE)t=GRASS;
+    for(const p of B)if(Math.hypot(x+.5-p.x,y+.5-p.y)<(MP.margin!==undefined?9:10.5))t=GRASS;
     if((x<1||y<1||x>MAP-2||y>MAP-2)&&t===GRASS&&hash(x,y,s)<.6)t=TREE;
     terr[y*MAP+x]=t;
   }
-  const nearBase=(x,y)=>B.some(p=>Math.hypot(x+.5-p.x,y+.5-p.y)<5.5);
-  const fields=[[C.x,C.y,4.6]];
+  const nearBase=(x,y)=>B.some(p=>Math.hypot(x+.5-p.x,y+.5-p.y)<5.5),fr=MP.ore;
+  const fields=[[C.x,C.y,4.6*fr]];
   for(const b of B){const dx=C.x-b.x,dy=C.y-b.y,l=Math.hypot(dx,dy),ux=dx/l,uy=dy/l;
-    fields.push([b.x+ux*6-uy*6,b.y+uy*6+ux*6,3.1],[b.x+ux*6+uy*6,b.y+uy*6-ux*6,2.7])}
-  for(const m of mids)fields.push([m.x,m.y,2.9]);
+    fields.push([b.x+ux*6-uy*6,b.y+uy*6+ux*6,3.1*fr],[b.x+ux*6+uy*6,b.y+uy*6-ux*6,2.7*fr]);
+    if(MP.extra)fields.push([b.x+ux*13,b.y+uy*13,3.2*fr],[b.x-uy*9,b.y+ux*9,2.6*fr],[b.x+uy*9,b.y-ux*9,2.6*fr])}
+  for(const m of mids)fields.push([m.x,m.y,2.9*fr]);
+  if(MP.extra)for(let k=0;k<8;k++){const a=k/8*Math.PI*2+.4,rr=MAP*.2;fields.push([C.x+Math.cos(a)*rr,C.y+Math.sin(a)*rr,2.8*fr])}
   for(const[cx,cy,r]of fields){
     for(let y=Math.floor(cy-r-1);y<=cy+r+1;y++)for(let x=Math.floor(cx-r-1);x<=cx+r+1;x++){
       if(x<1||y<1||x>MAP-2||y>MAP-2)continue;const i=y*MAP+x;
       const d=Math.hypot(x+.5-cx,y+.5-cy);
-      if(d<r+(hash(x,y,s+5)-.5)*1.4&&terr[i]===GRASS&&!nearBase(x,y))ore[i]=Math.round(220+(1-d/r)*230+hash(x,y,s+9)*50);
+      if(d<r+(hash(x,y,s+5)-.5)*1.4&&terr[i]===GRASS&&!nearBase(x,y))ore[i]=Math.max(ore[i],Math.round(220+(1-d/r)*230+hash(x,y,s+9)*50));
     }
   }
   // edelstenen: in het midden en tussen buurbases, drie keer zoveel waard en groeien niet terug
@@ -427,52 +451,63 @@ function genMap(s){
 const walkable=(x,y)=>x>=0&&y>=0&&x<MAP&&y<MAP&&terr[y*MAP+x]===GRASS&&bmap[y*MAP+x]===0;
 
 // ---------- ground canvas
-let gcv=null,gx=null,mmBase=null;
+// De grond wordt in stukken van 2048 px getekend, zodat ook de grote kaart binnen de grenzen van elke browser blijft
+let gch=[],mmBase=null;const GCH=2048,GP=2;
 function tilePath(c,px,py,e=0){c.beginPath();c.moveTo(px,py-e);c.lineTo(px+HW+e*2,py+HH);c.lineTo(px,py+TH+e);c.lineTo(px-HW-e*2,py+HH);c.closePath()}
 function adjWater(x,y){for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<MAP&&Y<MAP&&terr[Y*MAP+X]===WATER)return true}return false}
 function renderGround(){
-  if(!gcv){gcv=document.createElement('canvas');gcv.width=MAP*TW;gcv.height=MAP*TH;gx=gcv.getContext('2d')}
-  const g=gx;g.fillStyle='#030405';g.fillRect(0,0,gcv.width,gcv.height);
-  const R=mulberry(seed*7+3);
-  for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){
-    const i=y*MAP+x,t=terr[i],px=(x-y)*HW+OX,py=(x+y)*HH,n=fbm(x/6,y/6,seed+5);
-    let col;
-    if(t===WATER){const dep=fbm(x/10,y/10,seed);col=`hsl(203,44%,${12+dep*34}%)`}
-    else if(adjWater(x,y))col=`hsl(40,26%,${36+n*10}%)`;
-    else if(t===ROCK)col=`hsl(30,13%,${26+n*9}%)`;
-    else col=`hsl(${86+n*18},${28+n*10}%,${22+n*9}%)`;
-    g.fillStyle=col;g.strokeStyle=col;g.lineWidth=1.2;tilePath(g,px,py);g.fill();g.stroke();
-  }
-  for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){
-    const t=terr[y*MAP+x];
-    if(t===WATER){
-      g.strokeStyle='rgba(170,215,255,.13)';g.lineWidth=1;
-      for(let k=0;k<2;k++){const u=R(),v=R();const px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH;g.beginPath();g.moveTo(px-6,py);g.lineTo(px+6,py);g.stroke()}
-      continue;
+  const W=MAP*TW,H=MAP*TH,snow=MAPS[MAPK].theme==='snow';gch=[];
+  for(let y=0;y<H;y+=GCH)for(let x=0;x<W;x+=GCH){const c=document.createElement('canvas'),w=Math.min(GCH,W-x),h=Math.min(GCH,H-y);c.width=w+GP*2;c.height=h+GP*2;gch.push({x,y,w,h,c,g:c.getContext('2d')})}
+  for(const ch of gch){
+    const g=ch.g;g.setTransform(1,0,0,1,GP-ch.x,GP-ch.y);g.fillStyle='#030405';g.fillRect(ch.x-GP,ch.y-GP,ch.w+GP*2,ch.h+GP*2);
+    const inCh=(x,y,up)=>{const px=(x-y)*HW+OX,py=(x+y)*HH;return px+HW+8>=ch.x-GP&&px-HW-8<=ch.x+ch.w+GP&&py+TH+8>=ch.y-GP&&py-up<=ch.y+ch.h+GP};
+    for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){
+      if(!inCh(x,y,4))continue;
+      const i=y*MAP+x,t=terr[i],px=(x-y)*HW+OX,py=(x+y)*HH,n=fbm(x/6,y/6,seed+5);
+      let col;
+      if(t===WATER){const dep=fbm(x/10,y/10,seed);col=snow?`hsl(205,38%,${22+dep*26}%)`:`hsl(203,44%,${12+dep*34}%)`}
+      else if(adjWater(x,y))col=snow?`hsl(200,14%,${66+n*8}%)`:`hsl(40,26%,${36+n*10}%)`;
+      else if(t===ROCK)col=snow?`hsl(210,6%,${38+n*10}%)`:`hsl(30,13%,${26+n*9}%)`;
+      else col=snow?`hsl(${200+n*15},${10+n*8}%,${80+n*9}%)`:`hsl(${86+n*18},${28+n*10}%,${22+n*9}%)`;
+      g.fillStyle=col;g.strokeStyle=col;g.lineWidth=1.2;tilePath(g,px,py);g.fill();g.stroke();
     }
-    for(let k=0;k<9;k++){
-      const u=R(),v=R(),px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH;
-      g.fillStyle=R()<.5?'rgba(0,0,0,.14)':'rgba(255,255,220,.07)';g.fillRect(px,py,2,1);
+    for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){
+      if(!inCh(x,y,30))continue;
+      const i=y*MAP+x,t=terr[i],R=mulberry(seed*131+i*7919+11);
+      if(t===WATER){
+        g.strokeStyle=snow?'rgba(235,248,255,.28)':'rgba(170,215,255,.13)';g.lineWidth=1;
+        for(let k=0;k<2;k++){const u=R(),v=R();const px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH;g.beginPath();g.moveTo(px-6,py);g.lineTo(px+6,py+(snow?3:0));g.stroke()}
+        continue;
+      }
+      for(let k=0;k<9;k++){
+        const u=R(),v=R(),px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH;
+        g.fillStyle=R()<.5?(snow?'rgba(90,110,130,.12)':'rgba(0,0,0,.14)'):(snow?'rgba(255,255,255,.3)':'rgba(255,255,220,.07)');g.fillRect(px,py,2,1);
+      }
+      if(t===GRASS&&R()<.18){const u=R(),v=R(),px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH;g.fillStyle=snow?'rgba(140,160,180,.16)':'rgba(60,45,25,.18)';g.beginPath();g.ellipse(px,py,10+R()*10,4+R()*4,0,0,7);g.fill()}
     }
-    if(t===GRASS&&R()<.18){const u=R(),v=R(),px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH;g.fillStyle='rgba(60,45,25,.18)';g.beginPath();g.ellipse(px,py,10+R()*10,4+R()*4,0,0,7);g.fill()}
-  }
-  // rotsen
-  for(let s=0;s<2*MAP;s++)for(let x=0;x<MAP;x++){const y=s-x;if(y<0||y>=MAP||terr[y*MAP+x]!==ROCK)continue;
-    for(let k=0;k<2;k++){
-      const u=.25+R()*.5,v=.25+R()*.5,px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH,r=9+R()*9,h=8+R()*12;
-      const pts=[];for(let a=0;a<7;a++){const an=Math.PI+a/6*Math.PI,rr=r*(.75+R()*.35);pts.push([px+Math.cos(an)*rr,py+Math.sin(an)*rr*.5-(a>0&&a<6?h*Math.sin(a/6*Math.PI):0)])}
-      g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(px+3,py+2,r,r*.45,0,0,7);g.fill();
-      const gr=g.createLinearGradient(px-r,py-h,px+r,py);gr.addColorStop(0,'#9a958c');gr.addColorStop(1,'#4e4a45');
-      g.fillStyle=gr;g.beginPath();g.moveTo(px-r,py);for(const p of pts)g.lineTo(p[0],p[1]);g.lineTo(px+r,py);g.ellipse(px,py,r,r*.4,0,0,Math.PI);g.closePath();g.fill();
+    // rotsen, van achter naar voren
+    for(let sd=0;sd<2*MAP;sd++)for(let x=0;x<MAP;x++){const y=sd-x;if(y<0||y>=MAP||terr[y*MAP+x]!==ROCK||!inCh(x,y,40))continue;
+      const R=mulberry(seed*977+(y*MAP+x)*104729+5);
+      for(let k=0;k<2;k++){
+        const u=.25+R()*.5,v=.25+R()*.5,px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH,r=9+R()*9,h=8+R()*12;
+        const pts=[];for(let a=0;a<7;a++){const an=Math.PI+a/6*Math.PI,rr=r*(.75+R()*.35);pts.push([px+Math.cos(an)*rr,py+Math.sin(an)*rr*.5-(a>0&&a<6?h*Math.sin(a/6*Math.PI):0)])}
+        g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(px+3,py+2,r,r*.45,0,0,7);g.fill();
+        const gr=g.createLinearGradient(px-r,py-h,px+r,py);gr.addColorStop(0,snow?'#eef3f7':'#9a958c');gr.addColorStop(1,snow?'#5a6068':'#4e4a45');
+        g.fillStyle=gr;g.beginPath();g.moveTo(px-r,py);for(const p of pts)g.lineTo(p[0],p[1]);g.lineTo(px+r,py);g.ellipse(px,py,r,r*.4,0,0,Math.PI);g.closePath();g.fill();
+      }
     }
   }
   mmBase=null;
 }
 function scorch(x,y,r){
-  netEv(['s',r2(x),r2(y),r]);if(!gx)return;const px=(x-y)*HW+OX,py=(x+y)*HH;
-  gx.save();gx.translate(px,py);gx.scale(1,.5);const rr=r*46;
-  const g=gx.createRadialGradient(0,0,0,0,0,rr);g.addColorStop(0,'rgba(18,12,6,.6)');g.addColorStop(.6,'rgba(18,12,6,.3)');g.addColorStop(1,'rgba(18,12,6,0)');
-  gx.fillStyle=g;gx.beginPath();gx.arc(0,0,rr,0,7);gx.fill();gx.restore();
+  netEv(['s',r2(x),r2(y),r]);if(!gch.length)return;
+  const px=(x-y)*HW+OX,py=(x+y)*HH,rr=r*46;
+  for(const ch of gch){
+    if(px+rr<ch.x-GP||px-rr>ch.x+ch.w+GP||py+rr/2<ch.y-GP||py-rr/2>ch.y+ch.h+GP)continue;
+    const gx=ch.g;gx.save();gx.setTransform(1,0,0,1,GP-ch.x,GP-ch.y);gx.translate(px,py);gx.scale(1,.5);
+    const g=gx.createRadialGradient(0,0,0,0,0,rr);g.addColorStop(0,'rgba(18,12,6,.6)');g.addColorStop(.6,'rgba(18,12,6,.3)');g.addColorStop(1,'rgba(18,12,6,0)');
+    gx.fillStyle=g;gx.beginPath();gx.arc(0,0,rr,0,7);gx.fill();gx.restore();
+  }
 }
 
 // ---------- state
@@ -518,7 +553,7 @@ function producer(o,cat){
 
 // cfg: {diff, mode, slots:[{kind:'human'|'ai'|'off', name, fac, team} x4]}; populate=false voor gasten, die alles van de gastheer krijgen
 function newGame(s,cfg,populate=true){
-  genMap(s);renderGround();
+  genMap(s,cfg.map);renderGround();
   Object.assign(G,{t:0,diff:cfg.diff,mode:cfg.mode,paused:false,over:null,
     pl:cfg.slots.map(c=>mkPlayer(c.kind==='ai'?[3500,6000,9000][cfg.diff]:5000,c)),
     units:[],blds:[],proj:[],fx:[],pings:[],bombs:[],rads:[],drops:[],gemSeen:false,ai:{},
@@ -537,7 +572,7 @@ function newGame(s,cfg,populate=true){
 }
 
 // ---------- pathfinding
-const gS=new Float32Array(N),fS=new Float32Array(N),came=new Int32Array(N),stamp=new Uint32Array(N),closed=new Uint32Array(N);let gen=0;const heap=[];
+let gS=new Float32Array(N),fS=new Float32Array(N),came=new Int32Array(N),stamp=new Uint32Array(N),closed=new Uint32Array(N),gen=0;const heap=[];
 const DX=[1,-1,0,0,1,1,-1,-1],DY=[0,0,1,-1,1,-1,1,-1];
 function hpush(i){heap.push(i);let k=heap.length-1;while(k>0){const p=(k-1)>>1;if(fS[heap[p]]<=fS[i])break;heap[k]=heap[p];k=p}heap[k]=i}
 function hpop(){const top=heap[0],last=heap.pop(),n=heap.length;if(n){let k=0;for(;;){const l=2*k+1;if(l>=n)break;const r=l+1;const c=(r<n&&fS[heap[r]]<fS[heap[l]])?r:l;if(fS[heap[c]]>=fS[last])break;heap[k]=heap[c];k=c}heap[k]=last}return top}
@@ -1273,12 +1308,16 @@ function drawEagle(c,pr,u,tm,t){
 }
 function drawUnit(c,pr,u,t){const tm=TEAM[u.o];if(u.type==='eagle')drawEagle(c,pr,u,tm,t);else if(u.type==='kirov')drawKirov(c,pr,u,tm,t);else if(u.type==='rocketeer')drawRocketeer(c,pr,u,tm,t);else if(u.type==='dog')drawDog(c,pr,u,tm,t);else if(UT[u.type].cat==='inf')drawInf(c,pr,u,tm,t);else drawVeh(c,pr,u,tm,t)}
 function drawTree(c,x,y){
-  const i=y*MAP+x,h1=hash(x,y,seed+2),h2=hash(x,y,seed+4),cx=x+.3+h1*.4,cy=y+.3+h2*.4,[sx,sy]=w2s(cx,cy,0),s=.85+h1*.4;
+  const h1=hash(x,y,seed+2),h2=hash(x,y,seed+4),cx=x+.3+h1*.4,cy=y+.3+h2*.4,[sx,sy]=w2s(cx,cy,0),s=.85+h1*.4;
   c.fillStyle='rgba(0,0,0,.28)';c.beginPath();c.ellipse(sx+6,sy+1,13*s,6*s,0,0,7);c.fill();
   c.fillStyle='#4a3622';c.fillRect(sx-1.5,sy-9*s,3,9*s);
+  if(MAPS[MAPK].theme==='snow'){
+    for(const[oy,w,hh]of[[-8,12,14],[-16,9,12],[-23,6,10]]){c.fillStyle=`hsl(${150+h2*20},28%,${18+h1*6}%)`;c.beginPath();c.moveTo(sx-w*s,sy+oy*s);c.lineTo(sx,sy+(oy-hh)*s);c.lineTo(sx+w*s,sy+oy*s);c.closePath();c.fill();
+      c.fillStyle='rgba(245,250,255,.9)';c.beginPath();c.moveTo(sx-w*.45*s,sy+(oy-hh*.55)*s);c.lineTo(sx,sy+(oy-hh)*s);c.lineTo(sx+w*.45*s,sy+(oy-hh*.55)*s);c.closePath();c.fill()}
+    return;
+  }
   const hue=95+h2*30;
   for(const[ox,oy,r,l]of[[0,-16,11,18],[-5,-22,8,22],[4,-24,8,24],[0,-29,6,28]]){c.fillStyle=`hsl(${hue},38%,${l}%)`;c.beginPath();c.arc(sx+ox*s,sy+oy*s,r*s,0,7);c.fill()}
-  void i;
 }
 const ORE_COL=[['rgba(110,70,20,.28)','#8a6414','#f0c43c','#fff6c8'],['rgba(40,60,130,.3)','#3b2f8f','#6fd6ff','#ffffff']];
 function drawOre(c,x,y,a,t,g){
@@ -1304,8 +1343,8 @@ const tileOnScreen=(px,py)=>!(px<-HW-4||px>VW+HW+4||py<-TH-70||py>VH+8);
 const DR=[];
 function render(t){
   ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,VW,VH);
-  const sx0=Math.max(0,cam.x),sy0=Math.max(0,cam.y),sx1=Math.min(gcv.width,cam.x+VW),sy1=Math.min(gcv.height,cam.y+VH);
-  if(sx1>sx0&&sy1>sy0)ctx.drawImage(gcv,sx0,sy0,sx1-sx0,sy1-sy0,sx0-cam.x,sy0-cam.y,sx1-sx0,sy1-sy0);
+  for(const ch of gch){const sx0=Math.max(ch.x,cam.x),sy0=Math.max(ch.y,cam.y),sx1=Math.min(ch.x+ch.w,cam.x+VW),sy1=Math.min(ch.y+ch.h,cam.y+VH);
+    if(sx1>sx0&&sy1>sy0)ctx.drawImage(ch.c,sx0-ch.x+GP,sy0-ch.y+GP,sx1-sx0,sy1-sy0,sx0-cam.x,sy0-cam.y,sx1-sx0,sy1-sy0)}
   const[x0,x1,y0,y1]=visRange();DR.length=0;
   for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const i=y*MAP+x,[px,py]=w2s(x,y);if(!tileOnScreen(px,py))continue;
     if(!expl[i])continue;
@@ -1396,7 +1435,7 @@ function mmDraw(){
   const on=radarOn();$('mm-off').hidden=on;if(!on)return;
   const{sc,ox,oy}=mmGeo(),w=MAP*TW*sc,h=MAP*TH*sc;
   mc.setTransform(DPR,0,0,DPR,0,0);mc.fillStyle='#000';mc.fillRect(0,0,MMW,MMH);
-  if(!mmBase){mmBase=document.createElement('canvas');mmBase.width=Math.ceil(w*DPR);mmBase.height=Math.ceil(h*DPR);mmBase.getContext('2d').drawImage(gcv,0,0,mmBase.width,mmBase.height)}
+  if(!mmBase){mmBase=document.createElement('canvas');mmBase.width=Math.ceil(w*DPR);mmBase.height=Math.ceil(h*DPR);const m=mmBase.getContext('2d'),k=mmBase.width/(MAP*TW);for(const ch of gch)m.drawImage(ch.c,GP,GP,ch.w,ch.h,ch.x*k,ch.y*k,ch.w*k,ch.h*k)}
   mc.drawImage(mmBase,ox,oy,w,h);
   const tp=(x,y)=>[ox+((x-y)*HW+OX)*sc,oy+(x+y)*HH*sc];
   for(let i=0;i<N;i++)if(ore[i]>0&&expl[i]){const x=i%MAP,y=(i/MAP)|0,[a,b]=tp(x+.5,y+.5);mc.fillStyle=gem[i]?'#6fd6ff':'#d9ad2b';mc.fillRect(a-1,b-.6,2,1.3)}
@@ -1748,7 +1787,7 @@ function showEnd(win,outOnly){
 const PEER_PREFIX='rodedageraad-v1-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
-const L={code:'',mode:'ffa',diff:1,online:false,slots:[],pending:[]};
+const L={code:'',mode:'ffa',diff:1,map:'river',online:false,slots:[],pending:[]};
 const cleanName=v=>String(v||'').replace(/[\u0000-\u001f\u007f<>]/g,'').trim().slice(0,16);
 function myToken(){try{let t=localStorage.getItem('rd-token');if(!t){t=Math.random().toString(36).slice(2,12);localStorage.setItem('rd-token',t)}return t}catch(e){return NET.tok||(NET.tok=Math.random().toString(36).slice(2,12))}}
 function teamFor(mode,i,kind){return mode==='ffa'?i:mode==='2v2'?(i===0||i===2?0:1):(kind==='ai'?1:0)}
@@ -1800,9 +1839,9 @@ function admit(i,ok){
   L.slots[free]={kind:'human',name:p.name,nat:NATIONS[p.nat]?p.nat:'usa',token:p.token,conn:p.conn};p.conn.slot=free;
   p.conn.send({t:'joined',slot:free});broadcastLobby();renderLobby();
 }
-function lobbyView(){return{t:'lobby',code:L.code,mode:L.mode,diff:L.diff,slots:L.slots.map((s,i)=>({kind:s.kind,name:s.name||'',nat:s.nat||'usa',team:teamFor(L.mode,i,s.kind)}))}}
+function lobbyView(){return{t:'lobby',code:L.code,mode:L.mode,diff:L.diff,map:L.map,slots:L.slots.map((s,i)=>({kind:s.kind,name:s.name||'',nat:s.nat||'usa',team:teamFor(L.mode,i,s.kind)}))}}
 function broadcastLobby(){const v=lobbyView();L.slots.forEach((s,i)=>{if(i>0&&s.conn&&s.conn.open)try{s.conn.send({...v,you:i})}catch(e){}})}
-function matchCfg(){return{diff:L.diff,mode:L.mode,slots:L.slots.map((s,i)=>{const kind=s.kind==='human'?'human':s.kind==='ai'?'ai':'off';return{kind,name:kind==='ai'?'Computer':s.name||'',nat:s.nat||'usa',team:teamFor(L.mode,i,kind)}})}}
+function matchCfg(){return{diff:L.diff,mode:L.mode,map:L.map,slots:L.slots.map((s,i)=>{const kind=s.kind==='human'?'human':s.kind==='ai'?'ai':'off';return{kind,name:kind==='ai'?'Computer':s.name||'',nat:s.nat||'usa',team:teamFor(L.mode,i,kind)}})}}
 function startMatch(){
   const cfg=matchCfg(),teams=new Set(cfg.slots.filter(s=>s.kind!=='off').map(s=>s.team));
   if(teams.size<2){lobbyStatus(L.mode==='coop'?'Zet minstens één plek op Computer om tegen te spelen.':'Er zijn minstens twee kanten nodig. Zet een plek op Computer of wacht op een vriend.',true);return}
@@ -1846,7 +1885,7 @@ function guestData(d){
     case'wait':lobbyStatus('Je staat in de wachtruimte. De gastheer moet je nog toelaten.');break;
     case'joined':LOCAL=d.slot|0;lobbyStatus('Je doet mee. Wachten tot de gastheer start.');break;
     case'denied':NET.denied=true;lobbyStatus(String(d.why||'Je kunt niet meedoen.'),true);break;
-    case'lobby':LOCAL=d.you|0;L.code=d.code;L.mode=d.mode;L.diff=d.diff;L.slots=d.slots;renderLobby();break;
+    case'lobby':LOCAL=d.you|0;L.code=d.code;L.mode=d.mode;L.diff=d.diff;L.map=MAPS[d.map]?d.map:'river';L.slots=d.slots;renderLobby();break;
     case'start':LOCAL=d.you|0;newGame(d.seed,d.cfg,false);G.t=d.time||0;started=true;$('start').hidden=true;say('Welkom, commandant','welcome',0);break;
     case'ore':if(Array.isArray(d.a)&&d.a.length===N)ore.set(d.a);break;
     case'snap':if(started)applySnap(d);break;
@@ -1899,13 +1938,16 @@ function lobbyStatus(t,err){const el=$('lobby-status');el.textContent=t;el.class
 function showLobby(host){
   $('menu-card').hidden=true;$('lobby-card').hidden=false;L.isHost=host;
   $('code-box').hidden=host&&!L.online;$('start-btn').hidden=!host;
-  for(const b of document.querySelectorAll('#mode-seg button,#diff-seg button'))b.disabled=!host;
+  for(const b of document.querySelectorAll('#mode-seg button,#diff-seg button,#map-seg button'))b.disabled=!host;
   renderLobby();
 }
 function renderLobby(){
   const host=L.isHost;
   for(const b of document.querySelectorAll('#mode-seg button'))b.setAttribute('aria-pressed',String(b.dataset.m===L.mode));
   for(const b of document.querySelectorAll('#diff-seg button'))b.setAttribute('aria-pressed',String(+b.dataset.d===L.diff));
+  for(const b of document.querySelectorAll('#map-seg button'))b.setAttribute('aria-pressed',String(b.dataset.k===L.map));
+  const mp=MAPS[L.map];$('map-desc').textContent=mp.d+' '+mp.size+' × '+mp.size+' vakjes.';
+  if(!started&&MAPK!==L.map)previewMap(L.map);
   $('code').textContent=L.code||'------';
   const box=$('slots');box.textContent='';
   L.slots.forEach((s,i)=>{
@@ -1967,10 +2009,14 @@ function bgTicker(on){
 }
 document.addEventListener('visibilitychange',()=>{bgTicker(document.hidden&&NET.mode==='host');last=performance.now()});
 
+// achter het menu ligt een voorbeeld van de gekozen kaart
+const PREVIEW_SLOTS=[{kind:'human',name:'',nat:'usa',team:0},{kind:'ai',nat:'russia',team:1},{kind:'ai',nat:'iraq',team:2},{kind:'ai',nat:'france',team:3}];
+function previewMap(k){const l=LOCAL;LOCAL=0;newGame(seed,{diff:1,mode:'ffa',map:k,slots:PREVIEW_SLOTS});LOCAL=l;resize()}
+
 // ---------- start
 function boot(){
   resize();buildUI();
-  newGame(seed,{diff:1,mode:'ffa',slots:[{kind:'human',name:'',nat:'usa',team:0},{kind:'ai',nat:'russia',team:1},{kind:'ai',nat:'iraq',team:2},{kind:'ai',nat:'france',team:3}]});
+  newGame(seed,{diff:1,mode:'ffa',map:'river',slots:PREVIEW_SLOTS});
   try{$('nm').value=localStorage.getItem('rd-name')||''}catch(e){}
   const qc=new URLSearchParams(location.search).get('code');if(qc)$('code-in').value=qc.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
   try{if(matchMedia('(pointer:coarse)').matches)$('touch-note').hidden=false}catch(e){}
@@ -1982,6 +2028,7 @@ function boot(){
   $('code-in').addEventListener('keydown',e=>{if(e.key==='Enter')$('join-btn').click()});
   for(const b of document.querySelectorAll('#mode-seg button'))b.addEventListener('click',()=>{L.mode=b.dataset.m;broadcastLobby();renderLobby()});
   for(const b of document.querySelectorAll('#diff-seg button'))b.addEventListener('click',()=>{L.diff=+b.dataset.d;broadcastLobby();renderLobby()});
+  for(const b of document.querySelectorAll('#map-seg button'))b.addEventListener('click',()=>{L.map=b.dataset.k;broadcastLobby();renderLobby()});
   $('start-btn').addEventListener('click',()=>{audioInit();if(S.ac&&S.ac.state==='suspended')S.ac.resume();startMatch()});
   $('leave-btn').addEventListener('click',()=>{try{peer&&peer.destroy()}catch(e){}location.href=location.pathname});
   $('copy').addEventListener('click',()=>{const link=location.origin+location.pathname+'?code='+L.code;const done=()=>{$('copy').textContent='Gekopieerd'};
