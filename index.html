@@ -159,7 +159,41 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 .stats dd{margin:0;font-family:var(--f-display);font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums;text-align:right}
 .stats dt{color:#c6d4e1}
 
+
+/* RA2-stijl: metalen commandobalk in de kleur van je kant, blauw chroom voor de Geallieerden, rood staal voor de Sovjets */
+:root{--m1:#b9cde4;--m2:#4a6a92;--m3:#16243a;--m4:#070d16;--acc:#59b4ff}
+body[data-fac="soviet"]{--m1:#e8b3a4;--m2:#8e2e22;--m3:#3a0f0a;--m4:#140504;--acc:#ff6a45}
+#side{background:
+    linear-gradient(90deg,rgba(255,255,255,.07),transparent 22%,transparent 78%,rgba(0,0,0,.25)),
+    repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px),
+    linear-gradient(180deg,var(--m2) 0%,var(--m3) 38%,var(--m4) 100%);
+  border-left:0;padding-left:15px;
+  box-shadow:inset 3px 0 0 var(--m1),inset 5px 0 0 #000,inset 7px 0 0 var(--m2),inset 8px 0 0 rgba(0,0,0,.6),inset 0 2px 0 var(--m1)}
+#emblem{position:relative;height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 40%,var(--m2),var(--m3) 70%,var(--m4))}
+#emblem::before,#emblem::after{content:"";position:absolute;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,var(--m1),var(--m3));box-shadow:0 1px 1px #000}
+#emblem::before{left:8px}#emblem::after{right:8px}
+#emblem svg{height:46px;width:auto;fill:var(--m1);filter:drop-shadow(0 0 6px var(--acc)) drop-shadow(0 2px 1px #000)}
+#emblem .sov{display:none}
+body[data-fac="soviet"] #emblem .sov{display:block}
+body[data-fac="soviet"] #emblem .al{display:none}
+.plate{background:#04070b;border:2px solid;border-color:var(--m3) var(--m1) var(--m1) var(--m3);box-shadow:0 0 0 1px #000,inset 0 0 8px rgba(0,0,0,.9)}
+.op,.tab{border:1px solid #000;color:#f2f6fa;text-shadow:0 1px 1px #000;
+  background:linear-gradient(180deg,var(--m1) 0%,var(--m2) 42%,var(--m3) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+.op:hover,.tab:not(:disabled):hover{filter:brightness(1.18)}
+.op[aria-pressed="true"]{background:linear-gradient(180deg,#ffe08a,#c08a17 45%,#5a3a05);color:#1a1000;text-shadow:none;border-color:#000}
+.tab[aria-selected="true"]{background:linear-gradient(180deg,#fff,var(--acc) 40%,var(--m2));color:#04070b;text-shadow:none;border-color:#000;box-shadow:0 0 8px var(--acc)}
+.cameo{border:2px solid;border-color:var(--m3) var(--m1) var(--m1) var(--m3);background:#04070b}
+.cameo:hover{border-color:var(--acc)}
+.cameo.ready{border-color:var(--ok)}
+.power{background:#000}
+#pw-fill{left:1px;right:1px;bottom:1px;
+  -webkit-mask:repeating-linear-gradient(0deg,#000 0 4px,transparent 4px 6px);mask:repeating-linear-gradient(0deg,#000 0 4px,transparent 4px 6px)}
+#pw-use{height:3px;background:var(--acc);box-shadow:0 0 6px var(--acc)}
+.credits{border-color:var(--m3) var(--m1) var(--m1) var(--m3)}
 @media (max-width:760px){
+  #emblem{display:none}
   #app{grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto}
   #side{border-left:0;border-top:2px solid #34495e;max-height:44vh;overflow:auto;padding:8px max(10px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(10px,env(safe-area-inset-left,0px))}
   .radar{display:none}
@@ -253,6 +287,10 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
   </div>
 
   <aside id="side" aria-label="Commandobalk">
+    <div class="plate" id="emblem" aria-hidden="true">
+      <svg class="al" viewBox="0 0 100 60"><path d="M50 13 L46 20 L8 4 L22 19 L3 20 L23 29 L9 35 L31 37 L43 33 L46 44 L50 56 L54 44 L57 33 L69 37 L91 35 L77 29 L97 20 L78 19 L92 4 L54 20 Z"/><circle cx="50" cy="14" r="5"/></svg>
+      <svg class="sov" viewBox="0 0 100 100"><path d="M62 10 A38 38 0 1 1 16 66 L26 64 A29 29 0 1 0 61 19 Z"/><rect x="11" y="64" width="11" height="24" rx="3" transform="rotate(45 16.5 76)"/><rect x="45" y="26" width="9" height="56" rx="2" transform="rotate(-45 49.5 54)"/><rect x="26" y="16" width="34" height="14" rx="2" transform="rotate(-45 43 23)"/><polygon points="78,6 81,14 90,14 83,19 86,27 78,22 70,27 73,19 66,14 75,14"/></svg>
+    </div>
     <div class="plate credits"><span class="lbl">Krediet</span><span id="credits">$ 0</span></div>
     <div class="plate radar"><canvas id="mm" aria-label="Radarkaart"></canvas><div id="mm-off"><b>Geen radar</b><span>Bouw een radarpost</span></div></div>
     <div class="ops">
@@ -477,11 +515,11 @@ function w2s(x,y,z=0){return[(x-y)*HW+OX-cam.x,(x+y)*HH-cam.y-z]}
 function s2w(sx,sy){const wx=sx+cam.x-OX,wy=sy+cam.y;return[(wx/HW+wy/HH)/2,(wy/HH-wx/HW)/2]}
 
 // ---------- map
-let terr,ore,gem,bmap,expl,seed=1337,TECH=[],BRIDGES=[];
+let terr,ore,gem,bmap,expl,seed=1337,TECH=[],BRIDGES=[],ROADC=new Float32Array(1);
 const GEM_MUL=3;
 function genMap(s,mk){
   MAPK=MAPS[mk]?mk:'river';const MP=MAPS[MAPK];setMapSize(MP.size,MP.ocean?MP.ocean-.075:0);
-  seed=s;terr=new Uint8Array(N);ore=new Uint16Array(N);gem=new Uint8Array(N);bmap=new Int32Array(N);expl=new Uint8Array(N);
+  seed=s;ROADC=new Float32Array(N).fill(99);terr=new Uint8Array(N);ore=new Uint16Array(N);gem=new Uint8Array(N);bmap=new Int32Array(N);expl=new Uint8Array(N);
   const R=mulberry(s),C={x:MAP/2+(R()-.5)*3,y:MAP/2+(R()-.5)*3},B=START.map(p=>({x:p.x+1.5,y:p.y+1.5}));
   const mids=RING.map(([a,b])=>({x:(B[a].x+B[b].x)/2+(C.x-(B[a].x+B[b].x)/2)*.18+(R()-.5)*5,y:(B[a].y+B[b].y)/2+(C.y-(B[a].y+B[b].y)/2)*.18+(R()-.5)*5}));
   const lanes=[],lw=MP.lane;
@@ -505,6 +543,7 @@ function genMap(s,mk){
     const rw=wetRiver(x,y);
     if(n<MP.water||rw)t=WATER;else if(n>MP.rock)t=ROCK;else if(m>MP.tree)t=TREE;
     let ln=99,li=-1;for(let k=0;k<lanes.length;k++){const[p,q,w]=lanes[k],d=segDist(x+.5,y+.5,p.x,p.y,q.x,q.y)-w;if(d<ln){ln=d;li=k}}
+    if(li>=0)ROADC[y*MAP+x]=ln+lanes[li][2];
     if(brl&&rw){if(ln<0)brl[y*MAP+x]=li}
     else if(ln<0)t=GRASS;else if(ln<(MP.margin??1.2)*lw&&t!==TREE)t=GRASS;
     for(const p of B)if(Math.hypot(x+.5-p.x,y+.5-p.y)<(MP.margin!==undefined?9:10.5))t=GRASS;
@@ -583,10 +622,13 @@ function renderGround(){
   for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){
     const i=y*MAP+x,t=terr[i],n=fbm(x/6,y/6,seed+5),big=.92+.16*vnoise(x/14,y/14,seed+77);let c;
     if(wetT(t)){GW[i]=1;for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<MAP&&Y<MAP&&!wetT(terr[Y*MAP+X]))SHORE[i]=1}const dep=fbm(x/10,y/10,seed);c=snow?hsl2rgb(205,.38,.22+dep*.26):hsl2rgb(203,.46,.13+dep*.32)}
-    else if(adjWater(x,y))c=snow?hsl2rgb(200,.14,.66+n*.08):hsl2rgb(40,.3,.38+n*.1);
-    else if(t===ROCK)c=snow?hsl2rgb(210,.06,.4+n*.1):hsl2rgb(30,.13,.27+n*.09);
-    else if(t===TREE)c=snow?hsl2rgb(195,.1,.7+n*.08):hsl2rgb(96+n*14,.3+n*.08,.17+n*.06);
-    else c=snow?hsl2rgb(200+n*15,.1+n*.08,.8+n*.09):hsl2rgb(86+n*18,.3+n*.1,.22+n*.09);
+    else if(adjWater(x,y))c=snow?hsl2rgb(200,.14,.66+n*.08):hsl2rgb(38,.36,.46+n*.08);
+    else if(t===ROCK)c=snow?hsl2rgb(210,.06,.4+n*.1):hsl2rgb(24,.36,.33+n*.08);
+    else if(t===TREE)c=snow?hsl2rgb(195,.1,.7+n*.08):hsl2rgb(78+n*14,.3+n*.06,.24+n*.06);
+    else{c=snow?hsl2rgb(200+n*15,.1+n*.08,.8+n*.09):hsl2rgb(60+n*22,.3+n*.1,.33+n*.1);
+      // zandvlekken in het gras en zandwegen tussen de bases, zoals in RA2
+      const dn=fbm(x/7,y/7,seed+211),fd=clamp((dn-.55)/.1,0,1)*.8,rc=ROADC[i],fr=t===GRASS?clamp((1.35-rc)/.7,0,1)*.9:0,f=Math.max(fd,fr);
+      if(f>0){const m=fbm(x/3,y/3,seed+223),d=snow?hsl2rgb(205,.08,.68+m*.08):hsl2rgb(34,.4,.42+m*.1);c=[c[0]+(d[0]-c[0])*f,c[1]+(d[1]-c[1])*f,c[2]+(d[2]-c[2])*f]}}
     const k=wetT(t)?1:big;TCOL[i*3]=c[0]*k;TCOL[i*3+1]=c[1]*k;TCOL[i*3+2]=c[2]*k;
   }
   for(let y=0;y<H;y+=GCH)for(let x=0;x<W;x+=GCH){const c=document.createElement('canvas'),w=Math.min(GCH,W-x),h=Math.min(GCH,H-y);c.width=w+GP*2;c.height=h+GP*2;gch.push({x,y,w,h,c,g:c.getContext('2d')})}
@@ -638,7 +680,7 @@ function renderGround(){
         const u=.25+R()*.5,v=.25+R()*.5,px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH,r=9+R()*9,h=8+R()*12;
         const pts=[];for(let a=0;a<7;a++){const an=Math.PI+a/6*Math.PI,rr=r*(.75+R()*.35);pts.push([px+Math.cos(an)*rr,py+Math.sin(an)*rr*.5-(a>0&&a<6?h*Math.sin(a/6*Math.PI):0)])}
         g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(px+3,py+2,r,r*.45,0,0,7);g.fill();
-        const gr=g.createLinearGradient(px-r,py-h,px+r,py);gr.addColorStop(0,snow?'#eef3f7':'#9a958c');gr.addColorStop(1,snow?'#5a6068':'#4e4a45');
+        const gr=g.createLinearGradient(px-r,py-h,px+r,py);gr.addColorStop(0,snow?'#eef3f7':'#c99a62');gr.addColorStop(1,snow?'#5a6068':'#6b4426');
         g.fillStyle=gr;g.beginPath();g.moveTo(px-r,py);for(const p of pts)g.lineTo(p[0],p[1]);g.lineTo(px+r,py);g.ellipse(px,py,r,r*.4,0,0,Math.PI);g.closePath();g.fill();
       }
     }
@@ -1864,9 +1906,18 @@ function drawOre(c,x,y,a,t,g){
     if(((t*(g?1.6:.7)+hash(x,y,k))%3)<(g?.16:.08)){c.fillStyle=C[3];c.fillRect(sx-1,sy-s*hgt,2,2)}
   }
 }
+// levensbalk als rij blokjes, zoals in RA2: groen, geel bij de helft, rood bij een kwart
+const hpCol=f=>f>.5?'#3fe05a':f>.25?'#f5d020':'#f03a2a';
 function hpBar(c,x,y,w,f){
-  const n=Math.max(4,Math.floor(w/4));c.fillStyle='rgba(0,0,0,.75)';c.fillRect(x-1,y-1,n*4+1,5);
-  c.fillStyle=f>.5?'#45d16e':f>.25?'#f2c230':'#ef4444';const m=Math.ceil(f*n);for(let i=0;i<m;i++)c.fillRect(x+i*4,y,3,3);
+  const n=Math.max(4,Math.floor(w/4));c.fillStyle='rgba(0,0,0,.85)';c.fillRect(x-2,y-2,n*4+3,8);c.fillStyle='rgba(255,255,255,.22)';c.fillRect(x-2,y-2,n*4+3,1);
+  const m=Math.ceil(f*n);for(let i=0;i<n;i++){c.fillStyle=i<m?hpCol(f):'#20262c';c.fillRect(x+i*4,y,3,4)}
+}
+// bij gebouwen loopt de balk schuin langs de linkerbovenrand, zoals in RA2
+function hpBarIso(c,b,f){
+  const T=BT[b.type],z=T.ht+10,n=Math.max(6,b.h*5),m=Math.ceil(f*n),col=hpCol(f);
+  const P=k=>w2s(b.x-.15,b.y+b.h-k*b.h/n,z),A=P(0),B=P(n);
+  c.strokeStyle='rgba(0,0,0,.85)';c.lineWidth=8;c.lineCap='butt';c.beginPath();c.moveTo(A[0],A[1]);c.lineTo(B[0],B[1]);c.stroke();
+  c.lineWidth=4;for(let i=0;i<n;i++){const p=P(i+.12),q=P(i+.88);c.strokeStyle=i<m?col:'#20262c';c.beginPath();c.moveTo(p[0],p[1]);c.lineTo(q[0],q[1]);c.stroke()}
 }
 
 // bruggen liggen plat op het water: pijlers, een dek met planken en leuningen; kapot blijven alleen de aanzetten op de oevers over
@@ -1980,9 +2031,10 @@ function render(t){
     if(u.type==='harv'&&u.load>0){ctx.fillStyle=u.gemLoad?'#6fd6ff':'#e8bd3a';ctx.fillRect(sx-r,sy+top-11,r*2*u.load/HCAP,2)}
     if(u.type==='hawk'){const cap=UT.hawk.cap;for(let i=0;i<cap;i++){ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(sx-cap*3.5+i*7-1,sy+top-13,6,6);ctx.fillStyle=i<(u.load||0)?'#ffd86a':'#3a4048';ctx.fillRect(sx-cap*3.5+i*7,sy+top-12,4,4)}}
     if(UT[u.type].jet&&u.ammo!==undefined){for(let i=0;i<UT[u.type].ammo;i++){ctx.fillStyle=i<u.ammo?'#ff9a3a':'#3a4048';ctx.fillRect(sx-r+i*6,sy+top-12,4,3)}}}
+  {const h=mouse.hover&&ents.get(mouse.hover);if(h&&h.k==='u'&&!h.dead&&!sel.includes(h.id)&&visibleE(h)){const[sx,sy]=w2s(h.x,h.y,uzS(h));const inf=UT[h.type].cat==='inf',r=(h.type==='kirov'?46:inf?8:17)*US;hpBar(ctx,sx-r,sy+(inf?-21:-22)*US-7,r*2,h.hp/UT[h.type].hp)}}
   for(const b of G.blds){if(!visibleE(b))continue;const T=BT[b.type],f=b.hp/T.hp;const show=b.id===selB||f<.999&&b.o===LOCAL||(mouse.hover===b.id);
     if(!show&&!b.rep&&!b.primaryMark)continue;const[sx,sy]=w2s(b.x+b.w/2,b.y+b.h/2,T.ht+16);
-    if(show)hpBar(ctx,sx-(b.w+b.h)*8,sy,(b.w+b.h)*16,f);
+    if(show)hpBarIso(ctx,b,f);
     if(b.rep&&(t*2|0)%2){ctx.fillStyle='#5fb0ff';ctx.font='700 14px "Barlow Condensed",sans-serif';ctx.textAlign='center';ctx.fillText('REPARATIE',sx,sy-6)}}
   for(const b of G.blds){if(!BT[b.type].civil||!visibleE(b))continue;const n=garN(b);if(!n&&b.id!==selB&&mouse.hover!==b.id)continue;const cap=BT[b.type].cap,[sx,sy]=w2s(b.x+b.w/2,b.y+b.h/2,BT[b.type].ht+8);
     for(let i=0;i<cap;i++){ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(sx-cap*3.5+i*7-1,sy-1,6,6);ctx.fillStyle=i<n?TEAM[b.o].main:'#3a4048';ctx.fillRect(sx-cap*3.5+i*7,sy,4,4)}}
@@ -2385,6 +2437,7 @@ function cameoCancel(type,cat){
 let uiAcc=0,dispC=0;
 function uiTick(dt){
   if(!G.pl)return;
+  {const f=G.pl[LOCAL]&&G.pl[LOCAL].fac==='soviet'?'soviet':'allies';if(document.body.dataset.fac!==f)document.body.dataset.fac=f}
   const P=G.pl[LOCAL];dispC+=(P.credits-dispC)*Math.min(1,dt*10);if(Math.abs(P.credits-dispC)<1)dispC=P.credits;
   $('credits').textContent='$ '+Math.floor(dispC);
   uiAcc+=dt;if(uiAcc<.1)return;uiAcc=0;
