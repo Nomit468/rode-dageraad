@@ -2123,6 +2123,8 @@ function mmDraw(){
   mc.drawImage(mmShroud,0,0,MMW,MMH);
   for(const b of G.blds){if(!visibleE(b))continue;mc.fillStyle=TEAM[b.o].light;const[a,c]=tp(b.x+b.w/2,b.y+b.h/2);mc.fillRect(a-(b.w+b.h)*.9,c-(b.w+b.h)*.45,(b.w+b.h)*1.8,(b.w+b.h)*.9)}
   for(const u of G.units){if(!visibleE(u))continue;mc.fillStyle=(u.type==='spy'&&enemy(LOCAL,u.o)?TEAM[LOCAL]:TEAM[u.o]).main;const[a,c]=tp(u.x,u.y);mc.fillRect(a-1.2,c-1.2,2.4,2.4)}
+  // geselecteerde eenheden knipperen wit, zodat je ziet waar je groep staat
+  if((performance.now()/400|0)%2===0)for(const id of sel){const u=ents.get(id);if(!u||u.dead||u.k!=='u')continue;const[a,c]=tp(u.x,u.y);mc.fillStyle='#000';mc.fillRect(a-2.4,c-2.4,4.8,4.8);mc.fillStyle='#fff';mc.fillRect(a-1.7,c-1.7,3.4,3.4)}
   for(const p of G.pings){const age=G.t-p.t;if(age>3)continue;const[a,c]=tp(p.x,p.y);mc.strokeStyle=`rgba(255,80,60,${1-age/3})`;mc.lineWidth=1.5;mc.beginPath();mc.arc(a,c,4+((age*12)%10),0,7);mc.stroke()}
   mc.strokeStyle='rgba(255,255,255,.85)';mc.lineWidth=1;mc.strokeRect(ox+cam.x*sc,oy+cam.y*sc,VW*sc,VH*sc);
 }
