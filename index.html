@@ -174,7 +174,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
   <div id="view">
     <canvas id="game" aria-label="Speelveld"></canvas>
     <div id="msgs" aria-live="polite"></div>
-    <div id="legend"><kbd>Klik</kbd> selecteren en bevelen · <kbd>Sleep</kbd> kader · <kbd>Rechts</kbd> deselecteren / slepen om te schuiven · <kbd>A</kbd> aanvalsbeweging (ook op bruggen) · <kbd>D</kbd> ingraven, landen, uitstappen · <kbd>S</kbd> stop · <kbd>H</kbd> basis · <kbd>Ctrl+1–9</kbd> groep · <kbd>P</kbd> pauze</div>
+    <div id="legend"><kbd>Klik</kbd> selecteren en bevelen · <kbd>Sleep</kbd> kader · <kbd>Rechts</kbd> deselecteren / slepen om te schuiven · <kbd>A</kbd> aanvalsbeweging (ook op bruggen) · <kbd>D</kbd> ingraven, landen, uitstappen · <kbd>S</kbd> stop · <kbd>H</kbd> basis · <kbd>Shift+1–9</kbd> groep · <kbd>P</kbd> pauze</div>
     <div id="pausebar" hidden>GEPAUZEERD</div>
     <div id="roster" hidden aria-label="Spelers"></div>
 
@@ -203,7 +203,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
           <dt>A + klik</dt><dd>aanvalsbeweging: onderweg alles aanvallen</dd>
           <dt>D</dt><dd>soldaten ingraven achter zandzakken, nog eens D om weer op te staan. Een Belegeringshelikopter landt ermee als kanon, een Nighthawk laat ermee zijn soldaten uitstappen</dd>
           <dt>A + klik op brug</dt><dd>een brug opblazen; een ingenieur herstelt hem weer</dd>
-          <dt>Ctrl + 1–9</dt><dd>groep opslaan, daarna 1–9 om hem te kiezen</dd>
+          <dt>Shift + 1–9</dt><dd>groep opslaan (Ctrl of Option kan ook), daarna 1–9 om hem te kiezen</dd>
         </dl>
       </div>
       <div class="card" id="lobby-card" hidden>
@@ -362,7 +362,7 @@ const UT={
   arty:{n:'V3-raketwerper',cat:'veh',side:'soviet',hp:220,spd:1.6,cost:1000,sight:8,wpn:'arty',arm:'veh',req:['factory','radar'],d:'Vuurt van grote afstand op een gebied. Kwetsbaar van dichtbij.'},
   tesla:{n:'Teslatank',cat:'veh',nat:'russia',hp:320,spd:1.9,cost:1200,sight:7,wpn:'zap',arm:'veh',req:['factory','radar'],d:'Alleen voor Rusland. Schiet elektrische ontladingen. Sterk tegen infanterie, goed tegen voertuigen.'},
   prism:{n:'Prismatank',cat:'veh',side:'allies',hp:200,spd:1.7,cost:1400,sight:8,wpn:'prism',arm:'veh',req:['factory','lab'],d:'Lichtstraal die afketst op doelen eromheen. Verwoestend tegen gebouwen, maar dun gepantserd.'},
-  mammoth:{n:'Mammoettank',cat:'veh',side:'soviet',hp:1400,spd:1,cost:2000,sight:8,wpn:'mammoth',arm:'veh',req:['factory','lab'],d:'Twee zware kanonnen, enorm pantser en herstelt zichzelf langzaam. Traag en duur.'},
+  mammoth:{n:'Mammoettank',cat:'veh',side:'soviet',hp:1400,spd:1,cost:2400,sight:8,wpn:'mammoth',aa:'tusk',arm:'veh',req:['factory','lab'],d:'Twee zware kanonnen, enorm pantser en herstelt zichzelf langzaam. Vuurt ook raketten op vliegtuigen, helikopters en luchtschepen. Traag en duur.'},
   kirov:{n:'Kirov-luchtschip',cat:'veh',side:'soviet',air:true,alt:64,hp:3200,spd:.6,cost:2000,sight:8,wpn:'bombs',arm:'air',req:['factory','radar'],d:'Sovjet-luchtschip. Traag, maar zo taai dat je meerdere luchtafweerstellingen nodig hebt. Gooit bommen die een gebouw in een paar klappen platleggen. Stort neer als het wordt neergehaald.'},
   destroyer:{n:'Torpedobootjager',cat:'sea',sea:true,side:'allies',hp:800,spd:2.2,cost:1000,sight:8,wpn:'navgun',arm:'ship',req:['shipyard'],d:'Alleen Geallieerden. Snel oorlogsschip met een kanon dat ook onderzeeërs raakt.'},
   carrier:{n:'Vliegdekschip',cat:'sea',sea:true,side:'allies',hp:1100,spd:1.3,cost:2000,sight:10,wpn:'hornet',arm:'ship',req:['shipyard','radar'],d:'Alleen Geallieerden. Stuurt zijn toestellen tot ver landinwaarts. Kwetsbaar van dichtbij.'},
@@ -408,6 +408,7 @@ const WP={
   mirage:{rng:6,dmg:75,rof:1.8,kind:'shell',spd:15,vs:{inf:.8,veh:.9,bld:.7}},
   chrono:{rng:6,dmg:140,rof:.15,kind:'chrono',vs:{inf:1,veh:1,bld:.5,ship:1,sub:1}},
   mammoth:{rng:6,dmg:70,rof:2.2,kind:'shell',spd:13,dbl:true,vs:{inf:.5,veh:1,bld:.9}},
+  tusk:{rng:7,dmg:35,rof:1.4,kind:'rocket',spd:14,dbl:true,vs:{air:1}},
   navgun:{rng:6.5,dmg:60,rof:1.6,kind:'shell',spd:14,vs:{inf:.5,veh:.8,bld:.7,ship:1,sub:1.8}},
   hornet:{rng:14,min:3,dmg:120,rof:4,kind:'arty',spd:8,splash:1.3,vs:{inf:.8,veh:.8,bld:1.2,ship:.8}},
   torp:{rng:6,dmg:150,rof:2.5,kind:'rocket',spd:6,vs:{ship:1.1,sub:.8}},
@@ -449,7 +450,8 @@ const PARA_T=240,OIL_RATE=12;
 const GARR=new Set(['gi','conscript','tesltrp','rocket','sniper','desolator','cmdo']);
 // wapen van een IFV hangt af van wie erin zit
 const IFV_W={gi:'ifvmg',conscript:'ifvmg',rocket:'ifvmsl2',sniper:'snipe',cmdo:'pistol',tesltrp:'zapinf'};
-const wkOf=u=>u.type==='ifv'&&u.pass?(IFV_W[u.pass]||'ifvmsl'):u.dep&&UT[u.type].dep?UT[u.type].dep:UT[u.type].wpn;
+// met een doel erbij: eenheden met een apart luchtafweerwapen (aa) gebruiken dat tegen luchtdoelen
+const wkOf=(u,t)=>t&&UT[u.type].aa&&armor(t)==='air'?UT[u.type].aa:u.type==='ifv'&&u.pass?(IFV_W[u.pass]||'ifvmsl'):u.dep&&UT[u.type].dep?UT[u.type].dep:UT[u.type].wpn;
 const canGar=u=>GARR.has(u.type)&&!u.dead;
 const garN=b=>b.gar?b.gar.length:(b.gc||0);
 // veteranen: na vijanden ter waarde van de eigen prijs veteraan, na drie keer die waarde elite
@@ -780,7 +782,7 @@ function orderGroup(us,tx,ty,am){
   for(const s of slots){if(!left.length)break;let bi=0,bd=1e9;for(let i=0;i<left.length;i++){const u=left[i],d=(u.x-s.x)**2+(u.y-s.y)**2;if(d<bd){bd=d;bi=i}}orderMove(left[bi],s.x,s.y,am);left.splice(bi,1)}
   for(const u of left)orderMove(u,tx,ty,am);
 }
-const canHit=(u,t)=>{const k=wkOf(u);if(!k)return false;const W=WP[k];if(t.k==='br'&&(t.down||W.kind==='chrono'||W.kind==='latch'))return false;if(W.kind==='melee'&&t.type==='drone')return false;return vsOf(W,t)>0||(W.c4&&t.k!=='u')};
+const canHit=(u,t)=>{const k=wkOf(u,t);if(!k)return false;const W=WP[k];if(t.k==='br'&&(t.down||W.kind==='chrono'||W.kind==='latch'))return false;if(W.kind==='melee'&&t.type==='drone')return false;return vsOf(W,t)>0||(W.c4&&t.k!=='u')};
 function orderEng(us,t){for(const u of us){u.st='eng';u.tid=t.id;u.path=null;u.repath=0;u.am=false;u.resume=null}}
 function orderAttack(us,t){for(const u of us){if(!canHit(u,t))continue;u.st='attack';u.tid=t.id;u.auto=false;u.resume=null;u.am=false;u.path=null;u.repath=0}}
 function moveAlong(u,dt){
@@ -833,14 +835,16 @@ function updUnit0(u,dt){
     if(!t||t.dead||!(t.o===NEU||t.o===u.o)||garN(t)>=BT[t.type].cap){u.st='idle';u.path=null;return}
     if(distPE(u.x,u.y,t)<.8){enterGarrison(u,t);return}
     u.repath-=dt;if(!u.path||u.repath<=0){u.repath=1;setPath(u,cxE(t),cyE(t))}moveAlong(u,dt);if(UT[u.type].cat==='inf')u.tur=u.face;return}
-  const wk=wkOf(u),W=WP[wk];u.cd=Math.max(0,u.cd-dt);u.scan-=dt;
+  let wk=wkOf(u),W=WP[wk];u.cd=Math.max(0,u.cd-dt);u.scan-=dt;
   let t=u.tid?ents.get(u.tid):null;if(t&&(t.hp<=0||t.dead))t=null;
+  if(t){wk=wkOf(u,t);W=WP[wk]}
   if(u.st==='attack'&&!t){u.tid=0;if(u.resume){const r=u.resume;orderMove(u,r.x,r.y,true)}else{u.st='idle';u.path=null}}
   if((u.st==='idle'||(u.st==='move'&&u.am))&&u.scan<=0){
     u.scan=.35+Math.random()*.2;
     const r=u.dep?W.rng:u.st==='idle'?W.rng+(isAI(u.o)?3:1.2):T.sight;
-    const e=nearestEnemy(u.x,u.y,u.o,r,W);
-    if(e){if(u.st==='move')u.resume={x:u.dx,y:u.dy};u.st='attack';u.tid=e.id;u.auto=true;t=e;u.path=null;u.repath=0}
+    let e=nearestEnemy(u.x,u.y,u.o,r,W);
+    if(T.aa){const A=WP[T.aa],e2=nearestEnemy(u.x,u.y,u.o,Math.max(r,A.rng),A);if(e2&&(!e||Math.hypot(e2.x-u.x,e2.y-u.y)<distPE(u.x,u.y,e)))e=e2}
+    if(e){if(u.st==='move')u.resume={x:u.dx,y:u.dy};u.st='attack';u.tid=e.id;u.auto=true;t=e;u.path=null;u.repath=0;wk=wkOf(u,t);W=WP[wk]}
   }
   if(u.st==='attack'&&t){
     const d=distPE(u.x,u.y,t),a=Math.atan2(cyE(t)-u.y,cxE(t)-u.x);
@@ -2278,8 +2282,10 @@ window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.insi
 window.addEventListener('keydown',e=>{
   if(!started||G.over)return;const k=e.key.toLowerCase();
   if(k.startsWith('arrow')){keys[k]=true;e.preventDefault();return}
-  if(/^[1-9]$/.test(k)){
-    if(e.ctrlKey||e.metaKey){e.preventDefault();groups[k]=sel.slice();say('Groep '+k+' opgeslagen','grp',0,false)}
+  const dg=/^(?:Digit|Numpad)([1-9])$/.exec(e.code||'')?.[1]||(/^[1-9]$/.test(k)?k:null);
+  if(dg){const k=dg;
+    // Cmd+cijfer pakt de browser op een Mac zelf af, dus Shift en Option slaan ook een groep op
+    if(e.ctrlKey||e.metaKey||e.shiftKey||e.altKey){e.preventDefault();groups[k]=sel.slice();say('Groep '+k+' opgeslagen','grp',0,false)}
     else if(groups[k]){const ids=groups[k].filter(id=>ents.has(id)&&!ents.get(id).dead);const now=performance.now();
       if(mouse.lastGroup===k&&now-mouse.lastGroupT<400&&ids.length){const u=ents.get(ids[0]);centerOn(u.x,u.y)}
       sel=ids;selB=0;mouse.lastGroup=k;mouse.lastGroupT=now}
