@@ -299,11 +299,11 @@ const wetT=t=>t===WATER||t>=BRIDGE;
 let START=[{x:12,y:64},{x:64,y:12},{x:12,y:12},{x:64,y:64}];
 // kaarten: grootte, hoeveel water/rots/bos, hoe breed de wegen, hoeveel erts en welk jaargetijde
 const MAPS={
-  river:{n:'Rivierdal',size:100,d:'Een rivier splitst de kaart in west en oost, met eilandjes in het midden. Bruggen kun je opblazen en met een ingenieur weer herstellen.',water:.3,rock:.71,tree:.64,lane:1,ore:1,ns:10,theme:'green',river:'v'},
-  big:{n:'Grote vlakte',size:136,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,theme:'green'},
-  islands:{n:'Eilanden',size:112,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,theme:'green'},
-  coast:{n:'Kustoorlog',size:112,d:'Eén groot eiland met open zee eromheen. Bouw een scheepswerf aan je kust en val de vijand ook vanaf het water aan.',water:.2,rock:.77,tree:.66,lane:1,ore:1.15,ns:11,theme:'green',ocean:.37},
-  winter:{n:'Winterfront',size:100,d:'Besneeuwd en rotsachtig. Een ijskoude rivier loopt van west naar oost; wie de bruggen heeft, heeft het front.',water:.29,rock:.63,tree:.6,lane:.9,ore:1,ns:9,theme:'snow',river:'h'},
+  river:{n:'Rivierdal',size:124,d:'Een rivier splitst de kaart in west en oost, met eilandjes in het midden. Bruggen kun je opblazen en met een ingenieur weer herstellen.',water:.3,rock:.71,tree:.64,lane:1,ore:1,ns:10,theme:'green',river:'v'},
+  big:{n:'Grote vlakte',size:164,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,theme:'green'},
+  islands:{n:'Eilanden',size:140,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,theme:'green'},
+  coast:{n:'Kustoorlog',size:140,d:'Eén groot eiland met open zee eromheen. Bouw een scheepswerf aan je kust en val de vijand ook vanaf het water aan.',water:.2,rock:.77,tree:.66,lane:1,ore:1.15,ns:11,theme:'green',ocean:.37},
+  winter:{n:'Winterfront',size:124,d:'Besneeuwd en rotsachtig. Een ijskoude rivier loopt van west naar oost; wie de bruggen heeft, heeft het front.',water:.29,rock:.63,tree:.6,lane:.9,ore:1,ns:9,theme:'snow',river:'h'},
 };
 let MAPK='river';
 function setMapSize(sz,ring){
@@ -749,7 +749,7 @@ function findPath(fx,fy,gx_,gy_){
   let best=s,bestH=fS[s],it=0;
   while(heap.length){
     const c=hpop();if(closed[c]===gen)continue;closed[c]=gen;
-    if(c===t){best=c;break}if(++it>16000)break;
+    if(c===t){best=c;break}if(++it>Math.max(16000,N*.75))break;
     const cx=c%MAP,cy=(c/MAP)|0,h=oct(cx,cy,tx,ty);if(h<bestH){bestH=h;best=c}
     for(let k=0;k<8;k++){
       const nx=cx+DX[k],ny=cy+DY[k];if(!walkable(nx,ny))continue;
@@ -1225,7 +1225,7 @@ const AI_ORDER=['power','refinery','barracks','factory','power','bunker','radar'
 function aiBase(o){return G.blds.find(b=>b.o===o&&b.type==='yard')||G.blds.find(b=>b.o===o&&!BT[b.type].tech)}
 function toCenter(b){const cx=b.x+b.w/2,cy=b.y+b.h/2,dx=MAP/2-cx,dy=MAP/2-cy,l=Math.hypot(dx,dy)||1;return{cx,cy,ux:dx/l,uy:dy/l}}
 // 0 op een kaart van 100, 1 op de Grote vlakte
-const bigK=()=>Math.max(0,MAP-100)/36;
+const bigK=()=>clamp((MAP-124)/40,0,1);
 function aiRally(o){const b=aiBase(o);if(!b)return{x:MAP/2,y:MAP/2};const c=toCenter(b),r=5.5+bigK()*7;return{x:c.cx+c.ux*r,y:c.cy+c.uy*r}}
 function aiSpot(o,type){
   const T=BT[type],base=aiBase(o);if(!base)return null;
@@ -2475,7 +2475,7 @@ function showEnd(win,outOnly){
 }
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-v3-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-v4-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',online:false,slots:[],pending:[]};
