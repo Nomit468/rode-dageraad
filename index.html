@@ -2039,7 +2039,7 @@ function render(t){
     if(u.type==='harv'&&u.load>0){ctx.fillStyle=u.gemLoad?'#6fd6ff':'#e8bd3a';ctx.fillRect(sx-r,sy+top-11,r*2*u.load/HCAP,2)}
     if(u.type==='hawk'){const cap=UT.hawk.cap;for(let i=0;i<cap;i++){ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(sx-cap*3.5+i*7-1,sy+top-13,6,6);ctx.fillStyle=i<(u.load||0)?'#ffd86a':'#3a4048';ctx.fillRect(sx-cap*3.5+i*7,sy+top-12,4,4)}}
     if(UT[u.type].jet&&u.ammo!==undefined){for(let i=0;i<UT[u.type].ammo;i++){ctx.fillStyle=i<u.ammo?'#ff9a3a':'#3a4048';ctx.fillRect(sx-r+i*6,sy+top-12,4,3)}}}
-  {const h=mouse.hover&&ents.get(mouse.hover);if(h&&h.k==='u'&&!h.dead&&!sel.includes(h.id)&&visibleE(h)){const[sx,sy]=w2s(h.x,h.y,uzS(h));const inf=UT[h.type].cat==='inf',r=(h.type==='kirov'?46:inf?8:17)*US;hpBar(ctx,sx-r,sy+(inf?-21:-22)*US-7,r*2,h.hp/UT[h.type].hp)}}
+  {const h=mouse.hover&&ents.get(mouse.hover);if(h&&h.k==='u'&&!h.dead&&!sel.includes(h.id)&&visibleE(h)&&!hidMirage(h)){const[sx,sy]=w2s(h.x,h.y,uzS(h));const inf=UT[h.type].cat==='inf',r=(h.type==='kirov'?46:inf?8:17)*US;hpBar(ctx,sx-r,sy+(inf?-21:-22)*US-7,r*2,h.hp/UT[h.type].hp)}}
   for(const b of G.blds){if(!visibleE(b))continue;const T=BT[b.type],f=b.hp/T.hp;const show=b.id===selB||f<.999&&b.o===LOCAL||(mouse.hover===b.id);
     if(!show&&!b.rep&&!b.primaryMark)continue;const[sx,sy]=w2s(b.x+b.w/2,b.y+b.h/2,T.ht+16);
     if(show)hpBarIso(ctx,b,f);
@@ -2122,7 +2122,7 @@ function mmDraw(){
     for(let i=0;i<N;i++)if(!expl[i]){const x=i%MAP,y=(i/MAP)|0,[a,b]=tp(x,y),hw=HW*sc+.6,hh=HH*sc+.4;s.beginPath();s.moveTo(a,b-.4);s.lineTo(a+hw,b+hh);s.lineTo(a,b+2*hh);s.lineTo(a-hw,b+hh);s.closePath();s.fill()}}
   mc.drawImage(mmShroud,0,0,MMW,MMH);
   for(const b of G.blds){if(!visibleE(b))continue;mc.fillStyle=TEAM[b.o].light;const[a,c]=tp(b.x+b.w/2,b.y+b.h/2);mc.fillRect(a-(b.w+b.h)*.9,c-(b.w+b.h)*.45,(b.w+b.h)*1.8,(b.w+b.h)*.9)}
-  for(const u of G.units){if(!visibleE(u))continue;mc.fillStyle=(u.type==='spy'&&enemy(LOCAL,u.o)?TEAM[LOCAL]:TEAM[u.o]).main;const[a,c]=tp(u.x,u.y);mc.fillRect(a-1.2,c-1.2,2.4,2.4)}
+  for(const u of G.units){if(!visibleE(u)||hidMirage(u))continue;mc.fillStyle=(u.type==='spy'&&enemy(LOCAL,u.o)?TEAM[LOCAL]:TEAM[u.o]).main;const[a,c]=tp(u.x,u.y);mc.fillRect(a-1.2,c-1.2,2.4,2.4)}
   // geselecteerde eenheden knipperen wit, zodat je ziet waar je groep staat
   if((performance.now()/400|0)%2===0)for(const id of sel){const u=ents.get(id);if(!u||u.dead||u.k!=='u')continue;const[a,c]=tp(u.x,u.y);mc.fillStyle='#000';mc.fillRect(a-2.4,c-2.4,4.8,4.8);mc.fillStyle='#fff';mc.fillRect(a-1.7,c-1.7,3.4,3.4)}
   for(const p of G.pings){const age=G.t-p.t;if(age>3)continue;const[a,c]=tp(p.x,p.y);mc.strokeStyle=`rgba(255,80,60,${1-age/3})`;mc.lineWidth=1.5;mc.beginPath();mc.arc(a,c,4+((age*12)%10),0,7);mc.stroke()}
@@ -2143,9 +2143,11 @@ try{new ResizeObserver(resize).observe($('view'))}catch(e){window.addEventListen
 const mouse={x:0,y:0,inside:false,left:false,drag:false,bx:0,by:0,rdown:false,rpan:false,rx:0,ry:0,cx:0,cy:0,type:'mouse',hover:0,lastClick:0,lastId:0};
 const keys={};
 function selUnits(){return sel.map(id=>ents.get(id)).filter(u=>u&&u.k==='u'&&!u.dead)}
-function pick(sx,sy){
+// een vermomde vijandelijke Mirage is voor jou gewoon een boom: niet aan te wijzen, behalve met A+klik
+const hidMirage=u=>u.type==='mirage'&&u.disg&&enemy(LOCAL,u.o);
+function pick(sx,sy,all){
   let best=null,bd=1e9;
-  for(const u of G.units){if(u.dead||!visibleE(u))continue;const inf=UT[u.type].cat==='inf',[ux,uy]=w2s(u.x,u.y,(uz(u)+(inf?8:6))*US),d=Math.hypot(ux-sx,uy-sy);if(d<(u.type==='kirov'?44:inf?10:18)*US&&d<bd){bd=d;best=u}}
+  for(const u of G.units){if(u.dead||!visibleE(u)||(!all&&hidMirage(u)))continue;const inf=UT[u.type].cat==='inf',[ux,uy]=w2s(u.x,u.y,(uz(u)+(inf?8:6))*US),d=Math.hypot(ux-sx,uy-sy);if(d<(u.type==='kirov'?44:inf?10:18)*US&&d<bd){bd=d;best=u}}
   if(best)return best;
   for(let i=G.blds.length-1;i>=0;i--){const b=G.blds[i];if(b.dead||!visibleE(b))continue;const ht=BT[b.type].ht;for(const f of[0,.35,.7,1]){const[wx,wy]=s2w(sx,sy+ht*f);if(wx>=b.x&&wx<b.x+b.w&&wy>=b.y&&wy<b.y+b.h)return b}}
   return null;
@@ -2161,7 +2163,7 @@ const ORD=new Map();
 const LINE_C={move:'#6fe08f',am:'#ffa040',att:'#ff4b3a',harv:'#f2c230',eng:'#5fb0ff'};
 function ordLines(us,tgt,kind){const now=performance.now();for(const u of us)ORD.set(u.id,{...tgt,c:LINE_C[kind],t:now})}
 function leftClick(sx,sy,ev){
-  audioInit();const[wx,wy]=s2w(sx,sy);const h=pick(sx,sy);const su=selUnits();
+  audioInit();const[wx,wy]=s2w(sx,sy);const h=pick(sx,sy,mode&&mode.k==='am');const su=selUnits();
   const mine=e=>!!e&&e.o===LOCAL,foe=e=>!!e&&enemy(LOCAL,e.o)&&visibleE(e);
   if(mode){
     if(mode.k==='place'){placeBld();return}
