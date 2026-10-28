@@ -495,14 +495,16 @@ function genMap(s,mk){
   const wetRiver=(x,y)=>{if(!riv)return false;const X=x+.5,Y=y+.5,a=riv.vx?Y:X,c=riv.vx?X:Y,rw=1.7+fbm(a/8,3.3,s+73)*.9;
     for(const[ix,iy,ir]of riv.isl){const d=Math.hypot(X-ix,Y-iy);if(d<ir)return false;if(d<ir+rw*1.7&&Math.abs(c-riv.mid(a))<ir+rw*2)return true}
     return Math.abs(c-riv.mid(a)+(fbm(a/5,7.7,s+79)-.5)*1.6)<rw};
-  // op kaarten met een rivier worden wegen over water bruggen; welke weg erover loopt onthouden we per vakje
+  // op kaarten met een rivier worden wegen over de rivier bruggen; welke weg erover loopt onthouden we per vakje.
+  // Over plasjes komt geen brug: daar wordt de weg gewoon land, net als op kaarten zonder rivier
   const brl=MP.river?new Int16Array(N).fill(-1):null;
   for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){
     const n=fbm(x/MP.ns,y/MP.ns,s),m=fbm(x/4.5,y/4.5,s+31);
     let t=GRASS;
-    if(n<MP.water||wetRiver(x,y))t=WATER;else if(n>MP.rock)t=ROCK;else if(m>MP.tree)t=TREE;
+    const rw=wetRiver(x,y);
+    if(n<MP.water||rw)t=WATER;else if(n>MP.rock)t=ROCK;else if(m>MP.tree)t=TREE;
     let ln=99,li=-1;for(let k=0;k<lanes.length;k++){const[p,q,w]=lanes[k],d=segDist(x+.5,y+.5,p.x,p.y,q.x,q.y)-w;if(d<ln){ln=d;li=k}}
-    if(brl&&t===WATER){if(ln<0)brl[y*MAP+x]=li}
+    if(brl&&rw){if(ln<0)brl[y*MAP+x]=li}
     else if(ln<0)t=GRASS;else if(ln<(MP.margin??1.2)*lw&&t!==TREE)t=GRASS;
     for(const p of B)if(Math.hypot(x+.5-p.x,y+.5-p.y)<(MP.margin!==undefined?9:10.5))t=GRASS;
     if((x<1||y<1||x>MAP-2||y>MAP-2)&&t===GRASS&&hash(x,y,s)<.6)t=TREE;
@@ -2473,7 +2475,7 @@ function showEnd(win,outOnly){
 }
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-v2-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-v3-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',online:false,slots:[],pending:[]};
