@@ -338,95 +338,96 @@ const BT={
   coil:{n:'Teslaspoel',w:1,h:1,side:'soviet',hp:800,pow:-75,cost:1500,sight:8,cat:'def',req:['radar'],wpn:'coil',ht:40,needPow:true,d:'Alleen Sovjets. Zware bliksemschichten tegen alles op de grond. Een Tesla-soldaat ernaast laadt hem op: dan werkt hij ook zonder stroom en schiet hij harder.'},
   wall:{n:'Muur',w:1,h:1,tech:true,wall:true,hp:500,pow:0,cost:50,sight:1,cat:'def',req:[],ht:12,d:'Betonnen muur die vijanden ophoudt. Na het plaatsen kun je meteen de volgende neerzetten; rechtsklik om te stoppen.'},
   airfield:{n:'Vliegveld',w:3,h:3,side:'allies',hp:1000,pow:-50,cost:1000,sight:9,cat:'bld',req:['radar'],ht:16,pads:4,d:'Alleen Geallieerden. Vier landingsplaatsen voor Harriers (Korea: Zwarte Adelaars). Toestellen vliegen naar hun doel, vuren hun raketten af en komen hier terug om bij te laden.'},
-  gcannon:{n:'Groot Kanon',w:2,h:2,nat:'france',hp:1400,pow:-100,cost:2000,sight:12,cat:'def',req:['factory','radar'],wpn:'grand',ht:30,needPow:true,d:'Alleen voor Frankrijk. Reusachtig kanon met een enorm bereik. Werkt alleen met genoeg stroom.'},
+  gcannon:{n:'Groot Kanon',w:2,h:2,nat:'france',hp:1400,pow:-100,cost:2000,sight:14,cat:'def',req:['factory','radar'],wpn:'grand',ht:30,needPow:true,d:'Alleen voor Frankrijk. Reusachtig kanon met een enorm bereik. Werkt alleen met genoeg stroom.'},
 };
 const UT={
-  conscript:{n:'Conscript',cat:'inf',side:'soviet',hp:100,spd:1.4,cost:100,sight:6,wpn:'conrifle',arm:'inf',req:['barracks'],d:'Sovjetsoldaat. Goedkoop en snel te trainen, sterk in grote aantallen.'},
-  tesltrp:{n:'Tesla-soldaat',cat:'inf',side:'soviet',hp:160,spd:1.2,cost:500,sight:6,wpn:'zapinf',arm:'inf',req:['barracks','radar'],d:'Zwaar gepantserde soldaat die bliksem schiet. Staat hij naast een Teslaspoel, dan laadt hij die op: de spoel werkt dan ook zonder stroom en schiet harder.'},
-  chrono:{n:'Chrono-legionair',cat:'inf',side:'allies',hp:125,spd:1.4,cost:1500,sight:8,wpn:'chrono',arm:'inf',req:['barracks','lab'],d:'Loopt niet maar springt door de tijd naar zijn doel. Zijn straal bevriest een vijand en wist hem daarna uit; zware doelen duren langer. Een bevroren doel kan niet vuren en niet geraakt worden.'},
-  gi:{n:'GI',cat:'inf',side:'allies',hp:125,spd:1.4,cost:200,sight:6,wpn:'rifle',dep:'rifled',arm:'inf',req:['barracks'],d:'Goedkoop en snel getraind. Sterk tegen infanterie. Druk op D om hem in te graven achter zandzakken: hij schiet dan harder en verder en houdt meer uit, maar kan niet lopen.'},
+  conscript:{n:'Conscript',cat:'inf',side:'soviet',hp:150,spd:1.4,cost:100,sight:6,wpn:'conrifle',arm:'inf',req:['barracks'],d:'Sovjetsoldaat. Goedkoop en snel te trainen, sterk in grote aantallen.'},
+  tesltrp:{n:'Tesla-soldaat',cat:'inf',side:'soviet',hp:156,spd:1.2,cost:500,sight:6,wpn:'zapinf',arm:'inf',req:['barracks','radar'],d:'Zwaar gepantserde soldaat die bliksem schiet. Staat hij naast een Teslaspoel, dan laadt hij die op: de spoel werkt dan ook zonder stroom en schiet harder.'},
+  chrono:{n:'Chrono-legionair',cat:'inf',side:'allies',hp:150,spd:1.4,cost:1500,sight:8,wpn:'chrono',arm:'inf',req:['barracks','lab'],d:'Loopt niet maar springt door de tijd naar zijn doel. Zijn straal bevriest een vijand en wist hem daarna uit; zware doelen duren langer. Een bevroren doel kan niet vuren en niet geraakt worden.'},
+  gi:{n:'GI',cat:'inf',side:'allies',hp:150,spd:1.4,cost:200,sight:6,wpn:'rifle',dep:'rifled',arm:'inf',req:['barracks'],d:'Goedkoop en snel getraind. Sterk tegen infanterie. Druk op D om hem in te graven achter zandzakken: hij schiet dan harder en verder en houdt meer uit, maar kan niet lopen.'},
   rocket:{n:'Raketsoldaat',cat:'inf',hp:125,spd:1.2,cost:400,sight:7,wpn:'rpg',arm:'inf',req:['barracks'],d:'Draagt een raketwerper. Sterk tegen tanks en gebouwen, en kan ook op luchtdoelen schieten.'},
-  rocketeer:{n:'Rocketeer',cat:'inf',side:'allies',air:true,alt:34,hp:125,spd:3,cost:600,sight:8,wpn:'jet',arm:'air',req:['barracks','radar'],d:'Vliegt met een raketrugzak over water, bossen en rotsen. Schiet op infanterie en luchtschepen. Alleen luchtafweer, raketsoldaten en andere rocketeers kunnen hem raken.'},
-  dog:{n:'Aanvalshond',cat:'inf',hp:100,spd:2.7,cost:200,sight:7,wpn:'bite',arm:'inf',req:['barracks'],d:'Snel en vals. Schakelt soldaten met één beet uit, maar kan niets tegen voertuigen of gebouwen.'},
-  eng:{n:'Ingenieur',cat:'inf',hp:75,spd:1.2,cost:500,sight:4,arm:'inf',req:['barracks'],d:'Klik op een vijandelijk gebouw om het over te nemen, of op een beschadigd eigen gebouw om het helemaal te herstellen. De ingenieur gaat erin op.'},
-  spy:{n:'Spion',cat:'inf',side:'allies',hp:100,spd:1.7,cost:1000,sight:7,arm:'inf',req:['barracks','radar'],d:'Alleen Geallieerden. Voor de vijand ziet hij eruit als een van hun eigen soldaten; alleen honden prikken erdoorheen. Klik op een vijandelijk gebouw om het te saboteren: stroom eraf (centrale), krediet stelen (raffinaderij), radarkaart wissen (radarpost), veteraan-soldaten of -voertuigen (kazerne of fabriek), of de omgeving verkennen (andere gebouwen).'},
-  ivan:{n:'Crazy Ivan',cat:'inf',side:'soviet',hp:125,spd:1.5,cost:600,sight:7,wpn:'ivan',arm:'inf',req:['barracks','radar'],d:'Plakt een tijdbom op een vijandelijke eenheid of gebouw en loopt dan door naar het volgende doel. Na vijf seconden volgt een flinke klap, ook voor alles eromheen. Er staat een aftelklok boven het doel.'},
-  cmdo:{n:'Commando',cat:'inf',hp:250,spd:1.7,cost:1500,sight:8,wpn:'pistol',arm:'inf',req:['barracks','lab'],max:1,d:'Schiet soldaten met één schot neer en blaast gebouwen op met C4: klik op een vijandelijk gebouw. Je kunt er maar één tegelijk hebben.'},
-  harv:{n:'Oogster',cat:'veh',hp:1000,spd:1.5,cost:1400,sight:5,arm:'veh',req:['factory','refinery'],d:'Haalt erts op en brengt het naar de raffinaderij. Klik met een oogster op een veld om hem daar te laten werken. Blauwe edelstenen leveren drie keer zoveel op.'},
-  tank:{n:'Grizzly-tank',cat:'veh',side:'allies',hp:330,spd:2.3,cost:700,sight:7,wpn:'gun',arm:'veh',req:['factory'],d:'Geallieerde tank. Snel en wendbaar, maar lichter gepantserd dan de Rhino.'},
-  rhino:{n:'Rhino-tank',cat:'veh',side:'soviet',hp:450,spd:1.8,cost:900,sight:7,wpn:'rhinogun',arm:'veh',req:['factory'],d:'Sovjettank. Langzamer dan de Grizzly, maar met dikker pantser en een zwaarder kanon.'},
-  mirage:{n:'Mirage-tank',cat:'veh',side:'allies',hp:300,spd:2,cost:1000,sight:7,wpn:'mirage',arm:'veh',req:['factory','radar'],d:'Staat hij even stil, dan ziet de vijand alleen een boom. Vijanden vallen hem dan niet aan. Na elk schot is hij even zichtbaar.'},
-  ifv:{n:'IFV',cat:'veh',side:'allies',hp:300,spd:2.6,cost:600,sight:8,wpn:'ifvmsl',arm:'veh',req:['factory'],d:'Snel gevechtsvoertuig met raketten tegen voertuigen en vliegtuigen. Laat een soldaat instappen en het wapen verandert: GI = mitrailleur, raketsoldaat = zware raketten, sluipschutter = scherpschuttersgeweer, ingenieur = repareert voertuigen in de buurt. D laat hem weer uitstappen.'},
-  flak:{n:'Flak-track',cat:'veh',side:'soviet',hp:300,spd:2.4,cost:500,sight:8,wpn:'flak',arm:'veh',req:['factory'],d:'Rijdende luchtafweer. Schiet vliegtuigen, luchtschepen en rocketeers uit de lucht, en houdt soldaten op afstand.'},
+  rocketeer:{n:'Rocketeer',cat:'inf',side:'allies',air:true,alt:34,hp:150,spd:2.7,cost:600,sight:8,wpn:'jet',arm:'air',req:['barracks','radar'],d:'Vliegt met een raketrugzak over water, bossen en rotsen. Schiet op infanterie en luchtschepen. Alleen luchtafweer, raketsoldaten en andere rocketeers kunnen hem raken.'},
+  dog:{n:'Aanvalshond',cat:'inf',hp:120,spd:1.75,cost:200,sight:7,wpn:'bite',arm:'inf',req:['barracks'],d:'Snel en vals. Schakelt soldaten met één beet uit, maar kan niets tegen voertuigen of gebouwen.'},
+  eng:{n:'Ingenieur',cat:'inf',hp:90,spd:1.2,cost:500,sight:4,arm:'inf',req:['barracks'],d:'Klik op een vijandelijk gebouw om het over te nemen, of op een beschadigd eigen gebouw om het helemaal te herstellen. De ingenieur gaat erin op.'},
+  spy:{n:'Spion',cat:'inf',side:'allies',hp:120,spd:1.7,cost:1000,sight:7,arm:'inf',req:['barracks','radar'],d:'Alleen Geallieerden. Voor de vijand ziet hij eruit als een van hun eigen soldaten; alleen honden prikken erdoorheen. Klik op een vijandelijk gebouw om het te saboteren: stroom eraf (centrale), krediet stelen (raffinaderij), radarkaart wissen (radarpost), veteraan-soldaten of -voertuigen (kazerne of fabriek), of de omgeving verkennen (andere gebouwen).'},
+  ivan:{n:'Crazy Ivan',cat:'inf',side:'soviet',hp:150,spd:1.5,cost:600,sight:7,wpn:'ivan',arm:'inf',req:['barracks','radar'],d:'Plakt een tijdbom op een vijandelijke eenheid of gebouw en loopt dan door naar het volgende doel. Na vijf seconden volgt een flinke klap, ook voor alles eromheen. Er staat een aftelklok boven het doel.'},
+  cmdo:{n:'Commando',cat:'inf',hp:150,spd:1.7,cost:1000,sight:8,wpn:'pistol',arm:'inf',req:['barracks','lab'],max:1,d:'Schiet soldaten met één schot neer en blaast gebouwen op met C4: klik op een vijandelijk gebouw. Doet niets tegen voertuigen. Je kunt er maar één tegelijk hebben.'},
+  harv:{n:'Oogster',cat:'veh',hp:1200,spd:1.36,cost:1400,sight:5,arm:'veh',req:['factory','refinery'],d:'Haalt erts op en brengt het naar de raffinaderij. Klik met een oogster op een veld om hem daar te laten werken. Blauwe edelstenen leveren drie keer zoveel op.'},
+  tank:{n:'Grizzly-tank',cat:'veh',side:'allies',hp:360,spd:2.38,cost:700,sight:7,wpn:'gun',arm:'veh',req:['factory'],d:'Geallieerde tank. Snel en wendbaar, maar lichter gepantserd dan de Rhino.'},
+  rhino:{n:'Rhino-tank',cat:'veh',side:'soviet',hp:480,spd:2.04,cost:900,sight:7,wpn:'rhinogun',arm:'veh',req:['factory'],d:'Sovjettank. Langzamer dan de Grizzly, maar met dikker pantser en een zwaarder kanon.'},
+  mirage:{n:'Mirage-tank',cat:'veh',side:'allies',hp:240,spd:2.38,cost:1000,sight:7,wpn:'mirage',arm:'veh',req:['factory','radar'],d:'Staat hij even stil, dan ziet de vijand alleen een boom. Vijanden vallen hem dan niet aan. Na elk schot is hij even zichtbaar.'},
+  ifv:{n:'IFV',cat:'veh',side:'allies',hp:240,spd:2.72,cost:600,sight:8,wpn:'ifvmsl',arm:'veh',req:['factory'],d:'Snel gevechtsvoertuig met raketten tegen voertuigen en vliegtuigen. Laat een soldaat instappen en het wapen verandert: GI = mitrailleur, raketsoldaat = zware raketten, sluipschutter = scherpschuttersgeweer, ingenieur = repareert voertuigen in de buurt. D laat hem weer uitstappen.'},
+  flak:{n:'Flak-track',cat:'veh',side:'soviet',hp:216,spd:2.72,cost:500,sight:9,aa:'flakaa',wpn:'flak',arm:'veh',req:['factory'],d:'Rijdende luchtafweer. Schiet vliegtuigen, luchtschepen en rocketeers uit de lucht, en houdt soldaten op afstand.'},
   heavy:{n:'Zware tank',side:'none',cat:'veh',hp:700,spd:1.4,cost:1400,sight:7,wpn:'heavygun',arm:'veh',req:['factory','radar'],d:'Dubbele loop en dik pantser. Langzaam maar taai.'},
-  arty:{n:'V3-raketwerper',cat:'veh',side:'soviet',hp:220,spd:1.6,cost:1000,sight:8,wpn:'arty',arm:'veh',req:['factory','radar'],d:'Vuurt van grote afstand op een gebied. Kwetsbaar van dichtbij.'},
-  tesla:{n:'Teslatank',cat:'veh',nat:'russia',hp:320,spd:1.9,cost:1200,sight:7,wpn:'zap',arm:'veh',req:['factory','radar'],d:'Alleen voor Rusland. Schiet elektrische ontladingen. Sterk tegen infanterie, goed tegen voertuigen.'},
-  prism:{n:'Prismatank',cat:'veh',side:'allies',hp:200,spd:1.7,cost:1400,sight:8,wpn:'prism',arm:'veh',req:['factory','lab'],d:'Lichtstraal die afketst op doelen eromheen. Verwoestend tegen gebouwen, maar dun gepantserd.'},
-  mammoth:{n:'Mammoettank',cat:'veh',side:'soviet',hp:1400,spd:1,cost:2400,sight:8,wpn:'mammoth',aa:'tusk',arm:'veh',req:['factory','lab'],d:'Twee zware kanonnen, enorm pantser en herstelt zichzelf langzaam. Vuurt ook raketten op vliegtuigen, helikopters en luchtschepen. Traag en duur.'},
-  kirov:{n:'Kirov-luchtschip',cat:'veh',side:'soviet',air:true,alt:64,hp:3200,spd:.6,cost:2000,sight:8,wpn:'bombs',arm:'air',req:['factory','radar'],d:'Sovjet-luchtschip. Traag, maar zo taai dat je meerdere luchtafweerstellingen nodig hebt. Gooit bommen die een gebouw in een paar klappen platleggen. Stort neer als het wordt neergehaald.'},
-  destroyer:{n:'Torpedobootjager',cat:'sea',sea:true,side:'allies',hp:800,spd:2.2,cost:1000,sight:8,wpn:'navgun',arm:'ship',req:['shipyard'],d:'Alleen Geallieerden. Snel oorlogsschip met een kanon dat ook onderzeeërs raakt.'},
-  carrier:{n:'Vliegdekschip',cat:'sea',sea:true,side:'allies',hp:1100,spd:1.3,cost:2000,sight:10,wpn:'hornet',arm:'ship',req:['shipyard','radar'],d:'Alleen Geallieerden. Stuurt zijn toestellen tot ver landinwaarts. Kwetsbaar van dichtbij.'},
-  sub:{n:'Onderzeeër',cat:'sea',sea:true,side:'soviet',hp:520,spd:2.2,cost:1000,sight:7,wpn:'torp',arm:'sub',req:['shipyard'],d:'Alleen Sovjets. Torpedo\'s die schepen kraken. Alleen torpedobootjagers en andere onderzeeërs kunnen hem raken.'},
+  arty:{n:'V3-raketwerper',cat:'veh',side:'soviet',hp:220,spd:1.6,cost:800,sight:8,wpn:'arty',arm:'veh',req:['factory','radar'],d:'Vuurt van grote afstand op een gebied. Kwetsbaar van dichtbij.'},
+  tesla:{n:'Teslatank',cat:'veh',nat:'russia',hp:360,spd:2.04,cost:1200,sight:7,wpn:'zap',arm:'veh',req:['factory','radar'],d:'Alleen voor Rusland. Schiet elektrische ontladingen. Sterk tegen infanterie, goed tegen voertuigen.'},
+  prism:{n:'Prismatank',cat:'veh',side:'allies',hp:180,spd:1.36,cost:1200,sight:10,wpn:'prism',arm:'veh',req:['factory','lab'],d:'Lichtstraal die afketst op doelen eromheen. Verwoestend tegen gebouwen, maar dun gepantserd.'},
+  mammoth:{n:'Mammoettank',cat:'veh',side:'soviet',hp:960,spd:1.36,cost:1750,sight:8,wpn:'mammoth',aa:'tusk',arm:'veh',req:['factory','lab'],d:'Twee zware kanonnen, enorm pantser en herstelt zichzelf langzaam. Vuurt ook raketten op vliegtuigen, helikopters en luchtschepen. Traag en duur.'},
+  kirov:{n:'Kirov-luchtschip',cat:'veh',side:'soviet',air:true,alt:64,hp:2400,spd:0.68,cost:2000,sight:8,wpn:'bombs',arm:'air',req:['factory','radar'],d:'Sovjet-luchtschip. Traag, maar zo taai dat je meerdere luchtafweerstellingen nodig hebt. Gooit bommen die een gebouw in een paar klappen platleggen. Stort neer als het wordt neergehaald.'},
+  destroyer:{n:'Torpedobootjager',cat:'sea',sea:true,side:'allies',hp:720,spd:2.2,cost:1000,sight:8,wpn:'navgun',arm:'ship',req:['shipyard'],d:'Alleen Geallieerden. Snel oorlogsschip met een kanon dat ook onderzeeërs raakt.'},
+  carrier:{n:'Vliegdekschip',cat:'sea',sea:true,side:'allies',hp:960,spd:1.3,cost:2000,sight:10,wpn:'hornet',arm:'ship',req:['shipyard','radar'],d:'Alleen Geallieerden. Stuurt zijn toestellen tot ver landinwaarts. Kwetsbaar van dichtbij.'},
+  sub:{n:'Onderzeeër',cat:'sea',sea:true,side:'soviet',hp:720,spd:2.2,cost:1000,sight:7,wpn:'torp',arm:'sub',req:['shipyard'],d:'Alleen Sovjets. Torpedo\'s die schepen kraken. Alleen torpedobootjagers en andere onderzeeërs kunnen hem raken.'},
   dread:{n:'Slagschip',cat:'sea',sea:true,side:'soviet',hp:1200,spd:1.2,cost:2000,sight:9,wpn:'dmsl',arm:'ship',req:['shipyard','radar'],d:'Alleen Sovjets. Vuurt zware raketten tot ver landinwaarts.'},
-  sniper:{n:'Sluipschutter',cat:'inf',nat:'uk',hp:125,spd:1.3,cost:600,sight:10,wpn:'snipe',arm:'inf',req:['barracks','radar'],d:'Alleen voor Groot-Brittannië. Schiet soldaten met één schot neer van heel ver weg. Doet niets tegen voertuigen.'},
-  desolator:{n:'Desolator',cat:'inf',nat:'iraq',hp:150,spd:1.2,cost:600,sight:6,wpn:'rad',arm:'inf',req:['barracks','radar'],d:'Alleen voor Irak. Straalwapen dat infanterie wegvaagt en een tijdje een gifgroene plas straling achterlaat.'},
-  terror:{n:'Terrorist',cat:'inf',nat:'cuba',hp:75,spd:2.3,cost:200,sight:6,wpn:'suicide',arm:'inf',req:['barracks'],d:'Alleen voor Cuba. Rent op het doel af en blaast zichzelf op. Goedkoop en gevaarlijk in groepen.'},
-  tdest:{n:'Tankjager',cat:'veh',nat:'germany',hp:450,spd:1.9,cost:900,sight:7,wpn:'tdgun',arm:'veh',req:['factory'],d:'Alleen voor Duitsland. Zwaar antitankkanon zonder draaibare koepel. Vernietigt tanks, maar is zwak tegen infanterie.'},
-  demo:{n:'Sloopwagen',cat:'veh',nat:'libya',hp:300,spd:1.8,cost:1500,sight:6,wpn:'demo',arm:'veh',req:['factory','radar'],d:'Alleen voor Libië. Rijdt een vijandelijke basis in en ontploft met een enorme klap. Ontploft ook als hij wordt neergeschoten.'},
-  eagle:{n:'Zwarte Adelaar',cat:'veh',nat:'korea',air:true,jet:true,ammo:2,alt:48,hp:260,spd:5,cost:1200,sight:9,wpn:'eaglemsl',arm:'air',req:['factory','airfield'],d:'Alleen voor Korea, in plaats van de Harrier. Sneller en sterker. Klik op een doel: hij vuurt twee raketten af en vliegt terug naar het vliegveld om bij te laden. Alleen luchtafweer, raketsoldaten, IFV\'s en rocketeers kunnen hem in de lucht raken.'},
-  harrier:{n:'Harrier',cat:'veh',side:'allies',notNat:'korea',air:true,jet:true,ammo:2,alt:46,hp:200,spd:4.6,cost:1200,sight:9,wpn:'harmsl',arm:'air',req:['factory','airfield'],d:'Geallieerde straaljager van het vliegveld. Klik op een doel: hij vuurt twee raketten af en vliegt terug om bij te laden. Op de grond is hij kwetsbaar; in de lucht raken alleen luchtafweer, raketsoldaten, IFV\'s en rocketeers hem.'},
-  hawk:{n:'Nighthawk',cat:'veh',side:'allies',air:true,heli:true,cap:5,alt:40,hp:320,spd:3.1,cost:1000,sight:9,wpn:'hawkmg',arm:'air',req:['factory','radar'],d:'Transporthelikopter met een boordschutter. Selecteer soldaten en klik op de Nighthawk: hij landt en neemt er vijf mee, over water en bergen heen. D laat ze weer uitstappen.'},
+  sniper:{n:'Sluipschutter',cat:'inf',nat:'uk',hp:150,spd:1.3,cost:600,sight:12,wpn:'snipe',arm:'inf',req:['barracks','radar'],d:'Alleen voor Groot-Brittannië. Schiet soldaten met één schot neer van heel ver weg. Doet niets tegen voertuigen.'},
+  desolator:{n:'Desolator',cat:'inf',nat:'iraq',hp:180,spd:1.2,cost:600,sight:6,wpn:'rad',arm:'inf',req:['barracks','radar'],d:'Alleen voor Irak. Straalwapen dat infanterie wegvaagt en een tijdje een gifgroene plas straling achterlaat.'},
+  terror:{n:'Terrorist',cat:'inf',nat:'cuba',hp:90,spd:2.3,cost:200,sight:6,wpn:'suicide',arm:'inf',req:['barracks'],d:'Alleen voor Cuba. Rent op het doel af en blaast zichzelf op. Goedkoop en gevaarlijk in groepen.'},
+  tdest:{n:'Tankjager',cat:'veh',nat:'germany',hp:480,spd:1.7,cost:900,sight:7,wpn:'tdgun',arm:'veh',req:['factory'],d:'Alleen voor Duitsland. Zwaar antitankkanon zonder draaibare koepel. Vernietigt tanks, maar is zwak tegen infanterie.'},
+  demo:{n:'Sloopwagen',cat:'veh',nat:'libya',hp:180,spd:1.7,cost:1500,sight:6,wpn:'demo',arm:'veh',req:['factory','radar'],d:'Alleen voor Libië. Rijdt een vijandelijke basis in en ontploft met een enorme klap. Ontploft ook als hij wordt neergeschoten.'},
+  eagle:{n:'Zwarte Adelaar',cat:'veh',nat:'korea',air:true,jet:true,ammo:2,alt:48,hp:240,spd:5,cost:1200,sight:9,wpn:'eaglemsl',arm:'air',req:['factory','airfield'],d:'Alleen voor Korea, in plaats van de Harrier. Sneller en sterker. Klik op een doel: hij vuurt twee raketten af en vliegt terug naar het vliegveld om bij te laden. Alleen luchtafweer, raketsoldaten, IFV\'s en rocketeers kunnen hem in de lucht raken.'},
+  harrier:{n:'Harrier',cat:'veh',side:'allies',notNat:'korea',air:true,jet:true,ammo:2,alt:46,hp:180,spd:4.6,cost:1200,sight:9,wpn:'harmsl',arm:'air',req:['factory','airfield'],d:'Geallieerde straaljager van het vliegveld. Klik op een doel: hij vuurt twee raketten af en vliegt terug om bij te laden. Op de grond is hij kwetsbaar; in de lucht raken alleen luchtafweer, raketsoldaten, IFV\'s en rocketeers hem.'},
+  hawk:{n:'Nighthawk',cat:'veh',side:'allies',air:true,heli:true,cap:5,alt:40,hp:210,spd:3.1,cost:1000,sight:9,wpn:'hawkmg',arm:'air',req:['factory','radar'],d:'Transporthelikopter met een boordschutter. Selecteer soldaten en klik op de Nighthawk: hij landt en neemt er vijf mee, over water en bergen heen. D laat ze weer uitstappen.'},
   siege:{n:'Belegeringshelikopter',cat:'veh',side:'soviet',air:true,heli:true,alt:40,hp:380,spd:2.7,cost:1100,sight:9,wpn:'chopmg',dep:'siegegun',arm:'air',req:['factory','radar'],d:'Sovjethelikopter met een mitrailleur tegen soldaten. Druk op D: hij landt en wordt een zwaar kanon met groot bereik, maar is dan een makkelijk doel. Nog eens D om weer op te stijgen.'},
-  drone:{n:'Terreurdrone',cat:'veh',side:'soviet',hp:120,spd:3.3,cost:500,sight:6,wpn:'drone',arm:'inf',req:['factory'],d:'Snelle robotspin. Springt in een vijandelijk voertuig en sloopt het van binnenuit. Rijd met een aangevallen voertuig naar je wapenfabriek of naar een IFV met ingenieur om hem eruit te halen. Bijt ook soldaten, maar die schieten hem makkelijk kapot.'},
+  drone:{n:'Terreurdrone',cat:'veh',side:'soviet',hp:120,spd:3.4,cost:500,sight:6,wpn:'drone',arm:'inf',req:['factory'],d:'Snelle robotspin. Springt in een vijandelijk voertuig en sloopt het van binnenuit. Rijd met een aangevallen voertuig naar je wapenfabriek of naar een IFV met ingenieur om hem eruit te halen. Bijt ook soldaten, maar die schieten hem makkelijk kapot.'},
 };
 const WP={
-  rifle:{rng:4.5,dmg:16,rof:.9,kind:'bullet',vs:{inf:1,veh:.18,bld:.22}},
-  rifled:{rng:5.5,dmg:34,rof:.65,kind:'bullet',vs:{inf:1,veh:.3,bld:.28}},
+  rifle:{rng:4,dmg:20,rof:0.57,kind:'bullet',vs:{inf:1,veh:.25,bld:.22}},
+  rifled:{rng:5,dmg:15,rof:0.42,kind:'bullet',vs:{inf:1,veh:.25,bld:.22}},
   mg:{rng:5.5,dmg:13,rof:.32,kind:'bullet',vs:{inf:1,veh:.15,bld:.2}},
   rpg:{rng:5.5,dmg:52,rof:2.2,kind:'rocket',spd:7,vs:{inf:.3,veh:1,bld:.65,air:.8}},
   aa:{rng:9,dmg:75,rof:1.1,kind:'rocket',spd:15,vs:{air:1}},
-  jet:{rng:4.5,dmg:24,rof:.4,kind:'bullet',vs:{inf:1,veh:.3,bld:.2,air:.5}},
-  bombs:{rng:.7,dmg:360,rof:1.5,kind:'bomb',fall:.8,splash:1.6,vs:{inf:.8,veh:.9,bld:1.4}},
+  jet:{rng:5,dmg:25,rof:.4,kind:'bullet',vs:{inf:1,veh:.3,bld:.2,air:.5}},
+  bombs:{rng:.7,dmg:250,rof:1.42,kind:'bomb',fall:.8,splash:1.6,vs:{inf:.8,veh:.9,bld:1.4}},
   crash:{dmg:320,kind:'bomb',fall:1.1,splash:1.8,vs:{inf:1,veh:.8,bld:1}},
-  gun:{rng:5,dmg:55,rof:1.7,kind:'shell',spd:13,vs:{inf:.45,veh:1,bld:.8}},
+  gun:{rng:5,dmg:65,rof:1.7,kind:'shell',spd:13,vs:{inf:.25,veh:1,bld:.8}},
   heavygun:{rng:5.5,dmg:46,rof:2,kind:'shell',spd:13,dbl:true,vs:{inf:.5,veh:1,bld:.9}},
   cannon:{rng:7,dmg:72,rof:2,kind:'shell',spd:15,vs:{inf:.45,veh:1,bld:.8}},
   arty:{rng:10,min:3,dmg:110,rof:5,kind:'arty',spd:6.5,splash:1.5,vs:{inf:1,veh:.6,bld:1.1}},
-  bite:{rng:.8,dmg:200,rof:1,kind:'melee',vs:{inf:1,veh:0,bld:0}},
-  pistol:{rng:5.5,dmg:150,rof:.6,kind:'bullet',c4:true,vs:{inf:1,veh:.08,bld:0}},
-  zap:{rng:4.5,dmg:80,rof:1.6,kind:'zap',vs:{inf:1,veh:1,bld:.5}},
-  prism:{rng:7.5,dmg:90,rof:3,kind:'beam',chain:2,vs:{inf:.8,veh:.7,bld:1.6}},
-  rhinogun:{rng:5.2,dmg:68,rof:1.9,kind:'shell',spd:13,vs:{inf:.45,veh:1,bld:.8}},
-  conrifle:{rng:4.2,dmg:13,rof:.9,kind:'bullet',vs:{inf:1,veh:.15,bld:.2}},
-  zapinf:{rng:4,dmg:48,rof:1.4,kind:'zap',vs:{inf:1,veh:.75,bld:.4}},
-  flak:{rng:6.5,dmg:22,rof:.45,kind:'bullet',vs:{inf:.7,veh:.15,bld:.1,air:1}},
-  ifvmsl:{rng:6,dmg:40,rof:1.3,kind:'rocket',spd:11,vs:{inf:.3,veh:.9,bld:.4,air:1}},
+  bite:{rng:.8,dmg:200,rof:0.28,kind:'melee',vs:{inf:1,veh:0,bld:0}},
+  pistol:{rng:6,dmg:250,rof:0.28,kind:'bullet',c4:true,vs:{inf:1,veh:0,bld:0}},
+  zap:{rng:4,dmg:135,rof:1.06,kind:'zap',vs:{inf:1,veh:1,bld:.5}},
+  prism:{rng:10,dmg:100,rof:2.83,kind:'beam',chain:2,vs:{inf:.8,veh:.7,bld:2}},
+  rhinogun:{rng:5.75,dmg:90,rof:1.84,kind:'shell',spd:13,vs:{inf:.25,veh:1,bld:.8}},
+  conrifle:{rng:4,dmg:15,rof:0.71,kind:'bullet',vs:{inf:1,veh:.25,bld:.2}},
+  zapinf:{rng:3,dmg:50,rof:1.7,kind:'zap',vs:{inf:1,veh:.75,bld:.4}},
+  flak:{rng:5,dmg:25,rof:0.71,kind:'bullet',vs:{inf:1,veh:.25,bld:.2}},
+  ifvmsl:{rng:6,dmg:25,rof:1.42,kind:'rocket',spd:11,dbl:true,vs:{inf:.3,veh:.9,bld:.4,air:1}},
   ifvmg:{rng:5,dmg:18,rof:.3,kind:'bullet',vs:{inf:1,veh:.2,bld:.2,air:.3}},
   ifvmsl2:{rng:6.5,dmg:70,rof:1.6,kind:'rocket',spd:11,vs:{inf:.35,veh:1.1,bld:.7,air:1}},
   prismt:{rng:8,dmg:100,rof:3,kind:'beam',chain:1,vs:{inf:1,veh:.9,bld:.7}},
   coil:{rng:7,dmg:110,rof:2.2,kind:'zap',vs:{inf:1,veh:.9,bld:.5}},
-  mirage:{rng:6,dmg:75,rof:1.8,kind:'shell',spd:15,vs:{inf:.8,veh:.9,bld:.7}},
+  mirage:{rng:7,dmg:100,rof:1.98,kind:'shell',spd:15,vs:{inf:.8,veh:.9,bld:.7}},
   chrono:{rng:6,dmg:140,rof:.15,kind:'chrono',vs:{inf:1,veh:1,bld:.5,ship:1,sub:1}},
-  mammoth:{rng:6,dmg:70,rof:2.2,kind:'shell',spd:13,dbl:true,vs:{inf:.5,veh:1,bld:.9}},
-  tusk:{rng:7,dmg:35,rof:1.4,kind:'rocket',spd:14,dbl:true,vs:{air:1}},
-  navgun:{rng:6.5,dmg:60,rof:1.6,kind:'shell',spd:14,vs:{inf:.5,veh:.8,bld:.7,ship:1,sub:1.8}},
+  mammoth:{rng:5.75,dmg:100,rof:1.84,kind:'shell',spd:13,dbl:true,vs:{inf:.25,veh:1,bld:.9}},
+  flakaa:{rng:9,dmg:35,rof:0.71,kind:'bullet',vs:{air:1}},
+  tusk:{rng:8,dmg:80,rof:2.26,kind:'rocket',spd:14,dbl:true,vs:{air:1}},
+  navgun:{rng:8,dmg:60,rof:3.11,kind:'shell',spd:14,vs:{inf:.5,veh:.8,bld:.7,ship:1,sub:1.8}},
   hornet:{rng:14,min:3,dmg:120,rof:4,kind:'arty',spd:8,splash:1.3,vs:{inf:.8,veh:.8,bld:1.2,ship:.8}},
-  torp:{rng:6,dmg:150,rof:2.5,kind:'rocket',spd:6,vs:{ship:1.1,sub:.8}},
+  torp:{rng:7,dmg:100,rof:2.12,kind:'rocket',spd:6,vs:{ship:1.1,sub:.8}},
   dmsl:{rng:14,min:3,dmg:160,rof:5,kind:'arty',spd:7,splash:1.6,vs:{inf:1,veh:.8,bld:1.3,ship:.8}},
-  snipe:{rng:9,dmg:130,rof:2.4,kind:'bullet',vs:{inf:1,veh:.05,bld:.03}},
-  rad:{rng:4.5,dmg:45,rof:1.3,kind:'rad',vs:{inf:1,veh:.3,bld:.1}},
+  snipe:{rng:12,dmg:250,rof:2.83,kind:'bullet',vs:{inf:1,veh:.05,bld:.03}},
+  rad:{rng:6,dmg:125,rof:2.83,kind:'rad',vs:{inf:1,veh:.3,bld:.1}},
   suicide:{rng:.7,dmg:300,kind:'suicide',splash:1.3,rof:1,vs:{inf:1,veh:.8,bld:.9}},
   demo:{rng:.9,dmg:900,kind:'suicide',splash:2.6,rof:1,vs:{inf:1,veh:1,bld:1}},
-  tdgun:{rng:6,dmg:85,rof:1.8,kind:'shell',spd:15,vs:{inf:.15,veh:1.3,bld:.5}},
-  eaglemsl:{rng:6,dmg:140,rof:.4,kind:'rocket',spd:16,vs:{inf:.45,veh:1.2,bld:.95,ship:.9}},
-  harmsl:{rng:5.5,dmg:115,rof:.45,kind:'rocket',spd:15,vs:{inf:.45,veh:1.1,bld:.9,ship:.9}},
-  hawkmg:{rng:5,dmg:10,rof:.3,kind:'bullet',vs:{inf:1,veh:.05,bld:.05}},
+  tdgun:{rng:5,dmg:150,rof:1.98,kind:'shell',spd:15,vs:{inf:.15,veh:1.3,bld:.5}},
+  eaglemsl:{rng:6,dmg:200,rof:.4,kind:'rocket',spd:16,vs:{inf:.45,veh:1.2,bld:.95,ship:.9}},
+  harmsl:{rng:6,dmg:150,rof:.45,kind:'rocket',spd:15,vs:{inf:.45,veh:1.1,bld:.9,ship:.9}},
+  hawkmg:{rng:6,dmg:25,rof:1.13,kind:'bullet',vs:{inf:1,veh:.05,bld:.05}},
   chopmg:{rng:5,dmg:18,rof:.32,kind:'bullet',vs:{inf:1,veh:.12,bld:.15}},
   siegegun:{rng:9.5,min:2,dmg:75,rof:3,kind:'arty',spd:8,splash:1.3,vs:{inf:1,veh:.8,bld:1,ship:.8}},
   drone:{rng:.7,dmg:70,rof:1,kind:'latch',vs:{inf:.5,veh:1,bld:0,ship:0,sub:0}},
   ivan:{rng:.9,dmg:0,rof:2.5,kind:'ivan',vs:{inf:1,veh:1,bld:1,ship:1,sub:0}},
-  ivanb:{dmg:420,splash:1.5,kind:'bomb',vs:{inf:1,veh:1,bld:.9,ship:.9,sub:.5}},
-  grand:{rng:12,min:2,dmg:150,rof:3,kind:'shell',spd:20,vs:{inf:.7,veh:1,bld:1}},
+  ivanb:{dmg:450,splash:1.5,kind:'bomb',vs:{inf:1,veh:1,bld:.9,ship:.9,sub:.5}},
+  grand:{rng:13,min:2,dmg:150,rof:2.12,kind:'shell',spd:20,vs:{inf:.7,veh:1,bld:1}},
 };
 const CATS=['bld','def','inf','veh','sea'];
 const CAT_TYPES={bld:['power','refinery','barracks','factory','radar','airfield','lab','shipyard'],def:['wall','bunker','tower','prismt','coil','aa','gcannon'],inf:['gi','conscript','rocket','dog','eng','tesltrp','rocketeer','spy','ivan','sniper','desolator','terror','chrono','cmdo'],veh:['harv','tank','rhino','ifv','flak','drone','mirage','tesla','tdest','arty','demo','hawk','siege','prism','mammoth','harrier','eagle','kirov'],sea:['destroyer','carrier','sub','dread']};
@@ -787,6 +788,11 @@ function orderGroup(us,tx,ty,am){
 const canHit=(u,t)=>{const k=wkOf(u,t);if(!k)return false;const W=WP[k];if(t.k==='br'&&(t.down||W.kind==='chrono'||W.kind==='latch'))return false;if(W.kind==='melee'&&t.type==='drone')return false;return vsOf(W,t)>0||(W.c4&&t.k!=='u')};
 function orderEng(us,t){for(const u of us){u.st='eng';u.tid=t.id;u.path=null;u.repath=0;u.am=false;u.resume=null}}
 function orderAttack(us,t){for(const u of us){if(!canHit(u,t))continue;u.st='attack';u.tid=t.id;u.auto=false;u.resume=null;u.am=false;u.path=null;u.repath=0}}
+// net als in RA2 rijden tanks soldaten plat; ingegraven GI's, Tesla-soldaten en Desolators niet
+const CRUSH=new Set(['tank','rhino','mammoth','heavy','mirage','prism','tdest','tesla','ifv','flak','harv']);
+const crushable=e=>e.k==='u'&&UT[e.type].cat==='inf'&&!UT[e.type].air&&e.type!=='tesltrp'&&e.type!=='desolator'&&!e.dep&&e.hp>0&&!e.dead;
+function crushAt(u){for(const e of G.units)if(enemy(u.o,e.o)&&crushable(e)&&Math.abs(e.x-u.x)<.45&&Math.abs(e.y-u.y)<.45&&Math.hypot(e.x-u.x,e.y-u.y)<.42){
+  fx({k:'sp',x:e.x,y:e.y,z:2,life:.3});sfx('bite',e.x,e.y);kill(e,{o:u.o,id:u.id})}}
 function moveAlong(u,dt){
   let p=u.path;if(!p||!p.length){u.path=null;return true}
   const T=UT[u.type],veh=T.cat==='veh';
@@ -795,7 +801,7 @@ function moveAlong(u,dt){
   if(d>.001){const a=Math.atan2(dy,dx);if(veh){u.face=turn(u.face,a,6*dt);spd*=Math.max(.15,Math.cos(Math.min(Math.abs(angDiff(u.face,a)),1.5)))}else u.face=a}
   const step=spd*dt;
   if(d<=step){u.x=w.x;u.y=w.y;p.shift()}else{u.x+=dx/d*step;u.y+=dy/d*step}
-  u.moving=true;
+  u.moving=true;if(CRUSH.has(u.type))crushAt(u);
   if(!T.air)u.pt+=dt;
   if(u.pt>1){u.pt=0;const mv=Math.hypot(u.x-u.lx,u.y-u.ly);u.lx=u.x;u.ly=u.y;
     if(mv<.2){u.stuckN++;const dg=Math.hypot(u.x-u.gx,u.y-u.gy);if(dg<2.2||u.stuckN>3){u.path=null;return true}u.path=findPath(u.x,u.y,u.gx,u.gy);p=u.path}else u.stuckN=0}
@@ -852,6 +858,9 @@ function updUnit0(u,dt){
     const d=distPE(u.x,u.y,t),a=Math.atan2(cyE(t)-u.y,cxE(t)-u.x);
     if(u.auto&&d>T.sight+2.5){u.tid=0;if(u.resume){const r=u.resume;orderMove(u,r.x,r.y,true)}else{u.st='idle';u.path=null}return}
     const c4=W.c4&&t.k!=='u';
+    // een tank die een soldaat dichtbij heeft, rijdt erop af en schiet onderweg
+    if(CRUSH.has(u.type)&&crushable(t)&&d<W.rng+1){u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.4;setPath(u,t.x,t.y)}moveAlong(u,dt);u.tur=turn(u.tur,a,5*dt);
+      if(!t.dead&&u.cd<=0&&Math.abs(angDiff(u.tur,a))<.25){fire(u,t,wk);u.cd=W.rof*(.9+Math.random()*.2)}return}
     if(d<=(c4?.8:W.rng)&&(!W.min||d>=W.min)){
       u.path=null;
       if(T.cat==='inf'){u.face=a;u.tur=a}else{u.tur=turn(u.tur,a,5*dt);if(u.type==='tdest'||u.type==='demo')u.face=turn(u.face,a,4*dt)}
@@ -956,6 +965,7 @@ function separate(dt){
   for(let i=0;i<n;i++){const a=us[i];if(a.dead)continue;const ra=rad(a),aa=grp(a);if(aa===3)continue;
     for(let j=i+1;j<n;j++){const b=us[j];if(b.dead||grp(b)!==aa)continue;let dx=b.x-a.x;if(dx>1.1||dx<-1.1)continue;let dy=b.y-a.y;if(dy>1.1||dy<-1.1)continue;
       const rr=ra+rad(b);let d2=dx*dx+dy*dy;if(d2>=rr*rr)continue;
+      if(aa===0&&enemy(a.o,b.o)&&(CRUSH.has(a.type)&&crushable(b)||CRUSH.has(b.type)&&crushable(a)))continue;
       let d=Math.sqrt(d2);if(d<1e-4){dx=Math.random()-.5;dy=Math.random()-.5;d=Math.hypot(dx,dy)}
       const push=(rr-d)*.5*k,nx=dx/d,ny=dy/d;
       const wa=a.hs==='mine'||a.hs==='unload'?.2:a.moving&&!b.moving?.5:1,wb=b.hs==='mine'||b.hs==='unload'?.2:b.moving&&!a.moving?.5:1;
@@ -1047,7 +1057,7 @@ function damage(e,amt,src){
   const att=src&&src.id?ents.get(src.id):null;if(att&&att.rank)amt*=RANKD[att.rank];
   // straaljagers in de lucht zijn snel en dus lastig te raken
   if(e.k==='u'&&UT[e.type].jet&&uz(e)>20)amt*=.6;if(att&&att.boost)amt*=att.boost;if(e.rank)amt*=RANKT[e.rank];
-  e.hp-=e.dep&&UT[e.type]&&UT[e.type].cat==='inf'?amt*.4:amt;
+  e.hp-=e.dep&&UT[e.type]&&UT[e.type].cat==='inf'?amt*.8:amt;
   if(e.k==='b'&&enemy(src.o,e.o))sayTo(e.o,'Onze basis wordt aangevallen','base',18,true,true,[cxE(e),cyE(e)]);
   if(G.ai[e.o]&&enemy(src.o,e.o))G.ai[e.o].alert={x:cxE(e),y:cyE(e),t:G.t};
   if(e.hp<=0){kill(e,src);return}
@@ -2475,7 +2485,7 @@ function showEnd(win,outOnly){
 }
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-v4-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-v5-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',online:false,slots:[],pending:[]};
