@@ -981,7 +981,11 @@ function findOre(u,maxR,from){
     let s=d-(gem[i]?7:0);for(const h of G.units)if(h!==u&&h.type==='harv'&&h.ot===i&&(h.hs==='go'||h.hs==='mine'))s+=4;if(s<bs){bs=s;best=i}}
   return best;
 }
-function nearestRef(u){let best=null,bd=1e9;for(const b of G.blds)if(b.o===u.o&&b.type==='refinery'&&b.bt>=1){const d=distPE(u.x,u.y,b);if(d<bd){bd=d;best=b}}return best}
+const dockBusy=(u,r)=>G.units.some(h=>h!==u&&h.type==='harv'&&h.rid===r.id&&h.hs==='unload'&&!h.dead);
+// net als in RA2: de dichtstbijzijnde raffinaderij, maar elke oogster die er eerder is (of al lost) telt als omweg, zodat ze over meerdere raffinaderijen verdelen
+function nearestRef(u){let best=null,bd=1e9;for(const b of G.blds)if(b.o===u.o&&b.type==='refinery'&&b.bt>=1){const d0=distPE(u.x,u.y,b);let d=d0;
+  for(const h of G.units){if(h===u||h.type!=='harv'||h.rid!==b.id)continue;if(h.hs==='unload'||h.hs==='queue')d+=6;else if(h.hs==='goRef'&&distPE(h.x,h.y,b)<=d0)d+=4.5}
+  if(d<bd){bd=d;best=b}}return best}
 function updHarv(u,dt){
   if(u.st==='move'){if(moveAlong(u,dt)){u.st='harv';u.hs=(u.load||0)>=HCAP?'ret':'seek'}return}
   u.st='harv';
@@ -994,8 +998,12 @@ function updHarv(u,dt){
         if(u.load>=HCAP)u.hs='ret';else if(ore[u.ot]<=0){const n=findOre(u,4);if(n>=0){u.ot=n;setPath(u,n%MAP+.5,((n/MAP)|0)+.5);u.hs='go'}else u.hs=u.cargo>0?'ret':'seek'}}break}
     case'ret':{const r=nearestRef(u);if(!r){u.hs='wait';u.ht=2;break}u.rid=r.id;const d=dock(r);setPath(u,d.x+.5,d.y+.5);u.hs='goRef';u.tries=0;break}
     case'goRef':{const r=ents.get(u.rid);if(!r||r.hp<=0){u.hs='ret';break}const done=moveAlong(u,dt);
-      if(distPE(u.x,u.y,r)<.9){u.hs='unload';u.ht=.3;u.path=null}else if(done){u.tries=(u.tries||0)+1;if(u.tries>4)u.hs='ret';else{const d=dock(r);setPath(u,d.x+.5,d.y+.5)}}break}
+      if(distPE(u.x,u.y,r)<.9){u.path=null;if(dockBusy(u,r)){u.hs='queue';u.ht=.5}else{u.hs='unload';u.ht=.3}}else if(done){u.tries=(u.tries||0)+1;if(u.tries>4)u.hs='ret';else{const d=dock(r);setPath(u,d.x+.5,d.y+.5)}}break}
     case'unload':{const r=ents.get(u.rid);if(r)u.face=turn(u.face,Math.atan2(cyE(r)-u.y,cxE(r)-u.x),3*dt);u.ht-=dt;if(u.ht<=0){u.ht=.2;const g=Math.min(u.gemLoad?50*GEM_MUL:50,u.cargo);u.cargo-=g;G.pl[u.o].credits+=g;G.st[u.o].earned+=g;if(u.cargo<=0){u.hs='seek';u.gemLoad=false;u.load=0}}break}
+    // er lost al een andere oogster: wachten, of uitwijken naar een raffinaderij die sneller vrij is
+    case'queue':{const r=ents.get(u.rid);if(!r||r.hp<=0){u.hs='ret';break}u.ht-=dt;if(u.ht>0)break;u.ht=.5;
+      if(!dockBusy(u,r)){u.hs=distPE(u.x,u.y,r)<.9?'unload':'goRef';u.ht=.3;if(u.hs==='goRef'){const d=dock(r);setPath(u,d.x+.5,d.y+.5)}break}
+      const nr=nearestRef(u);if(nr&&nr!==r)u.hs='ret';break}
     case'wait':u.ht-=dt;if(u.ht<=0)u.hs='seek';break;
     default:u.hs='seek';
   }
