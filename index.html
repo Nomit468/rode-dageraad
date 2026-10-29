@@ -65,6 +65,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 .cameo .cs{position:absolute;top:2px;right:4px;font-size:11px;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums;text-shadow:0 1px 2px #000}
 .cameo .pg{position:absolute;inset:0;background:conic-gradient(transparent calc(var(--p,0)*1turn),rgba(0,6,12,.68) 0);display:none}
 .cameo.on .pg{display:block}
+.cameo.rpt::after{content:'∞';position:absolute;left:4px;bottom:16px;font-size:18px;font-weight:800;color:var(--amber);text-shadow:0 0 4px #000,0 1px 2px #000}
 .cameo .st{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:800;font-size:15px;letter-spacing:.08em;text-shadow:0 0 6px #000,0 1px 2px #000}
 .cameo.ready{border-color:var(--ok)}
 .cameo.ready .st{color:var(--ok);animation:blink 1s steps(2) infinite}
@@ -258,6 +259,9 @@ body[data-fac="soviet"] #emblem .al{display:none}
           <dt>Enter</dt><dd>chatten; Tab wisselt tussen iedereen en alleen je team</dd>
           <dt>B</dt><dd>baken zetten op de plek van de muis, voor je teamgenoten</dd>
           <dt>Dubbelklik op gebouw</dt><dd>een kazerne, wapenfabriek of scheepswerf primair maken: daar komt de productie uit</dd>
+          <dt>Tab</dt><dd>naar het volgende tabblad van de bouwbalk (Shift + Tab terug)</dd>
+          <dt>Ctrl/Cmd + klik op eenheid in bouwbalk</dt><dd>die eenheid steeds opnieuw laten bouwen (∞); nog eens om te stoppen</dd>
+          <dt>Rechtsklik op radar</dt><dd>de geselecteerde eenheden daarheen sturen</dd>
           <dt>T</dt><dd>alle eenheden van dezelfde soort als je selectie in beeld kiezen, twee keer snel T voor de hele kaart. Dubbelklikken op een eenheid kiest ook de zelfde soort in beeld</dd>
           <dt>M</dt><dd>muziek aan of uit (ook met de knop Muziek)</dd>
           <dt>Shift + 1–9</dt><dd>groep opslaan (Ctrl of Option kan ook), daarna 1–9 om hem te kiezen</dd>
@@ -394,6 +398,10 @@ const BT={
   factory:{n:'Wapenfabriek',w:3,h:3,hp:1300,pow:-40,cost:2000,sight:5,cat:'bld',req:['refinery'],ht:30,d:'Bouwt tanks, oogsters en raketwerpers. Elke extra wapenfabriek maakt het bouwen 20% sneller. Dubbelklik om hem primair te maken.'},
   radar:{n:'Radarpost',w:2,h:2,hp:1000,pow:-50,cost:1000,sight:9,cat:'bld',req:['refinery'],ht:34,d:'Zet de radarkaart aan en ontgrendelt sterkere eenheden, zoals de V3-raketwerper, de Tesla-soldaat en de Rocketeer.'},
   lab:{n:'Techcentrum',w:2,h:2,hp:1000,pow:-100,cost:2000,sight:6,cat:'bld',req:['radar','factory'],ht:38,d:'Ontgrendelt de zwaarste eenheden: commando, Prismatank, Mammoettank en Chrono-legionair.'},
+  nukepow:{n:'Kernreactor',w:3,h:3,side:'soviet',hp:1000,pow:300,cost:1600,sight:5,cat:'bld',req:['lab'],ht:46,d:'Alleen Sovjets. Levert 300 stroom, drie keer zoveel als een Tesla-reactor. Pas op: wordt hij vernietigd, dan ontploft hij en laat hij een stralingswolk achter die alles in de buurt raakt.'},
+  cloning:{n:'Kloontanks',w:3,h:2,side:'soviet',hp:1000,pow:-100,cost:2000,sight:5,cat:'bld',req:['barracks','lab'],ht:30,d:'Alleen Sovjets. Elke soldaat die je traint, krijgt een gratis kloon die bij de kloontanks verschijnt. Geen ingenieurs, spionnen, helden of Yuri.'},
+  indplant:{n:'Industriële fabriek',w:3,h:3,side:'soviet',hp:1200,pow:-100,cost:2500,sight:5,cat:'bld',req:['factory','radar'],ht:34,d:'Alleen Sovjets. Al je voertuigen en schepen worden 25% goedkoper.'},
+  purifier:{n:'Ertszuiveraar',w:2,h:2,side:'allies',hp:1000,pow:-100,cost:2500,sight:5,cat:'bld',req:['refinery','lab'],ht:32,d:'Alleen Geallieerden. Elke vracht erts die je oogsters afleveren, levert 25% meer krediet op.'},
   spysat:{n:'Spionagesatelliet',w:2,h:2,side:'allies',hp:1000,pow:-50,cost:1500,sight:6,cat:'bld',req:['lab'],ht:40,d:'Alleen Geallieerden. Een grote schotel die verbinding maakt met een spionagesatelliet: zodra hij klaar is, zie je de hele kaart. Ook als hij later verwoest wordt, blijft de kaart open.'},
   bunker:{n:'Bunker',w:1,h:1,hp:650,pow:0,cost:500,sight:6,cat:'def',req:['barracks'],wpn:'mg',ht:14,d:'Mitrailleur. Maait infanterie neer, doet weinig tegen tanks.'},
   aa:{n:'Luchtafweer',w:1,h:1,hp:600,pow:-40,cost:1000,sight:9,cat:'def',req:['radar'],wpn:'aa',ht:24,needPow:true,d:'Vuurt raketten op luchtdoelen, zoals Kirov-luchtschepen en rocketeers. Werkt alleen met genoeg stroom.'},
@@ -423,6 +431,7 @@ const UT={
   ivan:{n:'Crazy Ivan',cat:'inf',side:'soviet',hp:150,spd:1.5,cost:600,sight:7,wpn:'ivan',arm:'inf',req:['barracks','radar'],d:'Plakt een tijdbom op een vijandelijke eenheid of gebouw en loopt dan door naar het volgende doel. Na vijf seconden volgt een flinke klap, ook voor alles eromheen. Er staat een aftelklok boven het doel.'},
   cmdo:{n:'Commando',cat:'inf',hp:150,spd:1.7,cost:1000,sight:8,wpn:'pistol',arm:'inf',req:['barracks','lab'],max:1,d:'Schiet soldaten met één schot neer en blaast gebouwen op met C4: klik op een vijandelijk gebouw. Doet niets tegen voertuigen. Je kunt er maar één tegelijk hebben.'},
   seal:{n:'Navy SEAL',cat:'inf',side:'allies',amph:true,hp:150,spd:1.7,cost:1000,sight:8,wpn:'sealmg',arm:'inf',req:['barracks','lab'],d:'Alleen Geallieerden. Zwemt door water, maait soldaten neer met zijn machinegeweer en blaast gebouwen en schepen op met C4: klik erop. Doet niets tegen tanks.'},
+  yuri:{n:'Yuri',cat:'inf',side:'soviet',hp:150,spd:1.5,cost:1200,sight:8,wpn:'mind',arm:'inf',req:['barracks','lab'],d:'Alleen Sovjets. Neemt met gedachtecontrole één vijandelijke eenheid over; kies hij een nieuwe, dan is de vorige weer vrij. Sterft Yuri, dan ook. Werkt niet op vliegtuigen en terreurdrones.'},
   harv:{n:'Oogster',cat:'veh',hp:1200,spd:1.36,cost:1400,sight:5,arm:'veh',req:['factory','refinery'],d:'Haalt erts op en brengt het naar de raffinaderij. Klik met een oogster op een veld om hem daar te laten werken. Blauwe edelstenen leveren drie keer zoveel op.'},
   tank:{n:'Grizzly-tank',cat:'veh',side:'allies',hp:360,spd:2.38,cost:700,sight:7,wpn:'gun',arm:'veh',req:['factory'],d:'Geallieerde tank. Snel en wendbaar, maar lichter gepantserd dan de Rhino.'},
   rhino:{n:'Rhino-tank',cat:'veh',side:'soviet',hp:480,spd:2.04,cost:900,sight:7,wpn:'rhinogun',arm:'veh',req:['factory'],d:'Sovjettank. Langzamer dan de Grizzly, maar met dikker pantser en een zwaarder kanon.'},
@@ -439,6 +448,10 @@ const UT={
   carrier:{n:'Vliegdekschip',cat:'sea',sea:true,side:'allies',hp:960,spd:1.3,cost:2000,sight:10,wpn:'hornet',arm:'ship',req:['shipyard','radar'],d:'Alleen Geallieerden. Stuurt zijn toestellen tot ver landinwaarts. Kwetsbaar van dichtbij.'},
   sub:{n:'Onderzeeër',cat:'sea',sea:true,side:'soviet',hp:720,spd:2.2,cost:1000,sight:7,wpn:'torp',arm:'sub',req:['shipyard'],d:'Alleen Sovjets. Torpedo\'s die schepen kraken. Alleen torpedobootjagers en andere onderzeeërs kunnen hem raken.'},
   amph:{n:'Amfibische transporter',cat:'sea',amph:true,cap:5,hp:400,spd:2.6,cost:900,sight:7,arm:'veh',req:['shipyard'],d:'Luchtkussenboot die over water én land rijdt. Selecteer soldaten en klik op de transporter om ze in te laden (5 plaatsen). Rij naar de overkant en druk op D om ze te laten uitstappen.'},
+  aegis:{n:'Aegis-kruiser',cat:'sea',sea:true,side:'allies',hp:840,spd:2,cost:1200,sight:10,wpn:'aegis',arm:'ship',req:['shipyard','radar'],d:'Alleen Geallieerden. Een regen van raketten haalt vliegtuigen en Kirovs uit de lucht. Doet niets tegen doelen op de grond of het water.'},
+  seascorp:{n:'Zeeschorpioen',cat:'sea',sea:true,side:'soviet',hp:480,spd:2.4,cost:600,sight:8,wpn:'flak',aa:'flakaa',arm:'ship',req:['shipyard'],d:'Alleen Sovjets. Snelle boot met een flakkanon tegen vliegtuigen en soldaten aan de kust.'},
+  dolphin:{n:'Dolfijn',cat:'sea',sea:true,side:'allies',hp:240,spd:3,cost:500,sight:8,wpn:'sonic',arm:'sub',req:['shipyard','lab'],d:'Alleen Geallieerden. Valt schepen en onderzeeërs aan met geluidsgolven. Alleen schepen en onderzeeërs kunnen hem raken.'},
+  squid:{n:'Reuzeninktvis',cat:'sea',sea:true,side:'soviet',hp:300,spd:2.6,cost:1000,sight:7,wpn:'squid',arm:'sub',req:['shipyard','lab'],d:'Alleen Sovjets. Grijpt een schip vast en knijpt het kapot. Alleen schepen en onderzeeërs kunnen hem raken.'},
   dread:{n:'Slagschip',cat:'sea',sea:true,side:'soviet',hp:1200,spd:1.2,cost:2000,sight:9,wpn:'dmsl',arm:'ship',req:['shipyard','radar'],d:'Alleen Sovjets. Vuurt zware raketten tot ver landinwaarts.'},
   sniper:{n:'Sluipschutter',cat:'inf',nat:'uk',hp:150,spd:1.3,cost:600,sight:12,wpn:'snipe',arm:'inf',req:['barracks','radar'],d:'Alleen voor Groot-Brittannië. Schiet soldaten met één schot neer van heel ver weg. Doet niets tegen voertuigen.'},
   desolator:{n:'Desolator',cat:'inf',nat:'iraq',hp:180,spd:1.2,cost:600,sight:6,wpn:'rad',arm:'inf',req:['barracks','radar'],d:'Alleen voor Irak. Straalwapen dat infanterie wegvaagt en een tijdje een gifgroene plas straling achterlaat.'},
@@ -466,6 +479,10 @@ const WP={
   arty:{rng:10,min:3,dmg:110,rof:5,kind:'arty',spd:6.5,splash:1.5,vs:{inf:1,veh:.6,bld:1.1}},
   bite:{rng:.8,dmg:200,rof:0.28,kind:'melee',vs:{inf:1,veh:0,bld:0}},
   pistol:{rng:6,dmg:250,rof:0.28,kind:'bullet',c4:true,vs:{inf:1,veh:0,bld:0}},
+  mind:{rng:6,dmg:0,rof:2.5,kind:'mind',vs:{inf:1,veh:1,ship:1,sub:1}},
+  aegis:{rng:10,dmg:45,rof:.9,kind:'rocket',spd:16,dbl:true,vs:{air:1}},
+  sonic:{rng:5,dmg:60,rof:1.4,kind:'sonic',vs:{ship:1,sub:1}},
+  squid:{rng:.9,dmg:45,rof:.5,kind:'melee',vs:{ship:1,sub:.5}},
   sealmg:{rng:5,dmg:60,rof:.3,kind:'bullet',c4:true,vs:{inf:1,veh:0,bld:0,ship:0}},
   zap:{rng:4,dmg:135,rof:1.06,kind:'zap',vs:{inf:1,veh:1,bld:.5}},
   prism:{rng:10,dmg:100,rof:2.83,kind:'beam',chain:2,vs:{inf:.8,veh:.7,bld:2}},
@@ -503,7 +520,7 @@ const WP={
   grand:{rng:13,min:2,dmg:150,rof:2.12,kind:'shell',spd:20,vs:{inf:.7,veh:1,bld:1}},
 };
 const CATS=['bld','def','inf','veh','sea'];
-const CAT_TYPES={bld:['power','refinery','barracks','factory','radar','airfield','lab','spysat','shipyard'],def:['wall','bunker','tower','prismt','coil','aa','gap','gcannon'],inf:['gi','conscript','rocket','dog','eng','tesltrp','rocketeer','spy','ivan','sniper','desolator','terror','chrono','cmdo','seal'],veh:['harv','tank','rhino','ifv','flak','drone','mirage','tesla','tdest','arty','demo','hawk','siege','prism','mammoth','harrier','eagle','kirov'],sea:['destroyer','carrier','sub','dread','amph']};
+const CAT_TYPES={bld:['power','refinery','barracks','factory','radar','airfield','lab','spysat','nukepow','cloning','indplant','purifier','shipyard'],def:['wall','bunker','tower','prismt','coil','aa','gap','gcannon'],inf:['gi','conscript','rocket','dog','eng','tesltrp','rocketeer','spy','ivan','sniper','desolator','terror','chrono','cmdo','seal','yuri'],veh:['harv','tank','rhino','ifv','flak','drone','mirage','tesla','tdest','arty','demo','hawk','siege','prism','mammoth','harrier','eagle','kirov'],sea:['destroyer','aegis','dolphin','carrier','sub','seascorp','squid','dread','amph']};
 const RATE={bld:150,def:150,inf:90,veh:130,sea:130};
 const AI_MUL=[.65,1,1.35];
 const defOf=t=>BT[t]||UT[t];
@@ -884,6 +901,7 @@ function countB(o){const c={};for(const b of G.blds)if(b.o===o&&b.bt>=1)c[b.type
 function reqMet(o,req){if(!req)return true;for(const r of req)if(!G.blds.some(b=>b.o===o&&b.type===r&&b.bt>=1))return false;return true}
 const PRIM=new Set(['barracks','factory','shipyard']);
 // zoals in RA2: elk extra gebouw van dezelfde soort maakt de bouwtijd 20% korter (tot zes gebouwen)
+function costOf(o,type){const d=defOf(type),T=UT[type];let c=d.cost;if(T&&(T.cat==='veh'||T.cat==='sea')&&G.blds&&G.blds.some(b=>b.o===o&&b.type==='indplant'&&b.bt>=1&&!b.dead))c=Math.round(c*.75);return c}
 function multiF(o,cat){const t=cat==='inf'?'barracks':cat==='veh'?'factory':cat==='sea'?'shipyard':'yard';let n=0;for(const b of G.blds)if(b.o===o&&b.type===t&&b.bt>=1&&!b.dead)n++;return 1/Math.pow(.8,Math.min(6,Math.max(1,n))-1)}
 function producer(o,cat){
   const t=cat==='inf'?'barracks':cat==='veh'?'factory':cat==='sea'?'shipyard':'yard';
@@ -962,7 +980,9 @@ function los(x0,y0,x1,y1){const d=Math.hypot(x1-x0,y1-y0),n=Math.ceil(d/.25);for
 // ---------- orders & movement
 function setPath(u,x,y){u.gx=x;u.gy=y;u.path=UT[u.type].air?[{x:clamp(x,.3,MAP-.3),y:clamp(y,.3,MAP-.3)}]:asSea(pwOf(u.type),()=>findPath(u.x,u.y,x,y));u.stuckN=0;u.pt=0;u.lx=u.x;u.ly=u.y;u.los=0}
 function teleport(u,x,y){u.st='tele';u.tid=0;u.resume=null;u.path=null;u.dx=clamp(x,.5,MAP-.5);u.dy=clamp(y,.5,MAP-.5);u.tt=G.t+.4+Math.hypot(u.dx-u.x,u.dy-u.y)*.08;fx({k:'chf',x:u.x,y:u.y,z:6,life:.6})}
-function orderMove(u,x,y,am){u.gspd=0;if(u.type==='chrono'){teleport(u,x,y);u.am=!!am;return}u.land=u.unl=false;if(u.dep){u.dep=false;fxl({k:'ds',x:u.x,y:u.y,z:2,life:.6})}u.rt=0;u.st='move';u.am=!!am;u.tid=0;u.resume=null;u.auto=false;u.dx=x;u.dy=y;setPath(u,x,y)}
+// eenheden die niet zelf achter vijanden aan gaan: ze schieten alleen op wat binnen hun bereik komt
+const NOCHASE=new Set(['mirage','prism','arty']);
+function orderMove(u,x,y,am){u.gspd=0;u.home=null;if(u.type==='chrono'){teleport(u,x,y);u.am=!!am;return}u.land=u.unl=false;if(u.dep){u.dep=false;fxl({k:'ds',x:u.x,y:u.y,z:2,life:.6})}u.rt=0;u.st='move';u.am=!!am;u.tid=0;u.resume=null;u.auto=false;u.dx=x;u.dy=y;setPath(u,x,y)}
 // plekken rond een doel voor een groep, in dezelfde volgorde als de eenheden
 function groupSlots(us,tx,ty){const out=[],cx=tx|0,cy=ty|0,sl=[];for(let r=0;r<10&&sl.length<us.length;r++){const ring=[];for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;const x=cx+dx,y=cy+dy;if(walkable(x,y))ring.push({x:x+.5,y:y+.5,d:Math.hypot(dx,dy)})}ring.sort((a,b)=>a.d-b.d);sl.push(...ring)}
   for(let i=0;i<us.length;i++)out.push(us.length===1?{x:tx,y:ty}:sl[i]||{x:tx,y:ty});return out}
@@ -984,7 +1004,7 @@ function orderGroup(us,tx,ty,am){
 }
 const canHit=(u,t)=>{const k=wkOf(u,t);if(!k)return false;const W=WP[k];if(t.k==='br'&&(t.down||W.kind==='chrono'||W.kind==='latch'))return false;if(W.kind==='melee'&&t.type==='drone')return false;return vsOf(W,t)>0||(W.c4&&(t.k!=='u'||UT[t.type].sea))};
 function orderEng(us,t){for(const u of us){u.st='eng';u.tid=t.id;u.path=null;u.repath=0;u.am=false;u.resume=null}}
-function orderAttack(us,t){for(const u of us){if(!canHit(u,t))continue;u.st='attack';u.tid=t.id;u.auto=false;u.resume=null;u.am=false;u.path=null;u.repath=0}}
+function orderAttack(us,t){for(const u of us){if(!canHit(u,t))continue;u.home=null;u.st='attack';u.tid=t.id;u.auto=false;u.resume=null;u.am=false;u.path=null;u.repath=0}}
 // net als in RA2 rijden tanks soldaten plat; ingegraven GI's, Tesla-soldaten en Desolators niet
 const CRUSH=new Set(['tank','rhino','mammoth','heavy','mirage','prism','tdest','tesla','ifv','flak','harv']);
 const crushable=e=>e.k==='u'&&UT[e.type].cat==='inf'&&!UT[e.type].air&&e.type!=='tesltrp'&&e.type!=='desolator'&&!e.dep&&e.hp>0&&!e.dead;
@@ -1068,19 +1088,19 @@ function updUnit0(u,dt){
   if(u.guard){const gd=Math.hypot(u.x-u.guard.x,u.y-u.guard.y);
     if(u.st==='attack'&&gd>T.sight+4){u.st='idle';u.tid=0;t=null;u.path=null}
     if(u.st==='idle'&&!t&&gd>1.5&&u.scan<=0){orderMove(u,u.guard.x,u.guard.y,true)}}
-  if((u.st==='idle'||(u.st==='move'&&u.am))&&u.scan<=0){
+  if((u.st==='idle'||(u.st==='move'&&u.am))&&u.scan<=0&&!(u.type==='yuri'&&u.ctrl&&(()=>{const m=ents.get(u.ctrl);return m&&!m.dead&&m.mc&&m.mc.by===u.id})())){
     u.scan=.35+Math.random()*.2;
-    const r=u.dep?W.rng:u.guard?Math.max(T.sight,W.rng+2):u.st==='idle'?W.rng+(isAI(u.o)?3:1.2):T.sight;
+    const r=u.dep?W.rng:u.guard?Math.max(T.sight,W.rng+2):u.st==='idle'?((NOCHASE.has(u.type)||G.t<(u.leashT||0))&&!isAI(u.o)?W.rng:W.rng+(isAI(u.o)?3:1.2)):T.sight;
     let e=nearestEnemy(u.x,u.y,u.o,r,W);
     if(T.aa){const A=WP[T.aa],e2=nearestEnemy(u.x,u.y,u.o,Math.max(r,A.rng),A);if(e2&&(!e||Math.hypot(e2.x-u.x,e2.y-u.y)<distPE(u.x,u.y,e)))e=e2}
-    if(e){if(u.st==='move')u.resume={x:u.dx,y:u.dy};u.st='attack';u.tid=e.id;u.auto=true;t=e;u.path=null;u.repath=0;wk=wkOf(u,t);W=WP[wk]}
+    if(e){if(u.st==='move')u.resume={x:u.dx,y:u.dy};else if(!u.home)u.home={x:u.x,y:u.y};u.st='attack';u.tid=e.id;u.auto=true;t=e;u.path=null;u.repath=0;wk=wkOf(u,t);W=WP[wk]}
   }
   if(u.st==='attack'&&t){
     const d=distPE(u.x,u.y,t),a=Math.atan2(cyE(t)-u.y,cxE(t)-u.x);
     if(u.auto&&d>T.sight+2.5){u.tid=0;if(u.resume){const r=u.resume;orderMove(u,r.x,r.y,true)}else{u.st='idle';u.path=null}return}
     const c4=W.c4&&(t.k!=='u'||UT[t.type].sea);
     // een tank die een soldaat dichtbij heeft, rijdt erop af en schiet onderweg
-    if(CRUSH.has(u.type)&&crushable(t)&&d<W.rng+1){u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.4;setPath(u,t.x,t.y)}moveAlong(u,dt);u.tur=turn(u.tur,a,5*dt);
+    if(CRUSH.has(u.type)&&crushable(t)&&d<W.rng+1&&!(u.auto&&!u.guard&&!u.am&&!isAI(u.o)&&(NOCHASE.has(u.type)||(u.home&&Math.hypot(u.x-u.home.x,u.y-u.home.y)>3)))){u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.4;setPath(u,t.x,t.y)}moveAlong(u,dt);u.tur=turn(u.tur,a,5*dt);
       if(!t.dead&&u.cd<=0&&Math.abs(angDiff(u.tur,a))<.25){fire(u,t,wk);u.cd=W.rof*(.9+Math.random()*.2)}return}
     if(d<=(c4?.8:W.rng)&&(!W.min||d>=W.min)){
       u.path=null;
@@ -1090,6 +1110,9 @@ function updUnit0(u,dt){
       if(u.cd<=0&&(W.kind==='bomb'||Math.abs(angDiff(u.tur,a))<.25)){fire(u,t,wk);u.cd=W.rof*(.9+Math.random()*.2)}
     }else{
       if(u.dep){u.tid=0;u.st='idle';u.path=null;return}
+      if(u.auto&&!u.guard&&!u.am&&!isAI(u.o)){
+        if(NOCHASE.has(u.type)){u.tid=0;u.st='idle';u.path=null;u.home=null;return}
+        if(u.home&&Math.hypot(u.x-u.home.x,u.y-u.home.y)>3){const h=u.home;u.tid=0;orderMove(u,h.x,h.y,false);u.leashT=G.t+5;return}}
       if(u.type==='chrono'){const dx=u.x-cxE(t),dy=u.y-cyE(t),l=Math.hypot(dx,dy)||1;const keep=u.tid;teleport(u,cxE(t)+dx/l*(W.rng-1.2),cyE(t)+dy/l*(W.rng-1.2));u.tid=keep;return}
       u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.9+Math.random()*.4;setPath(u,cxE(t),cyE(t))}
       moveAlong(u,dt);
@@ -1189,7 +1212,7 @@ function updHarv(u,dt){
     case'ret':{const r=nearestRef(u);if(!r){u.hs='wait';u.ht=2;break}u.rid=r.id;const d=dock(r);setPath(u,d.x+.5,d.y+.5);u.hs='goRef';u.tries=0;break}
     case'goRef':{const r=ents.get(u.rid);if(!r||r.hp<=0){u.hs='ret';break}const done=moveAlong(u,dt);
       if(distPE(u.x,u.y,r)<.9){u.path=null;if(dockBusy(u,r)){u.hs='queue';u.ht=.5}else{u.hs='unload';u.ht=.3}}else if(done){u.tries=(u.tries||0)+1;if(u.tries>4)u.hs='ret';else{const d=dock(r);setPath(u,d.x+.5,d.y+.5)}}break}
-    case'unload':{const r=ents.get(u.rid);if(!r||r.hp<=0){u.hs='ret';break}u.face=turn(u.face,Math.atan2(cyE(r)-u.y,cxE(r)-u.x),3*dt);u.ht-=dt;if(u.ht<=0){u.ht=.2;const g=Math.min(u.gemLoad?50*GEM_MUL:50,u.cargo);u.cargo-=g;G.pl[u.o].credits+=g;G.st[u.o].earned+=g;if(u.cargo<=0){u.hs='seek';u.gemLoad=false;u.load=0}}break}
+    case'unload':{const r=ents.get(u.rid);if(!r||r.hp<=0){u.hs='ret';break}u.face=turn(u.face,Math.atan2(cyE(r)-u.y,cxE(r)-u.x),3*dt);u.ht-=dt;if(u.ht<=0){u.ht=.2;const g=Math.min(u.gemLoad?50*GEM_MUL:50,u.cargo);u.cargo-=g;const pg=g*(G.blds.some(b=>b.o===u.o&&b.type==='purifier'&&b.bt>=1&&!b.dead)?1.25:1);G.pl[u.o].credits+=pg;G.st[u.o].earned+=pg;if(u.cargo<=0){u.hs='seek';u.gemLoad=false;u.load=0}}break}
     // er lost al een andere oogster: wachten, of uitwijken naar een raffinaderij die sneller vrij is
     case'queue':{const r=ents.get(u.rid);if(!r||r.hp<=0){u.hs='ret';break}u.ht-=dt;if(u.ht>0)break;u.ht=.5;
       if(!dockBusy(u,r)){u.hs=distPE(u.x,u.y,r)<.9?'unload':'goRef';u.ht=.3;if(u.hs==='goRef'){const d=dock(r);setPath(u,d.x+.5,d.y+.5)}break}
@@ -1228,6 +1251,11 @@ function fire(s,t,wk){
   if(W.kind==='bomb'){G.proj.push({x:sx,y:sy,x0:sx,y0:sy,z:mz,z0:mz,tx:tx+(Math.random()-.5)*.5,ty:ty+(Math.random()-.5)*.5,tid:t.id,o:s.o,wk,ft:0,dist:1,dl:0,trail:0,aid:s.id});sfx('arty',sx,sy);return}
   if(W.kind==='suicide'){kill(s,{o:s.o,id:s.id});return}
   if(s.type==='mirage')s.calm=-1.5;
+  if(W.kind==='mind'){if(t.k!=='u'||UT[t.type].air||t.type==='drone'||t.mc)return;
+    const old=s.ctrl&&ents.get(s.ctrl);if(old&&old.mc&&old.mc.by===s.id)mcRelease(old);
+    fx({k:'mnd',x:mx,y:my,z:mz,x2:tx,y2:ty,z2:hz,life:.6});const prev=t.o;t.mc={o:t.o,by:s.id};t.o=s.o;s.ctrl=t.id;t.st='idle';t.tid=0;t.path=null;t.wq=null;t.guard=null;t.mission=false;s.tid=0;s.st='idle';
+    sayTo(s.o,'Eenheid overgenomen','mind',1);sayTo(prev,'Eenheid overgenomen door de vijand','mindl',3,true,true,[tx,ty]);sfx('beam',sx,sy);return}
+  if(W.kind==='sonic'){fx({k:'son',x:mx,y:my,z:2,x2:tx,y2:ty,z2:2,life:.5});damage(t,W.dmg*vsOf(W,t),src);sfx('zap',sx,sy);return}
   if(W.kind==='chrono'){const mh=t.k==='b'?BT[t.type].hp:UT[t.type].hp;t.erase=(t.erase||0)+W.rof*W.dmg*vsOf(W,t)/mh;t.frozen=G.t+.35;
     fx({k:'chb',x:mx,y:my,z:mz,x2:tx,y2:ty,z2:hz,life:.2});if(t.erase>=1)chronoErase(t,src);return}
   if(W.kind==='rad'){fx({k:'radb',x:mx,y:my,z:mz,x2:tx,y2:ty,z2:hz,life:.25});damage(t,W.dmg*vsOf(W,t),src);G.rads.push({x:r2(tx),y:r2(ty),t:6,o:s.o});if(G.rads.length>40)G.rads.shift();sfx('zap',sx,sy);return}
@@ -1272,7 +1300,11 @@ function splashAt(x,y,W,o,src,brToo){
   if(brToo)for(const e of G.bridges)if(!e.down){const d=distPE(x,y,e);if(d<W.splash)damage(e,W.dmg*vsOf(W,e)*(1-d/W.splash*.6),src)}
   for(const e of G.units)if(enemy(o,e.o)&&e.hp>0&&!e.dead&&vsOf(W,e)>0){const d=distPE(x,y,e);if(d<W.splash)damage(e,W.dmg*vsOf(W,e)*(1-d/W.splash*.6),src)}
   for(const e of G.blds)if(enemy(o,e.o)&&e.hp>0&&!e.dead){const d=distPE(x,y,e);if(d<W.splash)damage(e,W.dmg*vsOf(W,e)*(1-d/W.splash*.6),src)}
+  // bomen in de buurt van de inslag kunnen omvallen; daarna kun je er langs
+  const R=W.splash;for(let yy=Math.floor(y-R);yy<=y+R;yy++)for(let xx=Math.floor(x-R);xx<=x+R;xx++){if(xx<1||yy<1||xx>=MAP-1||yy>=MAP-1)continue;const i=yy*MAP+xx;if(terr[i]!==TREE||Math.hypot(xx+.5-x,yy+.5-y)>R||Math.random()>.55)continue;
+    const a=Math.atan2(yy+.5-y,xx+.5-x);fellTree(i,a);netEv(['tr',i,r2(a)])}
 }
+function fellTree(i,a){if(terr[i]!==TREE)return;terr[i]=GRASS;PROPS.push({k:'log',x:i%MAP+.5,y:((i/MAP)|0)+.5,a,t0:G.t})}
 function impact(p){
   const W=WP[p.wk],src={id:p.aid,o:p.o};
   if(W.splash){
@@ -1291,6 +1323,8 @@ function chronoErase(e,src){
   else{G.st[e.o].lost++;sayTo(e.o,'Eenheid verloren','lost',8)}
   if(src&&src.o>=0&&enemy(src.o,e.o)){G.st[src.o].kills++;const a=src.id?ents.get(src.id):null;if(a&&a.k==='u'&&!a.dead){a.xp=(a.xp||0)+(e.k==='u'?UT[e.type].cost:BT[e.type].cost*.5);promote(a)}}
 }
+// gedachtecontrole loslaten: de eenheid gaat terug naar zijn eigen kant
+function mcRelease(m){if(!m||!m.mc)return;m.o=m.mc.o;m.mc=null;m.st='idle';m.tid=0;m.path=null;m.wq=null}
 function damage(e,amt,src){
   if(e.k==='g')return;
   if(e.k==='br'){if(e.down)return;e.hp-=amt;e.flash=.1;if(e.hp<=0)breakBridge(e,src);return}
@@ -1302,9 +1336,11 @@ function damage(e,amt,src){
   if(e.k==='b'&&enemy(src.o,e.o))sayTo(e.o,'Onze basis wordt aangevallen','base',18,true,true,[cxE(e),cyE(e)]);
   if(G.ai[e.o]&&enemy(src.o,e.o)){const A=G.ai[e.o],a=src.id&&ents.get(src.id);A.alert={x:cxE(e),y:cyE(e),t:G.t};if(a&&e.k==='b')A.threat={x:a.x,y:a.y,t:G.t}}
   if(e.hp<=0){kill(e,src);return}
-  if(e.k==='u'&&UT[e.type].wpn&&e.st==='idle'&&src.id){const a=ents.get(src.id);if(a&&a.hp>0&&canHit(e,a)){e.st='attack';e.tid=a.id;e.auto=true}}
+  // een Mirage die zich als boom verstopt, blijft stil tenzij hij moet bewaken
+  if(e.k==='u'&&UT[e.type].wpn&&e.st==='idle'&&src.id){const a=ents.get(src.id);if(a&&a.hp>0&&canHit(e,a)){if(!e.home)e.home={x:e.x,y:e.y};e.st='attack';e.tid=a.id;e.auto=true}}
 }
 function kill(e,src){
+  if(e.ctrl){const m=ents.get(e.ctrl);if(m&&m.mc&&m.mc.by===e.id)mcRelease(m)}
   e.hp=0;e.dead=true;G.anyDead=true;const x=cxE(e),y=cyE(e);
   if(e.k==='u'){
     const wk=UT[e.type].wpn,boomer=wk&&WP[wk].kind==='suicide';
@@ -1322,8 +1358,12 @@ function kill(e,src){
   }else{
     for(let yy=e.y;yy<e.y+e.h;yy++)for(let xx=e.x;xx<e.x+e.w;xx++){bmap[yy*MAP+xx]=0;scorch(xx+.5,yy+.5,.8)}
     if(e.gar&&e.gar.length)evacuate(e,true);
+    // het gebouw zakt in elkaar en laat een berg puin achter
+    fx({k:'bcol',ty:e.type,x:e.x,y:e.y,w:e.w,h:e.h,o:e.o,life:1.3});if(!BT[e.type].wall)fx({k:'rub',x:e.x,y:e.y,w:e.w,h:e.h,life:120});
     for(let i=0;i<e.w*e.h+3;i++)fx({k:'ex',x:e.x+Math.random()*e.w,y:e.y+Math.random()*e.h,z:4+Math.random()*16,s:1+Math.random()*.7,life:.9,dl:i*.12,snd:i%3===0});
     debris(x,y,14);sfx('big',x,y);
+    if(e.type==='nukepow'){boom(x,y,3.2,10);shake(x,y,9);for(const v of [...G.units,...G.blds]){if(v.dead||v===e)continue;const d=v.k==='b'?distPE(x,y,v):Math.hypot(v.x-x,v.y-y);if(d<5)damage(v,420*(1-d/5.5),{o:-1,id:0})}
+      for(let k=0;k<6;k++){const a=k/6*6.28;G.rads.push({x:r2(x+Math.cos(a)*1.6),y:r2(y+Math.sin(a)*1.6),t:22,o:-1})}G.rads.push({x:r2(x),y:r2(y),t:26,o:-1})}
     sayTo(e.o,'Gebouw verloren','blost',5,true,true);
     if(selB===e.id)selB=0;
   }
@@ -1453,12 +1493,12 @@ function production(o,dt){
     if(!reqMet(o,def.req)||!producer(o,cat)){it.hold=true;continue}
     let rate=RATE[cat]*(P.low?.5:1)*(isAI(o)?AI_MUL[G.diff]:1);
     rate*=multiF(o,cat);
-    const need=def.cost-it.spent;let sp=Math.min(need,rate*dt,P.credits);
+    const cost=costOf(o,it.type),need=cost-it.spent;let sp=Math.min(need,rate*dt,P.credits);
     if(sp<=0&&need>0){it.hold=true;sayTo(o,'Onvoldoende krediet','money',12);continue}
     it.hold=false;P.credits-=sp;it.spent+=sp;
-    if(it.spent>=def.cost-.01){
+    if(it.spent>=cost-.01){
       if(cat==='bld'||cat==='def'){it.ready=true;sayTo(o,'Bouw voltooid','ready',1.5)}
-      else if(spawnUnit(o,it.type)){q.shift();G.st[o].built++;sayTo(o,'Eenheid gereed','unit',2.5)}
+      else if(spawnUnit(o,it.type)){q.shift();G.st[o].built++;sayTo(o,'Eenheid gereed','unit',2.5);if(P.repeat&&P.repeat[it.type]&&q.filter(x=>x.type===it.type).length<1&&q.length<8)q.push({type:it.type,spent:0})}
     }
   }
 }
@@ -1468,6 +1508,8 @@ function spawnUnit(o,type){
   const ex=b.x+Math.floor(b.w/2),ey=b.y+b.h;const w=asSea(pwOf(type)||(UT[type].cat==='sea'?1:0),()=>nearestWalkable(ex,ey,6));if(!w)return false;
   const u=mkUnit(o,type,w.x+.5,w.y+.5);u.face=u.tur=Math.PI/2;if(UT[type].heli)u.z=0;const P=G.pl[o];if((cat==='inf'&&P.vetInf)||(cat==='veh'&&P.vetVeh)){u.rank=1;u.xp=UT[type].cost}
   if(type==='harv')return true;
+  // kloontanks: een gratis kloon van elke getrainde soldaat (geen helden, ingenieurs, spionnen of Yuri)
+  if(cat==='inf'&&!['eng','spy','yuri','cmdo','seal','chrono'].includes(type)){const cv=G.blds.find(x=>x.o===o&&x.type==='cloning'&&x.bt>=1&&!x.dead);if(cv){const w2=nearestWalkable(cv.x+1,cv.y+cv.h,5);if(w2){const cl=mkUnit(o,type,w2.x+.5,w2.y+.5);cl.face=cl.tur=Math.PI/2;if(b.rally)orderMove(cl,b.rally.x,b.rally.y,false);fx({k:'chf',x:cl.x,y:cl.y,z:6,life:.6})}}}
   if(isAI(o)){const r=aiRally(o);orderMove(u,r.x+(Math.random()-.5)*3,r.y+(Math.random()-.5)*3,false)}
   else if(b.rally)orderMove(u,b.rally.x,b.rally.y,false);
   else orderMove(u,w.x+.5+(Math.random()-.5)*2,w.y+2.2+Math.random(),false);
@@ -1475,7 +1517,7 @@ function spawnUnit(o,type){
 }
 
 // ---------- AI
-const AI_ORDER=['power','refinery','barracks','factory','power','bunker','radar','aa','power','airfield','tower','power','lab','refinery','aa','prismt','coil','shipyard','gcannon','bunker','prismt','coil','power','tower','factory','power','tower','bunker','power','tower'];
+const AI_ORDER=['power','refinery','barracks','factory','power','bunker','radar','aa','power','airfield','tower','power','lab','refinery','aa','prismt','coil','shipyard','gcannon','bunker','prismt','coil','power','tower','factory','power','tower','bunker','purifier','indplant','power','tower'];
 function aiBase(o){return G.blds.find(b=>b.o===o&&b.type==='yard')||G.blds.find(b=>b.o===o&&!BT[b.type].tech)}
 function toCenter(b){const cx=b.x+b.w/2,cy=b.y+b.h/2,dx=MAP/2-cx,dy=MAP/2-cy,l=Math.hypot(dx,dy)||1;return{cx,cy,ux:dx/l,uy:dy/l}}
 // 0 op Rivierdal en Winterfront, 1 op de Grote vlakte
@@ -1621,6 +1663,9 @@ function ambient(dt){
     const lowP=G.pl[b.o]&&G.pl[b.o].low;if(b.type==='power'&&!lowP&&Math.random()<dt*5){const pt=Math.random()<.5?[1.4,.6]:[.6,1.4];fxl({k:'sm',x:b.x+pt[0]+(Math.random()-.5)*.2,y:b.y+pt[1]+(Math.random()-.5)*.2,z:37,s:.9,life:3.2,vz:13,c:'#eef2f4',a:.42})}
     if(b.type==='factory'&&!lowP&&Math.random()<dt*2){const pt=Math.random()<.5?[.7,.6]:[2.3,.6];fxl({k:'sm',x:b.x+pt[0],y:b.y+pt[1],z:30,s:.45,life:2.4,vz:12,c:'#6a6d70',a:.35})}}
   for(const p of G.proj){if(p.dl>0)continue;const k=WP[p.wk].kind;if(k==='rocket'||k==='arty'){p.trail=(p.trail||0)-dt;if(p.trail<=0){p.trail=.03;fxl({k:'sm',x:p.x,y:p.y,z:p.z,s:.25,life:.6,vz:4,c:'#cfcfcf'})}}}
+  for(const f of G.fx){if((f.k!=='bcol'&&f.k!=='rub')||f.dl>0)continue;f.sk=(f.sk||0)-dt;if(f.sk>0)continue;
+    if(f.k==='bcol'){f.sk=.06;fxl({k:'sm',x:f.x+Math.random()*f.w,y:f.y+Math.random()*f.h,z:4,s:1,life:1.8,vz:10,c:'#8a8278',a:.55})}
+    else if(f.t<25){f.sk=.6;fxl({k:'sm',x:f.x+Math.random()*f.w,y:f.y+Math.random()*f.h,z:3,s:.5,life:2.2,vz:12,c:'#3a3633',a:.45})}else f.sk=99}
   for(const f of G.fx){if(f.k!=='wreck'||f.dl>0)continue;f.sk=(f.sk||0)-dt;if(f.sk>0)continue;const hot=f.t<5;f.sk=hot?.14:.4;if(f.t>f.life-2)continue;
     fxl({k:'sm',x:f.x+(Math.random()-.5)*.3,y:f.y+(Math.random()-.5)*.3,z:10,s:hot?.6:.45,life:2.6,vz:hot?18:12,c:hot?'#252321':'#4a4642',a:hot?.7:.45});
     if(hot&&Math.random()<.6)fxl({k:'fi',x:f.x+(Math.random()-.5)*.4,y:f.y+(Math.random()-.5)*.4,z:8,life:.45})}
@@ -1720,7 +1765,7 @@ const EVA_EN={promo:'Unit promoted',board:'Unit loaded',noland:'Cannot land ther
   sat:'Spy satellite online',gar:'Building garrisoned',engfix:'Building repaired',tech:'Tech building captured',techl:'Tech building lost',oil:'Oil derrick captured',oill:'Oil derrick lost',
   cap:'Building captured',capd:'Our building has been captured',drone:'Terror drone detected',blost:'Building lost',lost:'Unit lost',base:'Our base is under attack',kdown:'Kirov down',
   brug:'Bridge destroyed',brugok:'Bridge repaired',unl:'Unloading',money:'Insufficient funds',ready:'Construction complete',unit:'Unit ready',wave:'Enemy forces approaching',
-  gem:'Gems discovered',prim:'Primary building selected',paraon:'Paratroopers en route',sold:'Building sold',kirov:'Kirov airship detected',power:'Low power',droneoff:'Terror drone removed',crate:'Money crate',
+  gem:'Gems discovered',mind:'Unit acquired',mindl:'Unit lost',prim:'Primary building selected',paraon:'Paratroopers en route',sold:'Building sold',kirov:'Kirov airship detected',power:'Low power',droneoff:'Terror drone removed',crate:'Money crate',
   para:'Paratroopers ready',welcome:'Welcome back, commander'};
 const said={};
 function say(text,key,cool,voice=true,alert=false){key=key||text;cool=cool??3;if(G.t-(said[key]??-999)<cool)return false;said[key]=G.t;addMsg(text,alert);if(voice&&started)speak(EVA_EN[key]);return true}
@@ -1992,6 +2037,35 @@ const BDRAW={
     for(const a of[-.9,.9,2.6])line(c,[Math.cos(a)*14,Math.sin(a)*7.5],[0,-13],'#4a5056',1);
     dot(c,[0,-13],2.4,'#3a3f45');c.restore();
     if(k>.95&&!low)beacon(c,[c1[0],c1[1]-25],t,1.3);
+  },
+  nukepow(c,pr,b,tm,k,t,low){
+    // Kernreactor: drie koeltorens rond een betonnen kern met een groen gloeiend venster
+    box(c,pr,0,0,3,3,0,5,'#625b54');box(c,pr,.9,.9,1.2,1.2,5,5+16*k,'#7a7067');
+    for(const[x,y]of[[.6,.6],[2.4,.6],[.6,2.3]]){cyl(c,pr,x,y,.48,5,5+34*k,'#a9a39b',.7,true);band(c,pr,x,y,.42,5+20*k,'#b3221a')}
+    box(c,pr,1.4,2,1.3,.8,5,5+12*k,'#6d645b');box(c,pr,1.4,2.62,1.3,.18,5+8*k,5+9.5*k,tm.main);
+    if(k>.95){const g=pr(1.5,2.1,5+16*k);c.globalCompositeOperation='lighter';flash(c,g,low?4:9+3*Math.sin(t*2));c.globalCompositeOperation='source-over';dot(c,g,2.5,low?'#3a5a2a':'#9dff6a');star(c,pr(2.05,2.81,5+5*k),3.4,'#b3221a')}
+  },
+  cloning(c,pr,b,tm,k,t,low){
+    // Kloontanks: drie glazen buizen met groene vloeistof en een schim erin
+    box(c,pr,0,0,3,2,0,4,'#625b54');box(c,pr,.15,.15,2.7,.7,4,4+16*k,'#7a7067');box(c,pr,.15,.75,2.7,.12,4+10*k,4+11.5*k,tm.main);
+    if(k>.95)windows(c,pr,.15,.15,2.7,.7,8,2.5,6,low,t,(b.id|0)+31);
+    for(const x of[.55,1.5,2.45]){cyl(c,pr,x,1.35,.3,4,4+20*k,'rgba(120,220,140,.55)');const top=pr(x,1.35,4+20*k);c.fillStyle='#4a4440';c.beginPath();c.ellipse(top[0],top[1],13.5,6.8,0,0,7);c.fill();
+      if(k>.9){const m=pr(x,1.35,4+10*k);c.fillStyle='rgba(30,50,30,.55)';c.fillRect(m[0]-2,m[1]-6,4,9);dot(c,[m[0],m[1]-8],2,'rgba(30,50,30,.55)');
+        if(!low){const bb=pr(x,1.35,4+((t*8+x*5)%18)*k);dot(c,bb,1,'rgba(220,255,220,.8)')}}}
+  },
+  indplant(c,pr,b,tm,k,t,low){
+    // Industriële fabriek: grote hal met vier schoorstenen en een loopkraan
+    box(c,pr,0,0,3,3,0,4,'#5f5852');box(c,pr,.2,.2,2.6,2.6,4,4+18*k,'#73685f');if(k>.95)windows(c,pr,.2,.2,2.6,2.6,13,3,6,low,t,(b.id|0)+37);
+    box(c,pr,.2,2.65,2.6,.15,4+12*k,4+14*k,tm.main);
+    for(const[x,y]of[[.6,.6],[1.2,.6],[1.8,.6],[2.4,.6]]){cyl(c,pr,x,y,.14,4+18*k,4+38*k,'#4a4440');band(c,pr,x,y,.14,4+34*k,'#b3221a')}
+    if(k>.95){const a=pr(.4,1.6,4+24*k),bq=pr(2.6,1.6,4+24*k);line(c,a,bq,'#d6a51c',3);const hx=.4+((t*.15)%1)*2.2,h=pr(hx,1.6,4+24*k);line(c,h,[h[0],h[1]+10],'#222',1);c.fillStyle='#333';c.fillRect(h[0]-3,h[1]+10,6,4);star(c,pr(1.5,2.81,4+8*k),4,'#b3221a')}
+  },
+  purifier(c,pr,b,tm,k,t,low){
+    // Ertszuiveraar: strak gebouw met een draaiende centrifuge en een gouden gloed
+    box(c,pr,0,0,2,2,0,3,'#6c7277');box(c,pr,.15,.15,1.7,1.7,3,3+12*k,'#8d949b');box(c,pr,.15,1.55,1.7,.3,3+12*k,3+13.5*k,tm.main);
+    if(k>.95)windows(c,pr,.15,.15,1.7,1.7,7,2.6,4,low,t,(b.id|0)+41);
+    cyl(c,pr,1,1,.45,3+12*k,3+22*k,'#b8bfc5');if(k>.9){const top=pr(1,1,3+22*k),a=low?0:t*3;for(let i=0;i<4;i++){const an=a+i*1.57;line(c,top,[top[0]+Math.cos(an)*16,top[1]+Math.sin(an)*8],'#6b737b',2)}
+      c.globalCompositeOperation='lighter';flash(c,top,low?3:7+2*Math.sin(t*3));c.globalCompositeOperation='source-over';dot(c,top,2.5,'#ffd86a')}
   },
   gap(c,pr,b,tm,k,t,low){
     // Gap Generator: een mast met draaiende schermen bovenop; als hij werkt, hangt er een donkere waas om hem heen
@@ -2297,6 +2371,7 @@ function drawInf(c,pr,u,tm,t,air){
   const R=(a0,a1,b0,b1)=>[[a0,b0],[a1,b0],[a1,b1],[a0,b1]];
   const sov0=G.pl&&G.pl[u.o]&&G.pl[u.o].fac==='soviet';
   const gun=()=>{const o=[sx-ux*1.5,gy0-uy*.6];
+    if(u.type==='yuri'){const h=[sx+ux*4,sy-9.5-bob+uy*1.5];c.globalCompositeOperation='lighter';flash(c,h,4+Math.sin(t*5+u.id)*1.5);c.globalCompositeOperation='source-over';dot(c,h,1.4,'#e0b0ff');return}
     if(sn){const P=W(o,[[R(-3.5,-.3,-.4,1.4),'#4f5a36'],[R(-.3,4.5,0,1.2),'#2a2d2f'],[R(4.5,14,.35,.85),'#18191a'],[R(.6,4.6,1.4,2.5),'#121314'],[R(.2,.8,1.2,1.5),'#121314'],[R(4.2,4.8,1.2,1.5),'#121314'],[[[1,0],[1.7,0],[1.4,-1.7],[.8,-1.6]],'#18191a']]);
       dot(c,P(4.7,1.95),.6,'#9fd3ff');line(c,P(10,.4),P(10.6,-2.6),'#2a2a24',.6);line(c,P(10,.4),P(9.4,-2.6),'#2a2a24',.6);arm(P(1.2,0));return}
     if(rk){const P=W([sx-ux*1,sy-12.5-bob-uy*.4],[[R(-4.5,9,0,2.8),'#4b5a34'],[R(-5.6,-4.5,-.4,3.2),'#2f3824'],[R(8.4,9.4,-.2,3),'#3a4628'],[R(2,3.4,2.8,4),'#1f2318'],[[[1,0],[2,0],[1.8,-2],[1,-2]],'#1f2318'],[R(-4.5,9,2.2,2.8),'rgba(255,255,255,.12)']]);
@@ -2314,7 +2389,7 @@ function drawInf(c,pr,u,tm,t,air){
     const P=W(o,[[[[-3.4,-.7],[-.4,-.4],[-.4,1.1],[-3.4,1.6]],'#1e2022'],[R(-.4,4.2,-.1,1.3),'#2c3034'],[R(.5,3.2,1.3,1.9),'#1b1d1f'],[[[1.9,-.1],[2.8,-.1],[3,-2.7],[2.1,-2.7]],'#1b1d1f'],[[[.6,-.1],[1.3,-.1],[1.05,-1.8],[.45,-1.7]],'#1b1d1f'],[R(4.2,7.2,0,1.2),'#373b40'],[R(7.2,10.6,.35,.8),'#121314'],[R(9,9.4,.8,1.9),'#121314'],[R(-.4,7.2,1.05,1.3),'rgba(255,255,255,.14)']]);arm(P(1,0))};
   if(uy<0)gun();
   if(u.type==='gi'||u.type==='conscript'||u.type==='rocket'||u.type==='eng'){c.fillStyle=u.type==='eng'?'#5a4a2a':'#3d4232';c.fillRect(sx-ux*2.6-2,sy-12-bob,4,5)}
-  const sl=u.type==='seal',special=cm||sn||ds||tr_||tt||iv||sl,sov=G.pl&&G.pl[u.o]&&G.pl[u.o].fac==='soviet',uni=sov?'#6a5a42':'#5c6a48',body=sl?'#1f2326':iv?'#6b4a2c':chr?'#3a5f8a':tt?'#4a4f55':spy?'#5a4a36':cm?'#2b2d30':sn?'#55663a':ds?'#8f9440':tr_?'#3a2f2a':eng?'#7a6a3a':uni;
+  const sl=u.type==='seal',yu=u.type==='yuri',special=cm||sn||ds||tr_||tt||iv||sl||yu,sov=G.pl&&G.pl[u.o]&&G.pl[u.o].fac==='soviet',uni=sov?'#6a5a42':'#5c6a48',body=yu?'#3a2550':sl?'#1f2326':iv?'#6b4a2c':chr?'#3a5f8a':tt?'#4a4f55':spy?'#5a4a36':cm?'#2b2d30':sn?'#55663a':ds?'#8f9440':tr_?'#3a2f2a':eng?'#7a6a3a':uni;
   // uniform in de kleur van de kant; de teamkleur zit op schouders en borst, zodat je ze nog herkent
   c.fillStyle=body;c.fillRect(sx-2.7,sy-12.5-bob,5.4,7);if(!special){c.fillStyle=tm.main;c.fillRect(sx-2.7,sy-12.5-bob,5.4,2.6)}
   c.fillStyle='rgba(0,0,0,.28)';c.fillRect(sx+.9,sy-12.5-bob,1.8,7);c.fillStyle='rgba(255,255,255,.2)';c.fillRect(sx-2.7,sy-12.5-bob,1.3,7);
@@ -2418,7 +2493,7 @@ function drawDrone(c,pr,u,tm,t){
 function shipPts(pr,u,L,W,z,f){const co=Math.cos(f),si=Math.sin(f);return[[L/2,0],[L*.28,W/2],[-L/2,W*.42],[-L/2,-W*.42],[L*.28,-W/2]].map(([a,b])=>pr(u.x+a*co-b*si,u.y+a*si+b*co,z))}
 function drawShip(c,pr,u,tm,t){
   const f=u.face,co=Math.cos(f),si=Math.sin(f),ty=u.type,sub=ty==='sub';
-  const [L,W]={destroyer:[1.35,.46],carrier:[1.95,.68],sub:[1.4,.34],dread:[1.8,.62]}[ty];
+  const [L,W]={destroyer:[1.35,.46],carrier:[1.95,.68],sub:[1.4,.34],dread:[1.8,.62],aegis:[1.5,.5],seascorp:[1,.38]}[ty];
   const bob=Math.sin(t*1.6+u.id)*.8,P2=(x,y,z)=>{const p=pr(x,y,z);return[p[0],p[1]-bob]};
   poly(c,shipPts(pr,u,L+.12,W+.12,0,f),'rgba(10,25,40,.35)');
   const hullC=sub?'#2b3036':ty==='carrier'?'#6b737b':'#7a828a';
@@ -2429,7 +2504,13 @@ function drawShip(c,pr,u,tm,t){
     c.lineWidth=1.4;for(let q=0;q<5;q++){const d=(hash(u.id,q,3)-.5)*L*.8,sd=q&1?1:-1,a=at(d,sd*W*.46,zz*.8),b=at(d,sd*W*.48,.3);c.strokeStyle='rgba(110,62,24,.35)';c.beginPath();c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.stroke()}}
   line(c,at(-L*.45,W*.36,sub?2:4.5),at(L*.25,W*.4,sub?2:4.5),tm.main,2);line(c,at(-L*.45,-W*.36,sub?2:4.5),at(L*.25,-W*.4,sub?2:4.5),tm.main,2);
   const tc=Math.cos(u.tur),ts=Math.sin(u.tur);
-  if(ty==='destroyer'){poly(c,hullPts(P2,u.x-co*.2,u.y-si*.2,.36,.26,10,f),'#9aa2a9');line(c,at(-.2,0,10),at(-.2,0,22),'#555',1.5);
+  // Aegis-kruiser: hoge brug met radarpanelen en twee blokken raketcellen; Zeeschorpioen: kleine boot met een flakkanon
+  if(ty==='aegis'){poly(c,hullPts(P2,u.x-co*.05,u.y-si*.05,.42,.3,14,f),'#a2aab1');for(const sd of[-1,1])poly(c,[at(.05,sd*.15,14),at(-.25,sd*.15,14),at(-.25,sd*.15,8),at(.05,sd*.15,8)],'#5a6b7a');
+    for(const d of[.45,-.5]){poly(c,hullPts(P2,u.x+co*d,u.y+si*d,.24,.24,6.5,f),'#6b737b');for(let i=0;i<3;i++)for(let j=0;j<2;j++)dot(c,at(d-.06+i*.06,-.05+j*.1,6.6),.9,'#2a2e33')}
+    line(c,at(-.1,0,14),at(-.1,0,26),'#555',1.5);if(u.flash>0){c.globalCompositeOperation='lighter';flash(c,at(.45,0,9),9);c.globalCompositeOperation='source-over'}}
+  else if(ty==='seascorp'){poly(c,hullPts(P2,u.x-co*.15,u.y-si*.15,.3,.24,9,f),'#8a8f84');const g=at(.25,0,6.5);c.fillStyle='#5a5f55';c.beginPath();c.ellipse(g[0],g[1],4.5,2.6,0,0,7);c.fill();
+    for(const s2 of[-.05,.05]){const b=P2(u.x+co*.25-si*s2+tc*.22,u.y+si*.25+co*s2+ts*.22,11);line(c,g,b,'#2a2e33',1.6)}if(u.flash>0)flash(c,at(.5,0,11),7)}
+  else if(ty==='destroyer'){poly(c,hullPts(P2,u.x-co*.2,u.y-si*.2,.36,.26,10,f),'#9aa2a9');line(c,at(-.2,0,10),at(-.2,0,22),'#555',1.5);
     const g=at(.38,0,7);c.fillStyle='#8a929a';c.beginPath();c.ellipse(g[0],g[1],5,3,0,0,7);c.fill();c.strokeStyle=tm.main;c.lineWidth=1.3;c.stroke();const e=P2(u.x+co*.38+tc*.35,u.y+si*.38+ts*.35,8);line(c,g,e,'#2b2f33',2.5);if(u.flash>0)flash(c,e,8)}
   else if(ty==='carrier'){line(c,at(-L*.42,0,4.6),at(L*.4,0,4.6),'rgba(255,255,255,.35)',1);poly(c,hullPts(P2,u.x-co*.1+si*.22,u.y-si*.1-co*.22,.42,.16,16,f),'#8d959c');
     for(const d of[-.55,.2]){const j=at(d,-.08,5.5);c.fillStyle='#3d444b';c.beginPath();c.moveTo(j[0]+5,j[1]);c.lineTo(j[0]-4,j[1]-3);c.lineTo(j[0]-4,j[1]+3);c.closePath();c.fill()}
@@ -2443,6 +2524,10 @@ function drawShip(c,pr,u,tm,t){
 function drawProp(c,p,t){const pr=(x,y,z)=>w2s(p.x+x,p.y+y,z);
   if(p.k==='lamp'){const a=pr(0,0,0),b=pr(0,0,30),h=pr(p.dx*.22,p.dy*.22,29);c.fillStyle='rgba(0,0,0,.25)';c.beginPath();c.ellipse(a[0]+2,a[1]+1,3,1.5,0,0,7);c.fill();
     line(c,a,b,'#33383d',2);line(c,b,h,'#33383d',1.4);dot(c,h,2.2,'#fff1c0');c.globalCompositeOperation='lighter';flash(c,h,6);c.globalCompositeOperation='source-over';return}
+  if(p.k==='log'){const fall=Math.min(1,(G.t-(p.t0||0))/.6),ca=Math.cos(p.a),sa=Math.sin(p.a),base=pr(0,0,0);
+    if(fall<1){const tip=pr(ca*.9*fall,sa*.9*fall,26*(1-fall));line(c,base,tip,'#4a3622',3);dot(c,tip,9*(1-fall*.3),MAPS[MAPK].theme==='snow'?'#2f4a40':'#2f5a2a');return}
+    c.fillStyle='rgba(0,0,0,.25)';c.beginPath();c.ellipse(base[0]+2,base[1]+2,14,5,0,0,7);c.fill();const tip=pr(ca*.95,sa*.95,1);line(c,base,tip,'#4a3622',3.4);line(c,base,tip,'rgba(255,255,255,.12)',1);
+    for(let k=0;k<4;k++){const q=.5+k*.15,cp=pr(ca*q+(hash(k,p.x|0,3)-.5)*.3,sa*q+(hash(k,p.y|0,5)-.5)*.3,3);dot(c,cp,4.5,k%2?'#2f5a2a':'#3d6b30')}dot(c,base,2.6,'#6b4e30');return}
   if(p.k==='fence'){const A=w2s(p.x,p.y,0),B=w2s(p.x1,p.y1,0),n=Math.max(2,Math.round(Math.hypot(p.x1-p.x,p.y1-p.y)*2.5));
     for(let k=0;k<=n;k++){const f=k/n,q=w2s(p.x+(p.x1-p.x)*f,p.y+(p.y1-p.y)*f,0);line(c,q,[q[0],q[1]-7],'#6b5236',1.4)}
     for(const z of[3,6])line(c,[A[0],A[1]-z],[B[0],B[1]-z],'#8a6a44',1.1);return}
@@ -2453,6 +2538,17 @@ function drawProp(c,p,t){const pr=(x,y,z)=>w2s(p.x+x,p.y+y,z);
     box(c,lp,0,0,w,h,1.5,5.5,p.col);box(c,lp,w*(p.ax?.12:.3),h*(p.ax?.3:.12),w*(p.ax?.76:.4),h*(p.ax?.4:.76),5.5,9,shade(p.col,.85));
     poly(c,[lp(w*(p.ax?.12:.3),h*(p.ax?.7:.88),9),lp(w*(p.ax?.88:.7),h*(p.ax?.7:.88),9),lp(w*(p.ax?.88:.7),h*(p.ax?.7:.88),6),lp(w*(p.ax?.12:.3),h*(p.ax?.7:.88),6)],'#2b3640')}
 }
+// ---------- dag en nacht (bij weer 'Wisselend'): elke acht minuten valt de avond; dan branden lantaarns, ramen en koplampen
+function nightI(t){if(!G.weather||G.weather==='clear')return 0;const ph=t/480+.55;return clamp(Math.sin(ph*Math.PI*2)*1.3-.3,0,1)}
+function drawNight(t){const d=nightI(t);if(d<=.01)return;ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=`rgba(8,12,34,${d*.58})`;ctx.fillRect(0,0,VW,VH);ctx.globalCompositeOperation='lighter';
+  const glow=(x,y,r,col,a)=>{const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${col},${a})`);g.addColorStop(1,`rgba(${col},0)`);ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y,r,r*.6,0,0,7);ctx.fill()};
+  for(const b of G.blds){if(b.dead||b.bt<1||BT[b.type].wall||!visibleE(b))continue;const[sx,sy]=w2s(b.x+b.w/2,b.y+b.h/2,BT[b.type].ht*.5);if(sx<-80||sx>VW+80||sy<-80||sy>VH+80)continue;
+    const off=b.o!==NEU&&G.pl[b.o]&&G.pl[b.o].low;if(!off)glow(sx,sy,28+(b.w+b.h)*10,'255,200,120',.22*d)}
+  for(const p of PROPS){if(p.k!=='lamp')continue;const[sx,sy]=w2s(p.x,p.y,0);if(sx<-60||sx>VW+60||sy<-60||sy>VH+60)continue;glow(sx,sy,46,'255,225,150',.32*d)}
+  for(const u of G.units){const T=UT[u.type];if(u.dead||T.cat!=='veh'||T.air||!visibleE(u))continue;const[sx,sy]=w2s(u.x,u.y,0);if(sx<-90||sx>VW+90||sy<-90||sy>VH+90)continue;
+    const L=w2s(u.x+Math.cos(u.face)*2.4,u.y+Math.sin(u.face)*2.4,0),g=ctx.createLinearGradient(sx,sy,L[0],L[1]);g.addColorStop(0,`rgba(255,240,190,${.3*d})`);g.addColorStop(1,'rgba(255,240,190,0)');
+    const nx=-(L[1]-sy),ny=L[0]-sx,nl=Math.hypot(nx,ny)||1;ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(sx+nx/nl*4,sy+ny/nl*4);ctx.lineTo(L[0]+nx/nl*22,L[1]+ny/nl*22);ctx.lineTo(L[0]-nx/nl*22,L[1]-ny/nl*22);ctx.lineTo(sx-nx/nl*4,sy-ny/nl*4);ctx.closePath();ctx.fill()}
+  ctx.restore()}
 // ---------- weer: regenbuien met onweer, of sneeuw op Winterfront; alleen beeld en geluid, elke computer maakt het zelf
 let thunderK=-1;
 function weatherI(t){if(!G.weather||G.weather==='clear')return 0;const ph=(seed%997)*.37;
@@ -2468,6 +2564,12 @@ function drawWeather(t){const I=weatherI(t);if(I<=.01)return;const snow=MAPS[MAP
     if(hit&&ft>.9&&thunderK!==k){thunderK=k;thunder()}}
   ctx.restore()}
 function thunder(){if(!S.on||!S.ac)return;const t=S.ac.currentTime;noiseBurst(t,2.4,140,'lowpass',.55,.7);noiseBurst(t+.05,.5,600,'lowpass',.3,.5);thump(t,70,30,1.6,.35)}
+// puin van een ingestort gebouw: brokken beton, staven en een paar rokende plekken in het begin
+function drawRubble(f){const a=Math.min(1,(f.life-f.t)/6);ctx.save();ctx.globalAlpha=a;const n=Math.round(f.w*f.h*5);
+  for(let i=0;i<n;i++){const hx=hash(i,f.x|0,7),hy=hash(i,f.y|0,9),[sx,sy]=w2s(f.x+.15+hx*(f.w-.3),f.y+.15+hy*(f.h-.3),0),r=2.5+hash(i,3,11)*5,col=['#6b6660','#58534d','#7d776f','#4a4541'][i%4];
+    ctx.fillStyle='rgba(0,0,0,.22)';ctx.beginPath();ctx.ellipse(sx+2,sy+1,r+1,r*.5,0,0,7);ctx.fill();ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(sx-r,sy);ctx.lineTo(sx-r*.3,sy-r*.9);ctx.lineTo(sx+r*.6,sy-r*.6);ctx.lineTo(sx+r,sy);ctx.closePath();ctx.fill();
+    if(i%5===0)line(ctx,[sx-r,sy-r*.4],[sx+r*.4,sy-r*1.3],'#3a2a1e',1)}
+  ctx.restore()}
 function drawWreck(f){
   if(!f.img){const W=150,H=120,ax=75,ay=82,cv=document.createElement('canvas');cv.width=W*DPR;cv.height=H*DPR;const c=cv.getContext('2d');c.scale(DPR,DPR);
     const g0=w2s(f.x,f.y,0),prO=(x,y,z)=>{const[a,b]=w2s(x,y,z);return[a-g0[0]+ax,b-g0[1]+ay]};
@@ -2489,7 +2591,21 @@ function drawUnit(c,pr,u,t){const[gx_,gy_]=pr(u.x,u.y,0);
     const T=UT[u.type];if(T.cat==='veh'&&!T.air&&u.rkT!==undefined&&t-u.rkT<.3){const k=(1-(t-u.rkT)/.3)**2,[bx,by]=pr(u.x+Math.cos(u.tur),u.y+Math.sin(u.tur),0),l=Math.hypot(bx-gx_,by-gy_)||1;c.translate(-(bx-gx_)/l*k*1.4,-(by-gy_)/l*k*1.4-k*.5)}
     drawUnit0(c,pr,u,t);c.restore();c.globalAlpha=1}
   if(u.erase>0){c.globalCompositeOperation='lighter';c.fillStyle=`rgba(110,190,255,${Math.min(.7,u.erase*.8)})`;c.beginPath();c.ellipse(gx_,gy_-10*US,12*US,15*US,0,0,7);c.fill();c.globalCompositeOperation='source-over'}}
-function drawUnit0(c,pr,u,t){if(u.type==='spy'){if(enemy(LOCAL,u.o))drawInf(c,pr,{...u,type:'gi'},TEAM[LOCAL]||TEAM[0],t);else drawInf(c,pr,u,TEAM[u.o],t);return}const tm=TEAM[u.o];if(UT[u.type].sea){drawShip(c,pr,u,tm,t);return}if(u.type==='eagle'||u.type==='harrier')drawEagle(c,pr,u,tm,t);else if(UT[u.type].heli)drawHeli(c,pr,u,tm,t);else if(u.type==='drone')drawDrone(c,pr,u,tm,t);else if(u.type==='kirov')drawKirov(c,pr,u,tm,t);else if(u.type==='rocketeer')drawRocketeer(c,pr,u,tm,t);else if(u.type==='dog')drawDog(c,pr,u,tm,t);else if(u.type==='amph')drawAmph(c,pr,u,tm,t);else if(UT[u.type].cat==='inf')drawInf(c,pr,u,tm,t);else drawVeh(c,pr,u,tm,t)}
+function drawUnit0(c,pr,u,t){if(u.type==='spy'){if(enemy(LOCAL,u.o))drawInf(c,pr,{...u,type:'gi'},TEAM[LOCAL]||TEAM[0],t);else drawInf(c,pr,u,TEAM[u.o],t);return}const tm=TEAM[u.o];if(u.type==='dolphin'||u.type==='squid'){drawCreature(c,pr,u,tm,t);return}if(UT[u.type].sea){drawShip(c,pr,u,tm,t);return}if(u.type==='eagle'||u.type==='harrier')drawEagle(c,pr,u,tm,t);else if(UT[u.type].heli)drawHeli(c,pr,u,tm,t);else if(u.type==='drone')drawDrone(c,pr,u,tm,t);else if(u.type==='kirov')drawKirov(c,pr,u,tm,t);else if(u.type==='rocketeer')drawRocketeer(c,pr,u,tm,t);else if(u.type==='dog')drawDog(c,pr,u,tm,t);else if(u.type==='amph')drawAmph(c,pr,u,tm,t);else if(UT[u.type].cat==='inf')drawInf(c,pr,u,tm,t);else drawVeh(c,pr,u,tm,t)}
+// dolfijn springt boven het water uit; de reuzeninktvis is een paars lijf met zwiepende tentakels
+function drawCreature(c,pr,u,tm,t){const f=u.face,co=Math.cos(f),si=Math.sin(f),[gx,gy]=pr(u.x,u.y,0);
+  c.strokeStyle='rgba(220,240,255,.35)';c.lineWidth=1;const r=(t*1.2+u.id)%1;c.beginPath();c.ellipse(gx,gy,8+r*8,(8+r*8)*.45,0,0,7);c.stroke();
+  if(u.type==='dolphin'){const jump=Math.max(0,Math.sin(t*2.2+u.id))*10,E=(a,z)=>pr(u.x+co*a,u.y+si*a,z+jump);
+    c.fillStyle='rgba(10,30,50,.3)';c.beginPath();c.ellipse(gx,gy,9,3.5,0,0,7);c.fill();
+    const a=E(.38,3),m=E(0,6),b=E(-.36,3),ang=Math.atan2(a[1]-b[1],a[0]-b[0]),len=Math.hypot(a[0]-b[0],a[1]-b[1]);
+    c.save();c.translate(m[0],m[1]-2);c.rotate(ang);const g=c.createLinearGradient(0,-5,0,5);g.addColorStop(0,'#5f7484');g.addColorStop(.6,'#8fa3b2');g.addColorStop(1,'#d8e3ea');c.fillStyle=g;
+    c.beginPath();c.ellipse(0,0,Math.max(9,len/2+3),4.6,0,0,7);c.fill();c.fillStyle='#5f7484';c.beginPath();c.moveTo(-len/2-2,0);c.lineTo(-len/2-8,-4);c.lineTo(-len/2-7,4);c.closePath();c.fill();
+    c.beginPath();c.ellipse(len/2+4,.5,4,2,0,0,7);c.fillStyle='#7d8f9e';c.fill();dot(c,[len/2+1,-1.5],.9,'#111');c.restore();
+    const fin=E(0,8);poly(c,[fin,[fin[0]-3,fin[1]+2],[fin[0]+1,fin[1]-5]],'#5f7180');c.fillStyle=tm.main;c.fillRect(m[0]-3,m[1]-3,6,1.6);if(u.flash>0)flash(c,a,5);return}
+  const body=pr(u.x,u.y,6);for(let k=0;k<6;k++){const an=f+Math.PI+(k-2.5)*.35,w=Math.sin(t*4+k+u.id)*.12,len=.55+(k%2)*.12;const e=pr(u.x+Math.cos(an+w)*len,u.y+Math.sin(an+w)*len,1);
+    c.strokeStyle='#6a3a6e';c.lineWidth=2.4;c.beginPath();c.moveTo(body[0],body[1]+2);c.quadraticCurveTo((body[0]+e[0])/2+w*20,(body[1]+e[1])/2,e[0],e[1]);c.stroke()}
+  c.fillStyle='#7a4580';c.beginPath();c.ellipse(body[0],body[1]-3,7,5,0,0,7);c.fill();c.fillStyle='rgba(255,255,255,.18)';c.beginPath();c.ellipse(body[0]-2,body[1]-5,3,2,0,0,7);c.fill();
+  dot(c,[body[0]+co*3,body[1]-2],1.4,'#ffd84a');c.fillStyle=tm.main;c.fillRect(body[0]-3,body[1]+1,6,1.4)}
 // amfibische transporter: luchtkussenboot met zwarte rok, cabine en twee grote propellers achterop
 function drawAmph(c,pr,u,tm,t){const f=u.face,co=Math.cos(f),si=Math.sin(f),E=(a,b,z)=>pr(u.x+co*a-si*b,u.y+si*a+co*b,z),onW=!!terr&&wetT(terr[clamp(u.y|0,0,MAP-1)*MAP+clamp(u.x|0,0,MAP-1)]),bob=onW?Math.sin(t*3+u.id)*.8:0;
   const hull=(L,W,z)=>[E(L*.5,-W*.35,z),E(L*.5,W*.35,z),E(L*.35,W*.5,z),E(-L*.5,W*.5,z),E(-L*.5,-W*.5,z),E(L*.35,-W*.5,z)];
@@ -2601,6 +2717,9 @@ function render(t){
   for(const r of G.rads){const ri=(r.y|0)*MAP+(r.x|0);if(!expl[ri]||r.t<=0)continue;const[sx,sy]=w2s(r.x,r.y),a=Math.min(1,r.t/2)*.45,g=ctx.createRadialGradient(sx,sy,0,sx,sy,56);
     g.addColorStop(0,`rgba(140,255,60,${a})`);g.addColorStop(1,'rgba(140,255,60,0)');ctx.save();ctx.translate(sx,sy);ctx.scale(1,.5);ctx.translate(-sx,-sy);ctx.fillStyle=g;ctx.beginPath();ctx.arc(sx,sy,56,0,7);ctx.fill();ctx.restore()}
   const onS=f=>{const[a,b]=w2s(f.x,f.y);return a>-90&&b>-90&&a<VW+90&&b<VH+90};
+  for(const f of G.fx)if(f.k==='rub'&&f.t<f.life&&onS(f))drawRubble(f);
+  for(const f of G.fx)if(f.k==='bcol'&&f.t<f.life&&onS(f)&&BDRAW[f.ty]){const p=f.t/f.life,k=Math.max(.02,1-p*p),pr=(x,y,z)=>w2s(f.x+x,f.y+y,z);ctx.save();ctx.globalAlpha=1-p*.5;
+    try{BDRAW[f.ty](ctx,pr,{x:f.x,y:f.y,w:f.w,h:f.h,tur:0,o:f.o,flash:0,id:0,sv:!!(G.pl&&G.pl[f.o]&&G.pl[f.o].fac==='soviet')},TEAM[f.o]||TEAM[0],k,t,true)}catch(e){}ctx.restore()}
   for(const f of G.fx)if(f.k==='wreck'&&f.t<f.life&&onS(f))drawWreck(f);
   // een gesneuvelde soldaat valt in een halve tel achterover en blijft dan liggen
   for(const f of G.fx)if(f.k==='body'&&f.t<f.life&&onS(f)){const[sx,sy]=w2s(f.x,f.y),p=Math.min(1,f.t/.38),e=p*p,sd=Math.cos(f.face)-Math.sin(f.face)>0?-1:1,S=US*INF_S;
@@ -2662,6 +2781,7 @@ function render(t){
   for(const c of CLOUDS){const span=MAP+24,wx=((c.x*span+t*.22)%span)-12,wy=((c.y*span+t*.09)%span)-12,[sx,sy]=w2s(wx,wy),R=c.r*45;
     if(sx<-R||sx>VW+R||sy<-R||sy>VH+R)continue;const g=ctx.createRadialGradient(sx,sy,0,sx,sy,R);g.addColorStop(0,`rgba(8,14,24,${c.a})`);g.addColorStop(.6,`rgba(8,14,24,${c.a*.6})`);g.addColorStop(1,'rgba(8,14,24,0)');
     ctx.save();ctx.translate(sx,sy);ctx.scale(1,.5);ctx.translate(-sx,-sy);ctx.fillStyle=g;ctx.beginPath();ctx.arc(sx,sy,R,0,7);ctx.fill();ctx.restore()}
+  drawNight(t);
   drawFx(t);
   drawShroud(x0,x1,y0,y1);
   drawWeather(t);
@@ -2684,6 +2804,9 @@ function render(t){
   {const cnt={};for(const b of G.blds)if(b.o===LOCAL&&PRIM.has(b.type)&&b.bt>=1)cnt[b.type]=(cnt[b.type]||0)+1;
     for(const ty in cnt){if(cnt[ty]<2)continue;const p=producer(LOCAL,ty==='barracks'?'inf':ty==='factory'?'veh':'sea');if(!p||!visibleE(p))continue;const[sx,sy]=w2s(p.x+p.w/2,p.y+p.h/2,BT[ty].ht+30);
       ctx.font='700 13px "Barlow Condensed",sans-serif';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.75)';ctx.strokeText('PRIMAIR',sx,sy);ctx.fillStyle='#ffd23a';ctx.fillText('PRIMAIR',sx,sy)}}
+  // eenheden onder gedachtecontrole: een draaiende paarse spiraal boven het hoofd
+  for(const u of G.units){if(!(u.mc||u.mcv)||u.dead||!visibleE(u))continue;const[sx,sy]=w2s(u.x,u.y,uzS(u)+(UT[u.type].cat==='inf'?30:26));const a=t*4;
+    ctx.strokeStyle='rgba(200,120,255,.9)';ctx.lineWidth=1.6;ctx.beginPath();for(let i=0;i<=24;i++){const q=i/24,an=a+q*9,r=2+q*6;const x=sx+Math.cos(an)*r,y=sy+Math.sin(an)*r*.5;i?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.stroke()}
   // spelersnaam boven elke bouwwerf, in de kleur van die speler
   for(const b of G.blds){if(b.type!=='yard'||b.dead||b.o>=PMAX||!visibleE(b))continue;const[sx,sy]=w2s(b.x+b.w/2,b.y+b.h/2,BT.yard.ht+44);const nm=playerName(b.o);if(!nm)continue;
     ctx.font='700 14px "Barlow Condensed",sans-serif';ctx.textAlign='center';const w=ctx.measureText(nm).width+14;ctx.fillStyle='rgba(4,10,18,.72)';ctx.fillRect(sx-w/2,sy-13,w,18);ctx.fillStyle=TEAM[b.o].main;ctx.fillRect(sx-w/2,sy-13,3,18);ctx.fillStyle='#fff';ctx.fillText(nm,sx+1,sy+1)}
@@ -2697,7 +2820,7 @@ function render(t){
 }
 function drawFx(t){
   const c=ctx;
-  for(const f of G.fx){if(f.dl>0||f.k==='body'||f.k==='wreck')continue;const p=f.t/f.life,[sx,sy]=w2s(f.x,f.y,f.z||0);
+  for(const f of G.fx){if(f.dl>0||f.k==='body'||f.k==='wreck'||f.k==='rub'||f.k==='bcol')continue;const p=f.t/f.life,[sx,sy]=w2s(f.x,f.y,f.z||0);
     switch(f.k){
       case'ex':{const R=(9+26*f.s)*(.35+p*.85);
         if(!f.shook&&f.s>=1){f.shook=1;shake(f.x,f.y,f.s*2.2)}
@@ -2736,6 +2859,9 @@ function drawFx(t){
         c.strokeStyle=T.main;c.lineWidth=2;for(const q of[ph,(ph+.5)%1]){c.globalAlpha=al*(1-q);c.beginPath();c.ellipse(gx_,gy_,10+q*26,(10+q*26)*.5,0,0,7);c.stroke()}
         c.globalAlpha=al*.8;const g=c.createLinearGradient(gx_,gy_-70,gx_,gy_);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(1,T.main);c.fillStyle=g;c.fillRect(gx_-2,gy_-70,4,70);
         c.globalAlpha=al;c.fillStyle=T.main;c.beginPath();c.moveTo(gx_,gy_-6);c.lineTo(gx_+5,gy_);c.lineTo(gx_,gy_+3);c.lineTo(gx_-5,gy_);c.closePath();c.fill();c.restore();break}
+      case'mnd':{const b=w2s(f.x2,f.y2,f.z2);c.globalCompositeOperation='lighter';c.strokeStyle=`rgba(190,110,255,${(1-p)*.9})`;c.lineWidth=2.2;c.beginPath();c.moveTo(sx,sy);
+        for(let i=1;i<=12;i++){const q=i/12,x=sx+(b[0]-sx)*q,y=sy+(b[1]-sy)*q+Math.sin(q*14+f.t*30)*4*(1-q*.5);c.lineTo(x,y)}c.stroke();flash(c,b,8*(1-p)+3);c.globalCompositeOperation='source-over';break}
+      case'son':{const b=w2s(f.x2,f.y2,f.z2);for(let i=0;i<3;i++){const q=(p*1.6+i*.3)%1,x=sx+(b[0]-sx)*q,y=sy+(b[1]-sy)*q;c.strokeStyle=`rgba(170,230,255,${(1-q)*.8})`;c.lineWidth=1.4;c.beginPath();c.ellipse(x,y,4+q*5,2+q*2.5,0,0,7);c.stroke()}break}
       case'sw':{const[gx_,gy_]=w2s(f.x,f.y,0),R=(14+40*f.s)*(.25+p*1.1);c.save();c.translate(gx_,gy_);c.scale(1,.5);c.strokeStyle=`rgba(255,235,200,${(1-p)*.55})`;c.lineWidth=3*(1-p)+1;c.beginPath();c.arc(0,0,R,0,7);c.stroke();
         c.strokeStyle=`rgba(120,100,80,${(1-p)*.35})`;c.lineWidth=6*(1-p)+1;c.beginPath();c.arc(0,0,R*.85,0,7);c.stroke();c.restore();break}
       case'ds':c.globalAlpha=(1-p)*.5;dot(c,[sx,sy-p*8],2+p*4,'#c7a24a');c.globalAlpha=1;break;
@@ -2789,7 +2915,12 @@ function mmDraw(){
   mc.strokeStyle='rgba(255,255,255,.85)';mc.lineWidth=1;mc.strokeRect(ox+cam.x*sc,oy+cam.y*sc,VW*sc,VH*sc);
 }
 function mmJump(e){const r=mm.getBoundingClientRect(),{sc,ox,oy}=mmGeo();cam.x=(e.clientX-r.left-ox)/sc-VW/2;cam.y=(e.clientY-r.top-oy)/sc-VH/2;clampCam()}
-mm.addEventListener('pointerdown',e=>{if(!radarOn())return;mm.setPointerCapture(e.pointerId);mmJump(e)});
+// radar: links klikken verplaatst het beeld, rechts klikken stuurt de geselecteerde eenheden erheen
+function mmWorld(e){const r=mm.getBoundingClientRect(),{sc,ox,oy}=mmGeo(),px=(e.clientX-r.left-ox)/sc-OX,py=(e.clientY-r.top-oy)/sc;return[(px/HW+py/HH)/2,(py/HH-px/HW)/2]}
+mm.addEventListener('contextmenu',e=>e.preventDefault());
+mm.addEventListener('pointerdown',e=>{if(!radarOn())return;
+  if(e.button===2){const su=selUnits();if(!su.length)return;const[wx,wy]=mmWorld(e);if(wx<0||wy<0||wx>=MAP||wy>=MAP)return;issue({t:'move',ids:idsOf(su),x:r2(wx),y:r2(wy)});ordLines(su,{x:wx,y:wy},'move');marker(wx,wy,'#7be08f');ping(wx,wy);sfx('click');return}
+  mm.setPointerCapture(e.pointerId);mmJump(e)});
 mm.addEventListener('pointermove',e=>{if(e.buttons&1&&radarOn())mmJump(e)});
 
 // ---------- camera
@@ -2926,6 +3057,7 @@ function applyCmd(o,c){
     case'para':{const P=G.pl[o];if(P.para===0&&num(c.x)&&num(c.y)&&c.x>=0&&c.y>=0&&c.x<MAP&&c.y<MAP)paraDrop(o,c.x,c.y);break}
     // primair gebouw: daar komt de productie van dat soort vandaan, zoals in RA2
     case'prim':{const b=bld(c.id);if(b&&b.o===o&&PRIM.has(b.type)&&b.bt>=1){for(const x of G.blds)if(x.o===o&&x.type===b.type)x.primary=false;b.primary=true;sayTo(o,'Primair gebouw ingesteld','prim',.5)}break}
+    case'repeat':{if(UT[c.type]){const P=G.pl[o];P.repeat=P.repeat||{};P.repeat[c.type]=!!c.on}break}
     case'rally':{const b=bld(c.id);if(b&&b.o===o&&num(c.x)&&num(c.y))b.rally={x:clamp(c.x,0,MAP),y:clamp(c.y,0,MAP)};break}
   }
 }
@@ -3040,6 +3172,7 @@ window.addEventListener('blur',()=>{for(const k in keys)keys[k]=false;mouse.insi
 window.addEventListener('keydown',e=>{
   if(document.activeElement===$('chatin'))return;
   if(started&&e.key==='Enter'){e.preventDefault();chatOpen();return}
+  if(started&&e.key==='Tab'){e.preventDefault();const tabs=[...document.querySelectorAll('.tab')].filter(t=>!t.disabled),i=tabs.findIndex(t=>t.dataset.cat===tab);if(tabs.length){const n=tabs[(i+(e.shiftKey?-1:1)+tabs.length)%tabs.length];tab=n.dataset.cat;uiTick(1)}return}
   if(!started||G.over)return;const k=e.key.toLowerCase();
   if(k.startsWith('arrow')){keys[k]=true;e.preventDefault();return}
   const dg=/^(?:Digit|Numpad)([1-9])$/.exec(e.code||'')?.[1]||(/^[1-9]$/.test(k)?k:null);
@@ -3122,7 +3255,7 @@ function buildUI(){
     const d=defOf(type),b=document.createElement('button');b.className='cameo';b.id='cm-'+type;b.dataset.cat=cat;b.dataset.type=type;b.setAttribute('aria-label',d.n+', '+d.cost+' krediet');
     b.innerHTML=`<canvas></canvas><span class="pg"></span><span class="cs">$${d.cost}</span><span class="nm">${d.n}</span><span class="st"></span><span class="ct"></span>`;
     drawCameo(b.querySelector('canvas'),type);
-    b.addEventListener('click',e=>{cameoClick(type,cat,e.shiftKey)});
+    b.addEventListener('click',e=>{if((e.ctrlKey||e.metaKey)&&UT[type]){toggleRepeat(type,cat);return}cameoClick(type,cat,e.shiftKey)});
     b.addEventListener('contextmenu',e=>{e.preventDefault();cameoCancel(type,cat)});
     b.addEventListener('pointerenter',()=>showTip(b,type));b.addEventListener('pointerleave',hideTip);
     box.appendChild(b);cameoEls[type]={el:b,pg:b.querySelector('.pg'),st:b.querySelector('.st'),ct:b.querySelector('.ct')};
@@ -3139,7 +3272,12 @@ function showTip(el,type){
   if(mouse.type==='touch')return;const d=defOf(type),tip=$('tip'),missing=(d.req||[]).filter(r=>!G.blds.some(b=>b.o===LOCAL&&b.type===r&&b.bt>=1)).map(r=>BT[r].n);
   const pw=BT[type]?(d.pow>0?`+${d.pow} stroom`:d.pow<0?`${d.pow} stroom`:''):'';
   const extra=UT[type]&&UT[type].wpn?`Bereik ${WP[UT[type].wpn].rng}`:BT[type]&&BT[type].wpn?`Bereik ${WP[BT[type].wpn].rng}`:'';
-  tip.innerHTML=`<h4>${d.n}</h4><div class="row"><b>$${d.cost}</b>${pw?`<span>${pw}</span>`:''}${extra?`<span>${extra}</span>`:''}</div><div>${d.d}</div>${missing.length?`<div class="req">Nodig: ${missing.join(', ')}</div>`:''}<div class="row" style="margin:6px 0 0">Klik: bouwen${UT[type]?' · Shift: 5 tegelijk':''} · Rechts: annuleren</div>`;
+  // sterk tegen (uit de wapentabel) en kwetsbaar voor (uit het pantser)
+  const NM={inf:'soldaten',veh:'voertuigen',bld:'gebouwen',air:'vliegtuigen',ship:'schepen',sub:'onderzeeërs'};let good=[];
+  for(const wk of[(UT[type]||BT[type]).wpn,UT[type]&&UT[type].aa])if(wk&&WP[wk]){const W=WP[wk];if(W.kind==='mind')good.push('alles wat hij overneemt');else for(const a in W.vs)if(W.vs[a]>=.7&&NM[a]&&!good.includes(NM[a]))good.push(NM[a]);if(W.c4&&!good.includes('gebouwen (C4)'))good.push('gebouwen (C4)')}
+  const WEAK={inf:'tanks die over je heen rijden, mitrailleurs en Desolators',veh:'tanks, raketsoldaten en Tesla-wapens',air:'luchtafweer, IFV, Flak-track en Aegis',ship:'onderzeeërs, dolfijnen en de reuzeninktvis',sub:'torpedobootjagers, dolfijnen en de reuzeninktvis'};
+  const weak=UT[type]?WEAK[UT[type].air?'air':UT[type].arm]:'';
+  tip.innerHTML=`<h4>${d.n}</h4><div class="row"><b>$${d.cost}</b>${pw?`<span>${pw}</span>`:''}${extra?`<span>${extra}</span>`:''}</div><div>${d.d}</div>${good.length?`<div class="row" style="margin:5px 0 0;color:#8fe39b">Sterk tegen: ${good.join(', ')}</div>`:''}${weak?`<div class="row" style="margin:2px 0 0;color:#ffb0a0">Kwetsbaar voor: ${weak}</div>`:''}${missing.length?`<div class="req">Nodig: ${missing.join(', ')}</div>`:''}<div class="row" style="margin:6px 0 0">Klik: bouwen${UT[type]?' · Shift: 5 tegelijk · Ctrl/Cmd: steeds herhalen':''} · Rechts: annuleren</div>`;
   tip.hidden=false;const r=el.getBoundingClientRect(),tw=220;let x=r.left-tw-10;if(x<8)x=Math.min(window.innerWidth-tw-8,r.right+10);tip.style.left=x+'px';tip.style.top=Math.max(8,Math.min(window.innerHeight-150,r.top))+'px';
 }
 function hideTip(){$('tip').hidden=true}
@@ -3151,6 +3289,10 @@ function cameoClick(type,cat,shift){
   if(d.jet&&jetCount(LOCAL)+q.filter(x=>UT[x.type]&&UT[x.type].jet).length>=padCount(LOCAL)){say('Geen vrije landingsplaats: bouw nog een vliegveld','pads',1.5,false);return}
   issue({t:'build',type,cat,n:shift?5:1});sfx('click');
 }
+// herhaalbouw: deze eenheid steeds opnieuw bouwen zolang er krediet is
+const REPEAT=new Set();
+function toggleRepeat(type,cat){audioInit();if(!started||G.over)return;const on=!REPEAT.has(type);if(on)REPEAT.add(type);else REPEAT.delete(type);issue({t:'repeat',type,on:on?1:0});
+  if(on&&!G.pl[LOCAL].q[cat].some(i=>i.type===type))cameoClick(type,cat,false);addMsg(on?UT[type].n+': herhalen aan':UT[type].n+': herhalen uit');sfx('click')}
 function cameoCancel(type,cat){
   const q=G.pl[LOCAL].q[cat];if(!q.some(i=>i.type===type))return;
   if(mode&&mode.k==='place'&&mode.type===type)setMode(null);
@@ -3170,8 +3312,8 @@ function uiTick(dt){
   for(const cat of CATS){const q=P.q[cat];let any=false;for(const type of CAT_TYPES[cat]){const d=defOf(type),av=sideOk(LOCAL,d)&&reqMet(LOCAL,d.req)&&!!producer(LOCAL,cat);if(av)any=true;
     const c=cameoEls[type],show=av&&cat===tab;c.el.hidden=!show;if(!show)continue;anyVis=true;
     const head=q[0]&&q[0].type===type?q[0]:null,count=q.filter(i=>i.type===type).length;
-    c.el.classList.toggle('on',!!head&&!head.ready);c.el.style.setProperty('--p',head?(head.spent/d.cost).toFixed(3):0);
-    c.el.classList.toggle('ready',!!head&&!!head.ready);c.el.classList.toggle('hold',!!head&&!head.ready&&!!head.hold);
+    c.el.classList.toggle('on',!!head&&!head.ready);c.el.style.setProperty('--p',head?(head.spent/costOf(LOCAL,type)).toFixed(3):0);{const cs=c.el.querySelector('.cs'),pc='$'+costOf(LOCAL,type);if(cs.textContent!==pc)cs.textContent=pc}
+    c.el.classList.toggle('ready',!!head&&!!head.ready);c.el.classList.toggle('rpt',REPEAT.has(type));c.el.classList.toggle('hold',!!head&&!head.ready&&!!head.hold);
     c.el.classList.toggle('busyo',(cat==='bld'||cat==='def')&&!!q[0]&&!head);
     c.st.textContent=head&&head.ready?(mode&&mode.k==='place'&&mode.type===type?'PLAATS':'GEREED'):head&&head.hold?'WACHT':'';
     c.ct.textContent=count;c.ct.classList.toggle('v',(cat==='inf'||cat==='veh')&&count>0);
@@ -3280,7 +3422,7 @@ function chatOpen(){if(!started)return;$('chatbar').hidden=false;$('chatto').tex
 function chatClose(){$('chatbar').hidden=true;$('chatin').blur()}
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-v12-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-v13-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',weather:'var',seed:1,online:false,slots:[],pending:[]};
@@ -3352,7 +3494,7 @@ function startMatch(){
   say('Welkom, commandant','welcome',0);
 }
 function snapCommon(){
-  const u=G.units.map(u=>[u.id,UTL.indexOf(u.type),u.o,r2(u.x),r2(u.y),Math.round(u.hp),r2(u.face),r2(u.tur),(u.moving?1:0)|(u.flash>0?2:0)|(u.gemLoad?4:0)|(u.hs==='mine'?8:0)|(u.dep?16:0)|((u.rank||0)<<5)|(u.disg?128:0)|(u.st==='tele'?256:0)|(u.drone?512:0),u.load|0,u.pass?UTL.indexOf(u.pass):-1,Math.round((u.erase||0)*100),u.z===undefined?-1:Math.round(u.z),u.ammo??-1]);
+  const u=G.units.map(u=>[u.id,UTL.indexOf(u.type),u.o,r2(u.x),r2(u.y),Math.round(u.hp),r2(u.face),r2(u.tur),(u.moving?1:0)|(u.flash>0?2:0)|(u.gemLoad?4:0)|(u.hs==='mine'?8:0)|(u.dep?16:0)|((u.rank||0)<<5)|(u.disg?128:0)|(u.st==='tele'?256:0)|(u.drone?512:0)|(u.mc?1024:0),u.load|0,u.pass?UTL.indexOf(u.pass):-1,Math.round((u.erase||0)*100),u.z===undefined?-1:Math.round(u.z),u.ammo??-1]);
   const b=G.blds.map(b=>[b.id,BTL.indexOf(b.type),b.o,b.x,b.y,Math.round(b.hp),r2(b.bt),r2(b.tur),(b.flash>0?1:0)|(b.rep?2:0)|(b.primary?4:0),b.gar?b.gar.length:0,Math.round((b.erase||0)*100)]);
   const p=G.proj.filter(p=>!(p.dl>0)).map(p=>[r2(p.x),r2(p.y),Math.round(p.z),WPL.indexOf(p.wk),r2(p.tx),r2(p.ty),Math.round(p.tz??6)]);
   const oa=[];for(const i of oreDirty)oa.push(i,ore[i]);oreDirty.clear();
@@ -3414,7 +3556,7 @@ function applySnap(s){
   const seen=new Set();
   for(const a of s.u){const[id,ti,o,x,y,hp,face,tur,fl,load,pi,er,zz,am]=a,type=UTL[ti];if(!type)continue;let u=ents.get(id);
     if(!u||u.k!=='u'){u={id,k:'u',type,o,x,y,face,tur,hp,flash:0,moving:false,load:0,cargo:0,hs:'',st:'idle'};G.units.push(u);ents.set(id,u)}
-    u.o=o;u.nx=x;u.ny=y;u.nf=face;u.nt=tur;u.hp=hp;u.moving=!!(fl&1);if(fl&2)u.flash=.08;u.gemLoad=!!(fl&4);u.hs=fl&8?'mine':'';u.dep=!!(fl&16);u.rank=(fl>>5)&3;u.load=load;u.pass=pi>=0?UTL[pi]:null;u.disg=!!(fl&128);u.st=fl&256?'tele':'idle';u.erase=(er||0)/100;u.drone=fl&512?{}:null;u.nz=zz>=0?zz:undefined;if(u.nz===undefined)u.z=undefined;else if(u.z===undefined)u.z=u.nz;u.ammo=am>=0?am:undefined;seen.add(id)}
+    u.o=o;u.nx=x;u.ny=y;u.nf=face;u.nt=tur;u.hp=hp;u.moving=!!(fl&1);if(fl&2)u.flash=.08;u.gemLoad=!!(fl&4);u.hs=fl&8?'mine':'';u.dep=!!(fl&16);u.rank=(fl>>5)&3;u.load=load;u.pass=pi>=0?UTL[pi]:null;u.disg=!!(fl&128);u.st=fl&256?'tele':'idle';u.erase=(er||0)/100;u.drone=fl&512?{}:null;u.mcv=!!(fl&1024);u.nz=zz>=0?zz:undefined;if(u.nz===undefined)u.z=undefined;else if(u.z===undefined)u.z=u.nz;u.ammo=am>=0?am:undefined;seen.add(id)}
   G.units=G.units.filter(u=>{if(seen.has(u.id))return true;ents.delete(u.id);return false});
   const seenB=new Set();bmap.fill(0);
   for(const a of s.b){const[id,ti,o,x,y,hp,bt,tur,fl,gc,er]=a,type=BTL[ti];if(!type)continue;const T=BT[type];let b=ents.get(id);
@@ -3434,7 +3576,7 @@ function applySnap(s){
   const me=G.pl[LOCAL];if(me&&s.me){me.credits=s.me.c;me.low=!!s.me.low;me.para=s.me.sp??null;me.blackout=s.me.bo?G.t+s.me.bo:0;for(const c of CATS)me.q[c]=(s.me.q[c]||[]).map(a=>({type:a[0],spent:a[1],ready:!!a[2],hold:!!a[3]}));if(s.me.st)G.st[LOCAL]=s.me.st}
   sel=sel.filter(id=>ents.has(id));
 }
-function playEv(e){if(!Array.isArray(e))return;switch(e[0]){case'f':if(e[1]&&typeof e[1].k==='string')fxl(e[1]);break;case'b':boom(e[1],e[2],e[3],e[4]);break;case'd':debris(e[1],e[2],Math.min(20,e[3]|0));break;case's':scorch(e[1],e[2],e[3]);break;case'a':sfx(String(e[1]),e[2],e[3]);break}}
+function playEv(e){if(!Array.isArray(e))return;switch(e[0]){case'tr':if(typeof e[1]==='number'&&e[1]>=0&&e[1]<N)fellTree(e[1],+e[2]||0);break;case'f':if(e[1]&&typeof e[1].k==='string')fxl(e[1]);break;case'b':boom(e[1],e[2],e[3],e[4]);break;case'd':debris(e[1],e[2],Math.min(20,e[3]|0));break;case's':scorch(e[1],e[2],e[3]);break;case'a':sfx(String(e[1]),e[2],e[3]);break}}
 function guestStep(dt){
   if(!G.paused)G.t+=dt;
   const k=Math.min(1,dt*10);
