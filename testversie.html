@@ -980,7 +980,9 @@ function los(x0,y0,x1,y1){const d=Math.hypot(x1-x0,y1-y0),n=Math.ceil(d/.25);for
 // ---------- orders & movement
 function setPath(u,x,y){u.gx=x;u.gy=y;u.path=UT[u.type].air?[{x:clamp(x,.3,MAP-.3),y:clamp(y,.3,MAP-.3)}]:asSea(pwOf(u.type),()=>findPath(u.x,u.y,x,y));u.stuckN=0;u.pt=0;u.lx=u.x;u.ly=u.y;u.los=0}
 function teleport(u,x,y){u.st='tele';u.tid=0;u.resume=null;u.path=null;u.dx=clamp(x,.5,MAP-.5);u.dy=clamp(y,.5,MAP-.5);u.tt=G.t+.4+Math.hypot(u.dx-u.x,u.dy-u.y)*.08;fx({k:'chf',x:u.x,y:u.y,z:6,life:.6})}
-function orderMove(u,x,y,am){u.gspd=0;if(u.type==='chrono'){teleport(u,x,y);u.am=!!am;return}u.land=u.unl=false;if(u.dep){u.dep=false;fxl({k:'ds',x:u.x,y:u.y,z:2,life:.6})}u.rt=0;u.st='move';u.am=!!am;u.tid=0;u.resume=null;u.auto=false;u.dx=x;u.dy=y;setPath(u,x,y)}
+// eenheden die niet zelf achter vijanden aan gaan: ze schieten alleen op wat binnen hun bereik komt
+const NOCHASE=new Set(['mirage','prism','arty']);
+function orderMove(u,x,y,am){u.gspd=0;u.home=null;if(u.type==='chrono'){teleport(u,x,y);u.am=!!am;return}u.land=u.unl=false;if(u.dep){u.dep=false;fxl({k:'ds',x:u.x,y:u.y,z:2,life:.6})}u.rt=0;u.st='move';u.am=!!am;u.tid=0;u.resume=null;u.auto=false;u.dx=x;u.dy=y;setPath(u,x,y)}
 // plekken rond een doel voor een groep, in dezelfde volgorde als de eenheden
 function groupSlots(us,tx,ty){const out=[],cx=tx|0,cy=ty|0,sl=[];for(let r=0;r<10&&sl.length<us.length;r++){const ring=[];for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;const x=cx+dx,y=cy+dy;if(walkable(x,y))ring.push({x:x+.5,y:y+.5,d:Math.hypot(dx,dy)})}ring.sort((a,b)=>a.d-b.d);sl.push(...ring)}
   for(let i=0;i<us.length;i++)out.push(us.length===1?{x:tx,y:ty}:sl[i]||{x:tx,y:ty});return out}
@@ -1002,7 +1004,7 @@ function orderGroup(us,tx,ty,am){
 }
 const canHit=(u,t)=>{const k=wkOf(u,t);if(!k)return false;const W=WP[k];if(t.k==='br'&&(t.down||W.kind==='chrono'||W.kind==='latch'))return false;if(W.kind==='melee'&&t.type==='drone')return false;return vsOf(W,t)>0||(W.c4&&(t.k!=='u'||UT[t.type].sea))};
 function orderEng(us,t){for(const u of us){u.st='eng';u.tid=t.id;u.path=null;u.repath=0;u.am=false;u.resume=null}}
-function orderAttack(us,t){for(const u of us){if(!canHit(u,t))continue;u.st='attack';u.tid=t.id;u.auto=false;u.resume=null;u.am=false;u.path=null;u.repath=0}}
+function orderAttack(us,t){for(const u of us){if(!canHit(u,t))continue;u.home=null;u.st='attack';u.tid=t.id;u.auto=false;u.resume=null;u.am=false;u.path=null;u.repath=0}}
 // net als in RA2 rijden tanks soldaten plat; ingegraven GI's, Tesla-soldaten en Desolators niet
 const CRUSH=new Set(['tank','rhino','mammoth','heavy','mirage','prism','tdest','tesla','ifv','flak','harv']);
 const crushable=e=>e.k==='u'&&UT[e.type].cat==='inf'&&!UT[e.type].air&&e.type!=='tesltrp'&&e.type!=='desolator'&&!e.dep&&e.hp>0&&!e.dead;
@@ -1086,19 +1088,19 @@ function updUnit0(u,dt){
   if(u.guard){const gd=Math.hypot(u.x-u.guard.x,u.y-u.guard.y);
     if(u.st==='attack'&&gd>T.sight+4){u.st='idle';u.tid=0;t=null;u.path=null}
     if(u.st==='idle'&&!t&&gd>1.5&&u.scan<=0){orderMove(u,u.guard.x,u.guard.y,true)}}
-  if((u.st==='idle'||(u.st==='move'&&u.am))&&u.scan<=0&&!(u.type==='mirage'&&u.st==='idle'&&!u.guard&&!isAI(u.o))&&!(u.type==='yuri'&&u.ctrl&&(()=>{const m=ents.get(u.ctrl);return m&&!m.dead&&m.mc&&m.mc.by===u.id})())){
+  if((u.st==='idle'||(u.st==='move'&&u.am))&&u.scan<=0&&!(u.type==='yuri'&&u.ctrl&&(()=>{const m=ents.get(u.ctrl);return m&&!m.dead&&m.mc&&m.mc.by===u.id})())){
     u.scan=.35+Math.random()*.2;
-    const r=u.dep?W.rng:u.guard?Math.max(T.sight,W.rng+2):u.st==='idle'?W.rng+(isAI(u.o)?3:1.2):T.sight;
+    const r=u.dep?W.rng:u.guard?Math.max(T.sight,W.rng+2):u.st==='idle'?((NOCHASE.has(u.type)||G.t<(u.leashT||0))&&!isAI(u.o)?W.rng:W.rng+(isAI(u.o)?3:1.2)):T.sight;
     let e=nearestEnemy(u.x,u.y,u.o,r,W);
     if(T.aa){const A=WP[T.aa],e2=nearestEnemy(u.x,u.y,u.o,Math.max(r,A.rng),A);if(e2&&(!e||Math.hypot(e2.x-u.x,e2.y-u.y)<distPE(u.x,u.y,e)))e=e2}
-    if(e){if(u.st==='move')u.resume={x:u.dx,y:u.dy};u.st='attack';u.tid=e.id;u.auto=true;t=e;u.path=null;u.repath=0;wk=wkOf(u,t);W=WP[wk]}
+    if(e){if(u.st==='move')u.resume={x:u.dx,y:u.dy};else if(!u.home)u.home={x:u.x,y:u.y};u.st='attack';u.tid=e.id;u.auto=true;t=e;u.path=null;u.repath=0;wk=wkOf(u,t);W=WP[wk]}
   }
   if(u.st==='attack'&&t){
     const d=distPE(u.x,u.y,t),a=Math.atan2(cyE(t)-u.y,cxE(t)-u.x);
     if(u.auto&&d>T.sight+2.5){u.tid=0;if(u.resume){const r=u.resume;orderMove(u,r.x,r.y,true)}else{u.st='idle';u.path=null}return}
     const c4=W.c4&&(t.k!=='u'||UT[t.type].sea);
     // een tank die een soldaat dichtbij heeft, rijdt erop af en schiet onderweg
-    if(CRUSH.has(u.type)&&crushable(t)&&d<W.rng+1){u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.4;setPath(u,t.x,t.y)}moveAlong(u,dt);u.tur=turn(u.tur,a,5*dt);
+    if(CRUSH.has(u.type)&&crushable(t)&&d<W.rng+1&&!(u.auto&&!u.guard&&!u.am&&!isAI(u.o)&&(NOCHASE.has(u.type)||(u.home&&Math.hypot(u.x-u.home.x,u.y-u.home.y)>3)))){u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.4;setPath(u,t.x,t.y)}moveAlong(u,dt);u.tur=turn(u.tur,a,5*dt);
       if(!t.dead&&u.cd<=0&&Math.abs(angDiff(u.tur,a))<.25){fire(u,t,wk);u.cd=W.rof*(.9+Math.random()*.2)}return}
     if(d<=(c4?.8:W.rng)&&(!W.min||d>=W.min)){
       u.path=null;
@@ -1108,6 +1110,9 @@ function updUnit0(u,dt){
       if(u.cd<=0&&(W.kind==='bomb'||Math.abs(angDiff(u.tur,a))<.25)){fire(u,t,wk);u.cd=W.rof*(.9+Math.random()*.2)}
     }else{
       if(u.dep){u.tid=0;u.st='idle';u.path=null;return}
+      if(u.auto&&!u.guard&&!u.am&&!isAI(u.o)){
+        if(NOCHASE.has(u.type)){u.tid=0;u.st='idle';u.path=null;u.home=null;return}
+        if(u.home&&Math.hypot(u.x-u.home.x,u.y-u.home.y)>3){const h=u.home;u.tid=0;orderMove(u,h.x,h.y,false);u.leashT=G.t+5;return}}
       if(u.type==='chrono'){const dx=u.x-cxE(t),dy=u.y-cyE(t),l=Math.hypot(dx,dy)||1;const keep=u.tid;teleport(u,cxE(t)+dx/l*(W.rng-1.2),cyE(t)+dy/l*(W.rng-1.2));u.tid=keep;return}
       u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.9+Math.random()*.4;setPath(u,cxE(t),cyE(t))}
       moveAlong(u,dt);
@@ -1332,7 +1337,7 @@ function damage(e,amt,src){
   if(G.ai[e.o]&&enemy(src.o,e.o)){const A=G.ai[e.o],a=src.id&&ents.get(src.id);A.alert={x:cxE(e),y:cyE(e),t:G.t};if(a&&e.k==='b')A.threat={x:a.x,y:a.y,t:G.t}}
   if(e.hp<=0){kill(e,src);return}
   // een Mirage die zich als boom verstopt, blijft stil tenzij hij moet bewaken
-  if(e.k==='u'&&UT[e.type].wpn&&e.st==='idle'&&src.id&&!(e.type==='mirage'&&!e.guard&&!isAI(e.o))){const a=ents.get(src.id);if(a&&a.hp>0&&canHit(e,a)){e.st='attack';e.tid=a.id;e.auto=true}}
+  if(e.k==='u'&&UT[e.type].wpn&&e.st==='idle'&&src.id){const a=ents.get(src.id);if(a&&a.hp>0&&canHit(e,a)){if(!e.home)e.home={x:e.x,y:e.y};e.st='attack';e.tid=a.id;e.auto=true}}
 }
 function kill(e,src){
   if(e.ctrl){const m=ents.get(e.ctrl);if(m&&m.mc&&m.mc.by===e.id)mcRelease(m)}
@@ -3417,7 +3422,7 @@ function chatOpen(){if(!started)return;$('chatbar').hidden=false;$('chatto').tex
 function chatClose(){$('chatbar').hidden=true;$('chatin').blur()}
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-test7-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-test8-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',weather:'var',seed:1,online:false,slots:[],pending:[]};
