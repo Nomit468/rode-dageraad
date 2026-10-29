@@ -124,6 +124,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 .join-row .go2{height:42px}
 .err,.status.err{color:#ffb4a8}
 .err{font-size:14px;margin:0 0 10px}
+.in.need{border-color:var(--bad);box-shadow:0 0 0 2px rgba(239,68,68,.35)}
 .note{font-size:13px;color:var(--warn);margin:0 0 12px;line-height:1.4}
 .link{display:block;margin:12px auto 0;background:none;border:0;color:var(--dim);font-size:14px;text-decoration:underline;cursor:pointer}
 .code-box{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:10px 14px;margin:8px 0 10px;background:#070b0f;border:1px solid #3a5169}
@@ -163,6 +164,7 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 .go{width:100%;height:50px;border:1px solid #ff8a7a;background:linear-gradient(180deg,#d63a2a,#8e1d14);font-family:var(--f-display);font-size:19px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;cursor:pointer;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5)}
 .go:hover{filter:brightness(1.12)}
 .tipline{margin-top:12px;font-size:13px;color:var(--dim)}
+.rank{width:100%;border-collapse:collapse;margin:0 0 16px;font-size:14px}.rank th{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);font-weight:600;text-align:right;padding:3px 6px}.rank th:first-child,.rank td:first-child{text-align:left}.rank td{padding:4px 6px;text-align:right;border-top:1px solid rgba(77,104,132,.35)}.rank td i{display:inline-block;width:9px;height:9px;margin-right:7px}.rank tr.me td{color:#fff;font-weight:700}
 .stats{display:grid;grid-template-columns:1fr auto;gap:6px 18px;margin:6px 0 20px;font-size:16px}
 .stats dd{margin:0;font-family:var(--f-display);font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums;text-align:right}
 .stats dt{color:#c6d4e1}
@@ -227,8 +229,8 @@ body[data-fac="soviet"] #emblem .al{display:none}
         <div class="eyebrow">Commandocentrum</div>
         <h1>RODE DAGERAAD</h1>
         <p>Bouw een basis, oogst erts en vaag de vijand van de kaart. Speel alleen tegen de computer, of met maximaal zeven vrienden op een kaart met acht bases.</p>
-        <label class="fl" for="nm">Je naam</label>
-        <input class="in" id="nm" maxlength="16" placeholder="Commandant" autocomplete="nickname">
+        <label class="fl" for="nm">Je spelersnaam</label>
+        <input class="in" id="nm" maxlength="16" placeholder="Bijvoorbeeld Timon" autocomplete="nickname">
         <div class="menu-btns">
           <button class="go" id="host-btn">Spel aanmaken</button>
           <button class="go2" id="solo-btn">Alleen spelen</button>
@@ -304,6 +306,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
           <dt>Eigen verliezen</dt><dd id="s-lost">0</dd>
           <dt>Krediet uit erts</dt><dd id="s-earned">0</dd>
         </dl>
+        <div id="rank"></div>
         <button class="go" id="again">Terug naar menu</button>
         <button class="link" id="watch" hidden>Verder kijken</button>
       </div>
@@ -2681,6 +2684,9 @@ function render(t){
   {const cnt={};for(const b of G.blds)if(b.o===LOCAL&&PRIM.has(b.type)&&b.bt>=1)cnt[b.type]=(cnt[b.type]||0)+1;
     for(const ty in cnt){if(cnt[ty]<2)continue;const p=producer(LOCAL,ty==='barracks'?'inf':ty==='factory'?'veh':'sea');if(!p||!visibleE(p))continue;const[sx,sy]=w2s(p.x+p.w/2,p.y+p.h/2,BT[ty].ht+30);
       ctx.font='700 13px "Barlow Condensed",sans-serif';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.75)';ctx.strokeText('PRIMAIR',sx,sy);ctx.fillStyle='#ffd23a';ctx.fillText('PRIMAIR',sx,sy)}}
+  // spelersnaam boven elke bouwwerf, in de kleur van die speler
+  for(const b of G.blds){if(b.type!=='yard'||b.dead||b.o>=PMAX||!visibleE(b))continue;const[sx,sy]=w2s(b.x+b.w/2,b.y+b.h/2,BT.yard.ht+44);const nm=playerName(b.o);if(!nm)continue;
+    ctx.font='700 14px "Barlow Condensed",sans-serif';ctx.textAlign='center';const w=ctx.measureText(nm).width+14;ctx.fillStyle='rgba(4,10,18,.72)';ctx.fillRect(sx-w/2,sy-13,w,18);ctx.fillStyle=TEAM[b.o].main;ctx.fillRect(sx-w/2,sy-13,3,18);ctx.fillStyle='#fff';ctx.fillText(nm,sx+1,sy+1)}
   for(const b of G.blds){if(!BT[b.type].civil||!visibleE(b))continue;const n=garN(b);if(!n&&b.id!==selB&&mouse.hover!==b.id)continue;const cap=BT[b.type].cap,[sx,sy]=w2s(b.x+b.w/2,b.y+b.h/2,BT[b.type].ht+8);
     for(let i=0;i<cap;i++){ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(sx-cap*3.5+i*7-1,sy-1,6,6);ctx.fillStyle=i<n?TEAM[b.o].main:'#3a4048';ctx.fillRect(sx-cap*3.5+i*7,sy,4,4)}}
   for(const bo of G.bombs){const b=ents.get(bo.id);if(!b||!visibleE(b))continue;const[sx,sy]=w2s(cxE(b),cyE(b),b.k==='b'?BT[b.type].ht*.4:b.k==='u'?uzS(b)+(UT[b.type].cat==='inf'?16:12):6);if((G.t*6|0)%2)dot(ctx,[sx,sy],3.5,'#ff2a1a');ctx.fillStyle='#fff';ctx.font='700 13px "Barlow Condensed",sans-serif';ctx.textAlign='center';ctx.fillText((bo.iv?'BOM ':'C4 ')+Math.ceil(bo.t),sx,sy-8)}
@@ -3180,11 +3186,12 @@ function uiTick(dt){
   rosterAcc+=.1;if(rosterAcc>.5){rosterAcc=0;renderRoster()}
 }
 let rosterAcc=1;
+const playerName=o=>{const p=G.pl&&G.pl[o];if(!p)return'';return p.kind==='ai'?'Computer '+TEAM[o].n:p.name||TEAM[o].n};
 function renderRoster(){
   const box=$('roster');if(!started||!G.pl){box.hidden=true;return}
   const rows=G.pl.map((p,o)=>p.kind==='off'||p.kind==='neutral'?'':`<div class="ro${p.out?' out':''}${o===LOCAL?' me':''}"><i style="background:${TEAM[o].main}"></i><span></span>${G.mode!=='ffa'?`<em>Team ${p.team===0?'A':'B'}</em>`:''}</div>`).join('');
   box.innerHTML=rows;box.hidden=false;
-  let k=0;G.pl.forEach((p,o)=>{if(p.kind==='off'||p.kind==='neutral')return;box.children[k++].querySelector('span').textContent=(p.name||(p.kind==='ai'?'Computer':TEAM[o].n))+(o===LOCAL?' (jij)':'')+' · '+NATIONS[p.nat].n+(p.out?' · uit':'')});
+  let k=0;G.pl.forEach((p,o)=>{if(p.kind==='off'||p.kind==='neutral')return;box.children[k++].querySelector('span').textContent=playerName(o)+(o===LOCAL?' (jij)':'')+' · '+NATIONS[p.nat].n+(p.out?' · uit':'')});
 }
 
 // ---------- tick (gastheer of alleen)
@@ -3239,7 +3246,7 @@ function checkEnd(){
   }
   const teams=new Set();for(let o=0;o<PMAX;o++)if(active(o)&&!G.pl[o].out)teams.add(G.pl[o].team);
   if(teams.size<=1){const win=teams.size?[...teams][0]:-1;G.over={win};
-    for(let o=0;o<PMAX;o++)if(o!==LOCAL&&G.pl[o].kind==='human')netSend(o,{t:'end',win,st:G.st[o],time:r2(G.t)});
+    for(let o=0;o<PMAX;o++)if(o!==LOCAL&&G.pl[o].kind==='human')netSend(o,{t:'end',win,st:G.st[o],all:G.st,time:r2(G.t)});
     showEnd(teamOf(LOCAL)===win,false)}
 }
 function showEnd(win,outOnly){
@@ -3250,6 +3257,12 @@ function showEnd(win,outOnly){
   const st=G.st[LOCAL]||{},m=Math.floor(G.t/60),sec=Math.floor(G.t%60);$('s-time').textContent=`${m}:${String(sec).padStart(2,'0')}`;
   $('s-built').textContent=st.built||0;$('s-kills').textContent=st.kills||0;$('s-lost').textContent=st.lost||0;$('s-earned').textContent='$ '+Math.round(st.earned||0);
   $('watch').hidden=!outOnly;
+  // ranglijst van alle spelers, gesorteerd op vernietigde vijanden
+  {const box=$('rank');box.textContent='';const rows=[];G.pl.forEach((p,o)=>{if(!p||p.kind==='off'||p.kind==='neutral'||o>=PMAX)return;const s=G.st[o]||{};rows.push({o,p,s})});
+    if(rows.length>1&&rows.some(r=>r.o!==LOCAL&&(r.s.kills||r.s.built))){rows.sort((a,b)=>(b.s.kills||0)-(a.s.kills||0)||(b.s.built||0)-(a.s.built||0));
+      const tb=document.createElement('table');tb.className='rank';tb.innerHTML='<tr><th>Speler</th><th>Vernietigd</th><th>Verloren</th><th>Gebouwd</th></tr>';
+      for(const{o,p,s}of rows){const tr=document.createElement('tr');if(o===LOCAL)tr.className='me';const td=document.createElement('td'),i=document.createElement('i');i.style.background=TEAM[o].main;td.appendChild(i);td.appendChild(document.createTextNode(playerName(o)+(p.out?' (uit)':'')));tr.appendChild(td);
+        for(const v of[s.kills||0,s.lost||0,s.built||0]){const c=document.createElement('td');c.textContent=v;tr.appendChild(c)}tb.appendChild(tr)}box.appendChild(tb)}}
   setTimeout(()=>{$('end').hidden=false},outOnly?600:1400);speak(outOnly?'You have been eliminated':win?'Mission accomplished':'Mission failed');
 }
 
@@ -3393,7 +3406,7 @@ function guestData(d){
     case'chat':if(started)chatShow(d.from|0,String(d.text||'').slice(0,120),!!d.team);break;
     case'bcn':if(started&&typeof d.x==='number'&&typeof d.y==='number')beaconShow(d.from|0,clamp(d.x,0,MAP),clamp(d.y,0,MAP));break;
     case'reveal':if(started&&typeof d.x==='number')revealC(d.x,d.y,Math.min(20,+d.r||10));break;
-    case'end':G.over={win:d.win};G.t=d.time||G.t;if(d.st)G.st[LOCAL]=d.st;$('end').hidden=true;showEnd(teamOf(LOCAL)===d.win,false);break;
+    case'end':G.over={win:d.win};G.t=d.time||G.t;if(Array.isArray(d.all))d.all.forEach((x,i)=>{if(x&&typeof x==='object'&&G.st[i])Object.assign(G.st[i],{kills:x.kills|0,lost:x.lost|0,built:x.built|0,earned:+x.earned||0})});if(d.st)G.st[LOCAL]=d.st;$('end').hidden=true;showEnd(teamOf(LOCAL)===d.win,false);break;
   }
 }
 function applySnap(s){
@@ -3540,9 +3553,12 @@ function boot(){
   try{if(matchMedia('(pointer:coarse)').matches)$('touch-note').hidden=false}catch(e){}
   const remember=()=>{try{localStorage.setItem('rd-name',myName())}catch(e){}};
   const menuErr=t=>{const el=$('menu-err');el.textContent=t;el.hidden=!t};
-  $('host-btn').addEventListener('click',()=>{audioInit();remember();hostOpen(true)});
-  $('solo-btn').addEventListener('click',()=>{audioInit();remember();hostOpen(false)});
-  $('join-btn').addEventListener('click',()=>{audioInit();remember();const c=$('code-in').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length!==6){menuErr('Vul de code van zes tekens in die je van de gastheer kreeg.');return}menuErr('');guestJoin(c,myName())});
+  // eerst een spelersnaam; die wordt onthouden, dus dit vraagt het spel maar één keer
+  const needName=()=>{if(cleanName($('nm').value))return false;menuErr('Vul eerst je spelersnaam in. Die zien je vrienden in de chat, boven je basis en in de ranglijst.');$('nm').classList.add('need');$('nm').focus();return true};
+  $('nm').addEventListener('input',()=>{if(cleanName($('nm').value)){$('nm').classList.remove('need');menuErr('')}});
+  $('host-btn').addEventListener('click',()=>{if(needName())return;audioInit();remember();hostOpen(true)});
+  $('solo-btn').addEventListener('click',()=>{if(needName())return;audioInit();remember();hostOpen(false)});
+  $('join-btn').addEventListener('click',()=>{if(needName())return;audioInit();remember();const c=$('code-in').value.toUpperCase().replace(/[^A-Z0-9]/g,'');if(c.length!==6){menuErr('Vul de code van zes tekens in die je van de gastheer kreeg.');return}menuErr('');guestJoin(c,myName())});
   $('code-in').addEventListener('keydown',e=>{if(e.key==='Enter')$('join-btn').click()});
   for(const b of document.querySelectorAll('#mode-seg button'))b.addEventListener('click',()=>{L.mode=b.dataset.m;broadcastLobby();renderLobby()});
   for(const b of document.querySelectorAll('#diff-seg button'))b.addEventListener('click',()=>{L.diff=+b.dataset.d;broadcastLobby();renderLobby()});
