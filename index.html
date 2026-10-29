@@ -365,6 +365,7 @@ const BT={
   factory:{n:'Wapenfabriek',w:3,h:3,hp:1300,pow:-40,cost:2000,sight:5,cat:'bld',req:['refinery'],ht:30,d:'Bouwt tanks, oogsters en raketwerpers.'},
   radar:{n:'Radarpost',w:2,h:2,hp:1000,pow:-50,cost:1000,sight:9,cat:'bld',req:['refinery'],ht:34,d:'Zet de radarkaart aan en ontgrendelt sterkere eenheden, zoals de V3-raketwerper, de Tesla-soldaat en de Rocketeer.'},
   lab:{n:'Techcentrum',w:2,h:2,hp:1000,pow:-100,cost:2000,sight:6,cat:'bld',req:['radar','factory'],ht:38,d:'Ontgrendelt de zwaarste eenheden: commando, Prismatank, Mammoettank en Chrono-legionair.'},
+  spysat:{n:'Spionagesatelliet',w:2,h:2,side:'allies',hp:1000,pow:-50,cost:1500,sight:6,cat:'bld',req:['lab'],ht:40,d:'Alleen Geallieerden. Een grote schotel die verbinding maakt met een spionagesatelliet: zodra hij klaar is, zie je de hele kaart. Ook als hij later verwoest wordt, blijft de kaart open.'},
   bunker:{n:'Bunker',w:1,h:1,hp:650,pow:0,cost:500,sight:6,cat:'def',req:['barracks'],wpn:'mg',ht:14,d:'Mitrailleur. Maait infanterie neer, doet weinig tegen tanks.'},
   aa:{n:'Luchtafweer',w:1,h:1,hp:600,pow:-40,cost:1000,sight:9,cat:'def',req:['radar'],wpn:'aa',ht:24,needPow:true,d:'Vuurt raketten op luchtdoelen, zoals Kirov-luchtschepen en rocketeers. Werkt alleen met genoeg stroom.'},
   tower:{n:'Kanontoren',w:1,h:1,hp:750,pow:-30,cost:900,sight:7,cat:'def',req:['factory'],wpn:'cannon',ht:22,needPow:true,d:'Zwaar kanon tegen voertuigen. Werkt alleen met genoeg stroom.'},
@@ -469,7 +470,7 @@ const WP={
   grand:{rng:13,min:2,dmg:150,rof:2.12,kind:'shell',spd:20,vs:{inf:.7,veh:1,bld:1}},
 };
 const CATS=['bld','def','inf','veh','sea'];
-const CAT_TYPES={bld:['power','refinery','barracks','factory','radar','airfield','lab','shipyard'],def:['wall','bunker','tower','prismt','coil','aa','gcannon'],inf:['gi','conscript','rocket','dog','eng','tesltrp','rocketeer','spy','ivan','sniper','desolator','terror','chrono','cmdo'],veh:['harv','tank','rhino','ifv','flak','drone','mirage','tesla','tdest','arty','demo','hawk','siege','prism','mammoth','harrier','eagle','kirov'],sea:['destroyer','carrier','sub','dread']};
+const CAT_TYPES={bld:['power','refinery','barracks','factory','radar','airfield','lab','spysat','shipyard'],def:['wall','bunker','tower','prismt','coil','aa','gcannon'],inf:['gi','conscript','rocket','dog','eng','tesltrp','rocketeer','spy','ivan','sniper','desolator','terror','chrono','cmdo'],veh:['harv','tank','rhino','ifv','flak','drone','mirage','tesla','tdest','arty','demo','hawk','siege','prism','mammoth','harrier','eagle','kirov'],sea:['destroyer','carrier','sub','dread']};
 const RATE={bld:150,def:150,inf:90,veh:130,sea:130};
 const AI_MUL=[.65,1,1.35];
 const defOf=t=>BT[t]||UT[t];
@@ -769,7 +770,7 @@ function newGame(s,cfg,populate=true){
     pl:[...cfg.slots.map(c=>mkPlayer(c.kind==='ai'?[3500,6000,9000][cfg.diff]:5000,c)),mkPlayer(0,{kind:'neutral',team:99,nat:'usa'})],
     units:[],blds:[],proj:[],fx:[],pings:[],bombs:[],rads:[],drops:[],planes:[],crates:[],crateT:30,gemSeen:false,ai:{},
     st:[0,1,2,3,4].map(()=>({built:0,lost:0,kills:0,earned:0}))});
-  ents.clear();nextId=1;sel=[];selB=0;mode=null;groups={};shroudDirty=true;oreDirty.clear();
+  ents.clear();nextId=1;sel=[];selB=0;mode=null;groups={};shroudDirty=true;satOn=false;oreDirty.clear();
   // bruggen komen uit de kaart zelf; gastheer en gasten maken ze dus op dezelfde manier en met dezelfde nummers
   G.bridges=BRIDGES.map(d=>{const e={id:nextId++,k:'br',type:'bridge',o:NEU,...d,hp:BR_HP,down:false,flash:0};ents.set(e.id,e);return e});
   if(populate)for(const t of TECH)mkBld(NEU,t.type,t.x,t.y,true);
@@ -857,16 +858,26 @@ const CRUSH=new Set(['tank','rhino','mammoth','heavy','mirage','prism','tdest','
 const crushable=e=>e.k==='u'&&UT[e.type].cat==='inf'&&!UT[e.type].air&&e.type!=='tesltrp'&&e.type!=='desolator'&&!e.dep&&e.hp>0&&!e.dead;
 function crushAt(u){for(const e of G.units)if(enemy(u.o,e.o)&&crushable(e)&&Math.abs(e.x-u.x)<.45&&Math.abs(e.y-u.y)<.45&&Math.hypot(e.x-u.x,e.y-u.y)<.42){
   fx({k:'sp',x:e.x,y:e.y,z:2,life:.3});sfx('bite',e.x,e.y);kill(e,{o:u.o,id:u.id})}}
+// hoe snel een romp draait (radialen per seconde): lichte wagens snel, zware tanks en de oogster traag
+const VTURN={ifv:3.6,flak:3.6,drone:4.5,demo:2.6,tank:2.8,mirage:2.8,rhino:2.5,tesla:2.5,tdest:2.3,prism:2.2,arty:2,harv:1.8,mammoth:1.6};
 function moveAlong(u,dt){
   let p=u.path;if(!p||!p.length){u.path=null;return true}
-  const T=UT[u.type],veh=T.cat==='veh';
+  const T=UT[u.type],veh=T.cat==='veh'&&!T.air;
   u.los-=dt;if(u.los<=0){u.los=.3;while(p.length>1&&los(u.x,u.y,p[1].x,p[1].y))p.shift()}
   const w=p[0],dx=w.x-u.x,dy=w.y-u.y,d=Math.hypot(dx,dy);let spd=T.spd*RANKS[u.rank||0];
-  if(d>.001){const a=Math.atan2(dy,dx);if(veh){u.face=turn(u.face,a,6*dt);spd*=Math.max(.15,Math.cos(Math.min(Math.abs(angDiff(u.face,a)),1.5)))}else u.face=a}
+  if(d>.001){const a=Math.atan2(dy,dx);
+    if(veh){u.face=turn(u.face,a,(VTURN[u.type]||2.6)*dt);const df=Math.abs(angDiff(u.face,a));
+      // bij een scherpe bocht draait een voertuig eerst op de plaats en rijdt dan pas weg
+      u.piv=df>1.1;spd*=u.piv?0:Math.cos(df)}
+    else u.face=turn(u.face,a,11*dt)}
+  // optrekken en afremmen: in ruim een halve seconde op topsnelheid, en voor het eindpunt rustig stoppen
+  if(veh){const top=T.spd*RANKS[u.rank||0];if(G.t-(u.mvT??-9)>.15)u.v=0;u.mvT=G.t;
+    let cap=spd;if(p.length===1)cap=Math.min(cap,Math.sqrt(2*top/.45*d)+.08);
+    const v=u.v||0;u.v=v<cap?Math.min(cap,v+top/.6*dt):Math.max(cap,v-top/.35*dt);spd=u.v}
   const step=spd*dt;
   if(d<=step){u.x=w.x;u.y=w.y;p.shift()}else{u.x+=dx/d*step;u.y+=dy/d*step}
   u.moving=true;if(CRUSH.has(u.type))crushAt(u);
-  if(!T.air)u.pt+=dt;
+  if(!T.air&&!u.piv)u.pt+=dt;
   if(u.pt>1){u.pt=0;const mv=Math.hypot(u.x-u.lx,u.y-u.ly);u.lx=u.x;u.ly=u.y;
     if(mv<.2){u.stuckN++;const dg=Math.hypot(u.x-u.gx,u.y-u.gy);if(dg<2.2||u.stuckN>3){u.path=null;return true}u.path=findPath(u.x,u.y,u.gx,u.gy);p=u.path}else u.stuckN=0}
   if(!p||!p.length){u.path=null;return true}
@@ -928,7 +939,7 @@ function updUnit0(u,dt){
       if(!t.dead&&u.cd<=0&&Math.abs(angDiff(u.tur,a))<.25){fire(u,t,wk);u.cd=W.rof*(.9+Math.random()*.2)}return}
     if(d<=(c4?.8:W.rng)&&(!W.min||d>=W.min)){
       u.path=null;
-      if(T.cat==='inf'){u.face=a;u.tur=a}else{u.tur=turn(u.tur,a,5*dt);if(u.type==='tdest'||u.type==='demo')u.face=turn(u.face,a,4*dt)}
+      if(T.cat==='inf'){u.face=turn(u.face,a,11*dt);u.tur=u.face}else{u.tur=turn(u.tur,a,(u.type==='mammoth'?3.2:5)*dt);if(u.type==='tdest'||u.type==='demo')u.face=turn(u.face,a,4*dt)}
       if(c4){if(!G.bombs.some(b=>b.id===t.id)){G.bombs.push({id:t.id,t:1.6,o:u.o,src:u.id});sfx('click');sayTo(u.o,'C4 geplaatst','c4',1)}u.tid=0;u.st='idle';return}
       if(W.kind==='ivan'){if(u.cd>0)return;if(!G.bombs.some(b=>b.id===t.id)){G.bombs.push({id:t.id,t:5,o:u.o,src:u.id,iv:1});sfx('click');sayTo(u.o,'Bom geplakt','ivanb',1.5,false)}u.cd=W.rof;u.tid=0;u.st='idle';u.auto=false;return}
       if(u.cd<=0&&(W.kind==='bomb'||Math.abs(angDiff(u.tur,a))<.25)){fire(u,t,wk);u.cd=W.rof*(.9+Math.random()*.2)}
@@ -976,7 +987,11 @@ function infiltrate(u,t){
   else{sayTo(u.o,'Vijandelijke basis verkend','spy',1);if(u.o===LOCAL)revealC(cx,cy,14);else netSend(u.o,{t:'reveal',x:r2(cx),y:r2(cy),r:14})}
   sfx('click');
 }
-function reshroud(){expl.fill(0);shroudDirty=true;reveal()}
+function reshroud(){expl.fill(0);shroudDirty=true;satOn=false;reveal()}
+// spionagesatelliet: elke computer kijkt zelf of zijn kant er een heeft staan en opent dan de hele kaart
+let satOn=false;
+function satCheck(){if(!started||!G.blds)return;const tm=teamOf(LOCAL),has=G.blds.some(b=>b.type==='spysat'&&b.bt>=1&&!b.dead&&teamOf(b.o)===tm);
+  if(has&&!satOn){expl.fill(1);shroudDirty=true;say('Spionagesatelliet actief: je ziet de hele kaart','sat',0)}satOn=has||satOn&&expl[0]===1}
 function enterGarrison(u,t){
   t.gar=t.gar||[];if(t.gar.length>=BT[t.type].cap){u.st='idle';return}
   t.gar.push({type:u.type,hp:u.hp,rank:u.rank||0,xp:u.xp||0,cd:Math.random()*.5});u.dead=true;u.hp=0;G.anyDead=true;
@@ -1146,8 +1161,10 @@ function kill(e,src){
       if(e.type==='kirov'){for(let i=0;i<5;i++)fx({k:'ex',x:x+(Math.random()-.5)*1.4,y:y+(Math.random()-.5)*1.4,z:z+(Math.random()-.5)*16,s:1.2,life:.9,dl:i*.15,snd:i%2===0});
         G.proj.push({x,y,x0:x,y0:y,z,z0:z,tx:x+.4,ty:y+.4,tid:0,o:-1,wk:'crash',ft:0,dist:1,dl:0,trail:0,aid:0});if(src)sayTo(src.o,'Kirov neergehaald','kdown',3)}
       else{boom(x,y,.5,z);debris(x,y,3)}}
-    else if(UT[e.type].cat==='inf'){fx({k:'sm',x,y,z:4,s:.35,life:.9,vz:6,c:'#8a8a7a'});fx({k:'body',x,y,z:0,life:6,o:e.o,face:e.face})}
-    else{boom(x,y,1.1);debris(x,y,7);scorch(x,y,.7);sfx('boom',x,y)}
+    else if(UT[e.type].cat==='inf'){fx({k:'sm',x,y,z:4,s:.35,life:.9,vz:6,c:'#8a8a7a'});fx({k:'body',x,y,z:0,life:6,o:e.o,face:e.face,ty:e.type})}
+    else{boom(x,y,1.1);debris(x,y,7);scorch(x,y,.7);sfx('boom',x,y);
+      // een uitgebrand wrak blijft een tijdje rokend liggen
+      const T=UT[e.type];if(T.cat==='veh'&&!T.sea&&e.type!=='drone')fx({k:'wreck',x,y,z:0,life:16,o:e.o,face:e.face,tur:e.tur??e.face,ty:e.type})}
     G.st[e.o].lost++;if(!(src&&src.id===e.id))sayTo(e.o,'Eenheid verloren','lost',8);
   }else{
     for(let yy=e.y;yy<e.y+e.h;yy++)for(let xx=e.x;xx<e.x+e.w;xx++){bmap[yy*MAP+xx]=0;scorch(xx+.5,yy+.5,.8)}
@@ -1419,6 +1436,15 @@ function groundMark(x,y,a){
 function ambient(dt){
   for(const u of G.units){if(!UT[u.type].sea||!u.moving||u.dead)continue;u.wk=(u.wk||0)-dt;if(u.wk>0)continue;u.wk=.2;const co=Math.cos(u.face),si=Math.sin(u.face),L=u.type==='carrier'||u.type==='dread'?.95:.7;
     fxl({k:'wake',x:u.x-co*L,y:u.y-si*L,z:0,life:1.4});fxl({k:'wake',x:u.x+co*L*.9,y:u.y+si*L*.9,z:0,life:.5})}
+  // een schot: de loop schiet terug (rkT, zie drawVeh) en bij een kanon blijft er kruitdamp bij de monding hangen
+  for(const u of G.units){if(u.dead)continue;const T=UT[u.type],f=u.flash>0;
+    if(f&&!u.fl0){u.rkT=G.t;const W=WP[T.wpn];if(T.cat==='veh'&&!T.air&&W&&W.kind==='shell'){const D=VDIM[u.type]||[1,.5,10],co=Math.cos(u.tur),si=Math.sin(u.tur);
+      for(let i=0;i<3;i++)fxl({k:'sm',x:u.x+co*(.78+i*.14),y:u.y+si*(.78+i*.14),z:D[2]+5,s:.28+i*.1,life:.7+i*.25,vz:5,c:'#c4beb2',a:.6})}}
+    u.fl0=f}
+  // stof achter rijdende voertuigen; in de sneeuw opwaaiende poedersneeuw
+  {const snow=MAPS[MAPK].theme==='snow';for(const u of G.units){const T=UT[u.type];if(T.cat!=='veh'||T.air||!u.moving||u.dead||(u.v!==undefined&&u.v<T.spd*.35))continue;u.dst=(u.dst||Math.random()*.2)-dt;if(u.dst>0)continue;u.dst=.17;
+    const L=(VDIM[u.type]||[1])[0],co=Math.cos(u.face),si=Math.sin(u.face),k=(Math.random()-.5)*.5;
+    fxl({k:'sm',x:u.x-co*L*.55-si*k,y:u.y-si*L*.55+co*k,z:2,s:.45+Math.random()*.25,life:1.2,vz:3,c:snow?'#eef3f6':'#a88f63',a:snow?.5:.42})}}
   for(const u of G.units){const T=UT[u.type];if(T.cat!=='veh'||T.air||!u.moving||u.dead)continue;u.trk=(u.trk||0)-dt;if(u.trk>0)continue;u.trk=.11;
     const W=(VDIM[u.type]||[0,.5])[1],co=Math.cos(u.face),si=Math.sin(u.face);for(const k of[-1,1])groundMark(u.x-si*k*W*.4,u.y+co*k*W*.4,u.face)}
   for(const b of G.blds){if(b.dead||b.bt<1)continue;const T=BT[b.type],f=b.hp/T.hp;
@@ -1427,6 +1453,9 @@ function ambient(dt){
     const lowP=G.pl[b.o]&&G.pl[b.o].low;if(b.type==='power'&&!lowP&&Math.random()<dt*5){const pt=Math.random()<.5?[1.4,.6]:[.6,1.4];fxl({k:'sm',x:b.x+pt[0]+(Math.random()-.5)*.2,y:b.y+pt[1]+(Math.random()-.5)*.2,z:37,s:.9,life:3.2,vz:13,c:'#eef2f4',a:.42})}
     if(b.type==='factory'&&!lowP&&Math.random()<dt*2){const pt=Math.random()<.5?[.7,.6]:[2.3,.6];fxl({k:'sm',x:b.x+pt[0],y:b.y+pt[1],z:30,s:.45,life:2.4,vz:12,c:'#6a6d70',a:.35})}}
   for(const p of G.proj){if(p.dl>0)continue;const k=WP[p.wk].kind;if(k==='rocket'||k==='arty'){p.trail=(p.trail||0)-dt;if(p.trail<=0){p.trail=.03;fxl({k:'sm',x:p.x,y:p.y,z:p.z,s:.25,life:.6,vz:4,c:'#cfcfcf'})}}}
+  for(const f of G.fx){if(f.k!=='wreck'||f.dl>0)continue;f.sk=(f.sk||0)-dt;if(f.sk>0)continue;const hot=f.t<5;f.sk=hot?.14:.4;if(f.t>f.life-2)continue;
+    fxl({k:'sm',x:f.x+(Math.random()-.5)*.3,y:f.y+(Math.random()-.5)*.3,z:10,s:hot?.6:.45,life:2.6,vz:hot?18:12,c:hot?'#252321':'#4a4642',a:hot?.7:.45});
+    if(hot&&Math.random()<.6)fxl({k:'fi',x:f.x+(Math.random()-.5)*.4,y:f.y+(Math.random()-.5)*.4,z:8,life:.45})}
   for(const u of G.units)if(u.hs==='mine'&&Math.random()<dt*8)fxl({k:'ds',x:u.x+(Math.random()-.5)*.6,y:u.y+(Math.random()-.5)*.6,z:3,life:.7});
 }
 function ping(x,y){G.pings.push({x,y,t:G.t})}
@@ -1606,6 +1635,24 @@ const BDRAW={
     c.fillStyle='#c7cdd2';c.beginPath();c.ellipse(0,0,rx,ry,0,0,7);c.fill();c.strokeStyle=tm.main;c.lineWidth=2;c.stroke();
     c.fillStyle='#8d959c';c.beginPath();c.ellipse(Math.cos(a)*3,0,rx*.55,ry*.55,0,0,7);c.fill();dot(c,[Math.cos(a)*5,-1],2,'#333');c.restore();
   },
+  spysat(c,pr,b,tm,k,t,low){
+    // betonnen voet, een korte toren en een grote schotel die schuin naar de hemel kijkt
+    box(c,pr,0,0,2,2,0,3,'#6c7277');
+    box(c,pr,.25,1.15,.6,.6,3,3+12*k,'#7a8288');box(c,pr,.25,1.55,.6,.2,3+12*k,3+13*k,tm.main);
+    if(k>.95)windows(c,pr,.25,1.15,.6,.6,8,2,2,low,t,(b.id|0)+29);
+    box(c,pr,1.05,.75,.5,.5,3,3+14*k,'#5d646a');
+    if(k<.6)return;
+    const c0=pr(1.3,1,3+14*k),c1=pr(1.3,1,3+28*k);line(c,c0,c1,'#2d3237',4.5);
+    const sw=low?0:Math.sin(t*.25)*.12;
+    c.save();c.translate(c1[0],c1[1]);c.rotate(-.5+sw);
+    c.scale(1.3,1.3);c.fillStyle='rgba(0,0,0,.25)';c.beginPath();c.ellipse(2,3,22,12,0,0,7);c.fill();
+    const g=c.createLinearGradient(-20,-12,20,12);g.addColorStop(0,'#eef2f5');g.addColorStop(1,'#8d959c');
+    c.fillStyle=g;c.beginPath();c.ellipse(0,0,22,12,0,0,7);c.fill();c.strokeStyle=tm.main;c.lineWidth=2;c.stroke();
+    c.fillStyle='#b7bec4';c.beginPath();c.ellipse(1,1,14,7.5,0,0,7);c.fill();
+    for(const a of[-.9,.9,2.6])line(c,[Math.cos(a)*14,Math.sin(a)*7.5],[0,-13],'#4a5056',1);
+    dot(c,[0,-13],2.4,'#3a3f45');c.restore();
+    if(k>.95&&!low)beacon(c,[c1[0],c1[1]-25],t,1.3);
+  },
   bunker(c,pr,b,tm,k,t){
     box(c,pr,.05,.05,.9,.9,0,3,'#6f7276');
     const p=pr(.5,.5,3),rx=24,h=12*k;
@@ -1754,10 +1801,12 @@ function drawVeh(c,pr,u,tm,t){
     poly(c,[E(L*.45,-Wd*.4,Hz-.5),E(L*.45,Wd*.4,Hz-.5),E(L*.3,Wd*.4,Hz),E(L*.3,-Wd*.4,Hz)],shade(M,1.2));
     if(rh||mam)for(const sd of[-1,1])poly(c,[E(-L*.46,sd*Wd*.5,Hz*.75),E(L*.42,sd*Wd*.5,Hz*.75),E(L*.42,sd*Wd*.5,Hz*.3),E(-L*.46,sd*Wd*.5,Hz*.3)],shade(M,.72));
     {
-    const off=mam?-.1:rh?-.02:td?.04:-.07,cx=u.x+tc*off,cy=u.y+ts*off,T=(a,b2,z)=>pr(cx+tc*a-ts*b2,cy+ts*a+tc*b2,z);
+    // terugslag: na een schot schuift de loop terug en komt in een derde seconde weer naar voren
+    const rk=u.rkT!==undefined?Math.max(0,1-(t-u.rkT)/.32)**2:0;
+    const off=(mam?-.1:rh?-.02:td?.04:-.07)-rk*.05,cx=u.x+tc*off,cy=u.y+ts*off,T=(a,b2,z)=>pr(cx+tc*a-ts*b2,cy+ts*a+tc*b2,z);
     const TP=td?[[.3,.26],[.38,0],[.3,-.26],[-.32,-.28],[-.32,.28]]:mam?[[.3,.3],[.4,.12],[.4,-.12],[.3,-.3],[-.3,-.32],[-.38,0],[-.3,.32]]:rh?[[.22,.22],[.3,.08],[.3,-.08],[.22,-.22],[-.22,-.24],[-.28,0],[-.22,.24]]:mir?[[.26,.2],[.26,-.2],[-.26,-.22],[-.26,.22]]:[[.18,.13],[.25,0],[.18,-.13],[-.22,-.15],[-.3,0],[-.22,.15]];
     const bl=td?.9:mam?.95:rh?.66:mir?.62:.82,bw=td?3.8:mam?4.6:rh?4.8:mir?3.4:2.4,offs=mam?[-.11,.11]:ty==='heavy'?[-.08,.08]:[0];
-    const ends=offs.map(o=>[T(.15,o,tz+1),T(bl,o,tz+1)]);const back=ends[0][1][1]<pr(cx,cy,tz)[1];
+    const ends=offs.map(o=>[T(.15-rk*.1,o,tz+1),T(bl-rk*.17,o,tz+1)]);const back=ends[0][1][1]<pr(cx,cy,tz)[1];
     const barrel=()=>{for(const[a,b2]of ends){line(c,a,b2,'#25292d',bw);line(c,a,b2,'rgba(255,255,255,.12)',bw*.35);if(rh||mam)dot(c,b2,bw*.62,'#2b2f33')}};
     if(back)barrel();
     // koepel: zijkant en dak met licht van linksboven
@@ -1840,8 +1889,9 @@ function drawInf(c,pr,u,tm,t,air){
   const[sx,sy]=pr(u.x,u.y,0),dep=!!u.dep&&!air;
   if(!air){c.fillStyle='rgba(0,0,0,.3)';c.beginPath();c.ellipse(sx+1.6,sy+1.2,dep?9:5.2,dep?4:2.4,0,0,7);c.fill()}
   if(dep){sandbags(c,pr,u,false);c.save();c.translate(0,3.5)}
-  const ph=u.moving?Math.sin(t*16+u.id):0,bob=Math.abs(ph)*1.2;
-  line(c,[sx,sy-6-bob],[sx-1.8+ph*1.5,sy],'#3a432f',2);line(c,[sx,sy-6-bob],[sx+1.8-ph*1.5,sy],'#3a432f',2);
+  // rustige pas: benen stappen ver uit, het lijf deint maar een klein beetje
+  const ph=u.moving?Math.sin(t*10+u.id):0,bob=Math.abs(ph)*.45;
+  line(c,[sx,sy-6-bob],[sx-1.4+ph*2.3,sy],'#3a432f',2);line(c,[sx,sy-6-bob],[sx+1.4-ph*2.3,sy],'#3a432f',2);
   c.fillStyle='#1c1d1a';c.fillRect(sx-2.9+ph*1.5,sy-1,2.2,1.4);c.fillRect(sx+.7-ph*1.5,sy-1,2.2,1.4);
   const d=pr(u.x+Math.cos(u.tur)*.3,u.y+Math.sin(u.tur)*.3,0),gxv=d[0]-sx,gyv=d[1]-sy,gl=Math.hypot(gxv,gyv)||1,ux=gxv/gl,uy=gyv/gl;
   const rk=u.type==='rocket',eng=u.type==='eng',spy=u.type==='spy',cs=u.type==='conscript',tt=u.type==='tesltrp'||u.type==='chrono',chr=u.type==='chrono',cm=u.type==='cmdo'||spy,sn=u.type==='sniper',ds=u.type==='desolator',tr_=u.type==='terror',iv=u.type==='ivan',gy0=sy-(rk?11.5:9)-bob;
@@ -1982,12 +2032,26 @@ function drawShip(c,pr,u,tm,t){
     poly(c,hullPts(P2,u.x+co*.05,u.y+si*.05,.32,.3,13,f),'#8d959c');for(const s2 of[-.13,.13]){const a=at(-.1,s2,14),b=P2(u.x-co*.1-si*s2+tc*.2,u.y-si*.1+co*s2+ts*.2,20);line(c,a,b,'#4a4f55',3);dot(c,b,1.6,'#d03a2a')}
     if(u.flash>0)flash(c,at(0,0,20),10)}
 }
+function drawWreck(f){
+  if(!f.img){const W=150,H=120,ax=75,ay=82,cv=document.createElement('canvas');cv.width=W*DPR;cv.height=H*DPR;const c=cv.getContext('2d');c.scale(DPR,DPR);
+    const g0=w2s(f.x,f.y,0),prO=(x,y,z)=>{const[a,b]=w2s(x,y,z);return[a-g0[0]+ax,b-g0[1]+ay]};
+    c.translate(ax,ay);c.scale(US,US);c.translate(-ax,-ay);
+    try{drawUnit0(c,prO,{type:f.ty,x:f.x,y:f.y,face:f.face,tur:f.tur,o:f.o,id:0,moving:false,flash:0,hp:1,rank:0},0)}catch(e){}
+    c.setTransform(1,0,0,1,0,0);c.globalCompositeOperation='source-atop';c.fillStyle='rgba(20,16,12,.8)';c.fillRect(0,0,cv.width,cv.height);
+    // gloeiende plekken en roest op het verkoolde staal
+    for(let i=0;i<14;i++){c.fillStyle=i<4?'rgba(255,110,30,.35)':'rgba(90,50,28,.45)';c.fillRect(Math.random()*cv.width,Math.random()*cv.height,2*DPR,1.5*DPR)}
+    f.img=cv;f.W=W;f.H=H;f.ax=ax;f.ay=ay}
+  const[sx,sy]=w2s(f.x,f.y,0);ctx.globalAlpha=Math.min(1,(f.life-f.t)/2.5);ctx.drawImage(f.img,sx-f.ax,sy-f.ay,f.W,f.H);ctx.globalAlpha=1;
+}
 function drawUnit(c,pr,u,t){const[gx_,gy_]=pr(u.x,u.y,0);
   if(u.st==='tele'&&u.type==='chrono'){c.globalCompositeOperation='lighter';c.fillStyle='rgba(120,200,255,.25)';c.beginPath();c.ellipse(gx_,gy_-8,6,10,0,0,7);c.fill();c.globalCompositeOperation='source-over';return}
   // een stilstaande Mirage is voor iedereen een boom, net als in RA2; je eigen boom heeft een dunne ring in je teamkleur
   if(u.type==='mirage'&&u.disg){if(!enemy(LOCAL,u.o)){c.strokeStyle=TEAM[u.o].main;c.globalAlpha=.55;c.lineWidth=1.2;c.beginPath();c.ellipse(gx_,gy_+1,14,7,0,0,7);c.stroke();c.globalAlpha=1}
     drawTree(c,0,0,t,{sx:gx_,sy:gy_,h1:hash(u.id,1,3),h2:hash(u.id,2,3)});return}
-  {const S=US*infS(u);c.save();c.translate(gx_,gy_);c.scale(S,S);c.translate(-gx_,-gy_);drawUnit0(c,pr,u,t);c.restore();c.globalAlpha=1}
+  {const S=US*infS(u);c.save();c.translate(gx_,gy_);c.scale(S,S);c.translate(-gx_,-gy_);
+    // na een schot veert een voertuig even terug, tegen de schietrichting in
+    const T=UT[u.type];if(T.cat==='veh'&&!T.air&&u.rkT!==undefined&&t-u.rkT<.3){const k=(1-(t-u.rkT)/.3)**2,[bx,by]=pr(u.x+Math.cos(u.tur),u.y+Math.sin(u.tur),0),l=Math.hypot(bx-gx_,by-gy_)||1;c.translate(-(bx-gx_)/l*k*1.4,-(by-gy_)/l*k*1.4-k*.5)}
+    drawUnit0(c,pr,u,t);c.restore();c.globalAlpha=1}
   if(u.erase>0){c.globalCompositeOperation='lighter';c.fillStyle=`rgba(110,190,255,${Math.min(.7,u.erase*.8)})`;c.beginPath();c.ellipse(gx_,gy_-10*US,12*US,15*US,0,0,7);c.fill();c.globalCompositeOperation='source-over'}}
 function drawUnit0(c,pr,u,t){if(u.type==='spy'){if(enemy(LOCAL,u.o))drawInf(c,pr,{...u,type:'gi'},TEAM[LOCAL]||TEAM[0],t);else drawInf(c,pr,u,TEAM[u.o],t);return}const tm=TEAM[u.o];if(UT[u.type].sea){drawShip(c,pr,u,tm,t);return}if(u.type==='eagle'||u.type==='harrier')drawEagle(c,pr,u,tm,t);else if(UT[u.type].heli)drawHeli(c,pr,u,tm,t);else if(u.type==='drone')drawDrone(c,pr,u,tm,t);else if(u.type==='kirov')drawKirov(c,pr,u,tm,t);else if(u.type==='rocketeer')drawRocketeer(c,pr,u,tm,t);else if(u.type==='dog')drawDog(c,pr,u,tm,t);else if(UT[u.type].cat==='inf')drawInf(c,pr,u,tm,t);else drawVeh(c,pr,u,tm,t)}
 function drawTree(c,x,y,t=0,at){
@@ -2091,7 +2155,12 @@ function render(t){
     if(((t*.8+cr.id)%2)<.12){const g=P(.1,.1,12);ctx.globalCompositeOperation='lighter';flash(ctx,g,7);ctx.globalCompositeOperation='source-over'}}
   for(const r of G.rads){const ri=(r.y|0)*MAP+(r.x|0);if(!expl[ri]||r.t<=0)continue;const[sx,sy]=w2s(r.x,r.y),a=Math.min(1,r.t/2)*.45,g=ctx.createRadialGradient(sx,sy,0,sx,sy,56);
     g.addColorStop(0,`rgba(140,255,60,${a})`);g.addColorStop(1,'rgba(140,255,60,0)');ctx.save();ctx.translate(sx,sy);ctx.scale(1,.5);ctx.translate(-sx,-sy);ctx.fillStyle=g;ctx.beginPath();ctx.arc(sx,sy,56,0,7);ctx.fill();ctx.restore()}
-  for(const f of G.fx)if(f.k==='body'&&f.t<f.life){const[sx,sy]=w2s(f.x,f.y);ctx.globalAlpha=Math.min(1,(f.life-f.t)/1.5);ctx.fillStyle=TEAM[f.o].dark;ctx.fillRect(sx-5,sy-2,9,3);dot(ctx,[sx+5,sy-1],2,'#c09070');ctx.globalAlpha=1}
+  const onS=f=>{const[a,b]=w2s(f.x,f.y);return a>-90&&b>-90&&a<VW+90&&b<VH+90};
+  for(const f of G.fx)if(f.k==='wreck'&&f.t<f.life&&onS(f))drawWreck(f);
+  // een gesneuvelde soldaat valt in een halve tel achterover en blijft dan liggen
+  for(const f of G.fx)if(f.k==='body'&&f.t<f.life&&onS(f)){const[sx,sy]=w2s(f.x,f.y),p=Math.min(1,f.t/.38),e=p*p,sd=Math.cos(f.face)-Math.sin(f.face)>0?-1:1,S=US*INF_S;
+    ctx.save();ctx.globalAlpha=Math.min(1,(f.life-f.t)/1.5);ctx.translate(sx,sy);ctx.scale(S,S*(1-.4*e));ctx.rotate(sd*e*1.45);ctx.translate(-sx,-sy);
+    drawInf(ctx,w2s,{type:f.ty&&UT[f.ty]&&UT[f.ty].cat==='inf'&&!UT[f.ty].air?f.ty:'gi',x:f.x,y:f.y,face:f.face,tur:f.face,o:f.o,id:0,moving:false,flash:0},TEAM[f.o]||TEAM[0],t);ctx.restore()}
   if(mode&&mode.k==='place')drawGhostTiles();
   const sb=selB&&ents.get(selB);
   if(sb&&sb.o===LOCAL){const fp=[w2s(sb.x,sb.y),w2s(sb.x+sb.w,sb.y),w2s(sb.x+sb.w,sb.y+sb.h),w2s(sb.x,sb.y+sb.h)];ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1.5;ctx.beginPath();fp.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.stroke()}
@@ -2166,7 +2235,7 @@ function render(t){
 }
 function drawFx(t){
   const c=ctx;
-  for(const f of G.fx){if(f.dl>0||f.k==='body')continue;const p=f.t/f.life,[sx,sy]=w2s(f.x,f.y,f.z||0);
+  for(const f of G.fx){if(f.dl>0||f.k==='body'||f.k==='wreck')continue;const p=f.t/f.life,[sx,sy]=w2s(f.x,f.y,f.z||0);
     switch(f.k){
       case'ex':{const R=(9+26*f.s)*(.35+p*.85);
         if(!f.shook&&f.s>=1){f.shook=1;shake(f.x,f.y,f.s*2.2)}
@@ -2675,7 +2744,7 @@ function showEnd(win,outOnly){
 }
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-v7-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-v8-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',online:false,slots:[],pending:[]};
@@ -2885,7 +2954,7 @@ function frame(now){
   if(started&&!G.over){if(isGuest())guestStep(dt);else if(!G.paused)tick(dt)}
   else if(G.over)updFx(dt);
   if(started&&NET.mode==='host'&&G.pl)netHostStep(dt);
-  scroll(dt);render(G.t);updCursor();uiTick(dt);
+  satCheck();scroll(dt);render(G.t);updCursor();uiTick(dt);
   mmAcc+=dt;if(mmAcc>.2){mmAcc=0;mmDraw()}
   requestAnimationFrame(frame);
 }
