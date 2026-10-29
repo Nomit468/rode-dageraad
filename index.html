@@ -401,7 +401,7 @@ const UT={
   tank:{n:'Grizzly-tank',cat:'veh',side:'allies',hp:360,spd:2.38,cost:700,sight:7,wpn:'gun',arm:'veh',req:['factory'],d:'Geallieerde tank. Snel en wendbaar, maar lichter gepantserd dan de Rhino.'},
   rhino:{n:'Rhino-tank',cat:'veh',side:'soviet',hp:480,spd:2.04,cost:900,sight:7,wpn:'rhinogun',arm:'veh',req:['factory'],d:'Sovjettank. Langzamer dan de Grizzly, maar met dikker pantser en een zwaarder kanon.'},
   mirage:{n:'Mirage-tank',cat:'veh',side:'allies',hp:240,spd:2.38,cost:1000,sight:7,wpn:'mirage',arm:'veh',req:['factory','radar'],d:'Staat hij even stil, dan ziet de vijand alleen een boom. Vijanden vallen hem dan niet aan. Na elk schot is hij even zichtbaar.'},
-  ifv:{n:'IFV',cat:'veh',side:'allies',hp:240,spd:2.72,cost:600,sight:8,wpn:'ifvmsl',arm:'veh',req:['factory'],d:'Snel gevechtsvoertuig met raketten tegen voertuigen en vliegtuigen. Laat een soldaat instappen en het wapen verandert: GI = mitrailleur, raketsoldaat = zware raketten, sluipschutter = scherpschuttersgeweer, ingenieur = repareert voertuigen in de buurt. D laat hem weer uitstappen.'},
+  ifv:{n:'IFV',cat:'veh',side:'allies',hp:240,spd:3.2,cost:600,sight:8,wpn:'ifvmsl',arm:'veh',req:['factory'],d:'Snel gevechtsvoertuig met raketten tegen voertuigen en vliegtuigen. Laat een soldaat instappen en het wapen verandert: GI = mitrailleur, raketsoldaat = zware raketten, sluipschutter = scherpschuttersgeweer, ingenieur = repareert voertuigen in de buurt, Chrono-legionair = tijdstraal die vijanden uitwist. D laat hem weer uitstappen.'},
   flak:{n:'Flak-track',cat:'veh',side:'soviet',hp:216,spd:2.72,cost:500,sight:9,aa:'flakaa',wpn:'flak',arm:'veh',req:['factory'],d:'Rijdende luchtafweer. Schiet vliegtuigen, luchtschepen en rocketeers uit de lucht, en houdt soldaten op afstand.'},
   heavy:{n:'Zware tank',side:'none',cat:'veh',hp:700,spd:1.4,cost:1400,sight:7,wpn:'heavygun',arm:'veh',req:['factory','radar'],d:'Dubbele loop en dik pantser. Langzaam maar taai.'},
   arty:{n:'V3-raketwerper',cat:'veh',side:'soviet',hp:220,spd:1.6,cost:800,sight:8,wpn:'arty',arm:'veh',req:['factory','radar'],d:'Vuurt van grote afstand op een gebied. Kwetsbaar van dichtbij.'},
@@ -495,7 +495,7 @@ const NAT_KEYS=Object.keys(NATIONS),SOV_NATS=NAT_KEYS.filter(k=>NATIONS[k].side=
 const PARA_T=240,OIL_RATE=12;
 const GARR=new Set(['gi','conscript','tesltrp','rocket','sniper','desolator','cmdo']);
 // wapen van een IFV hangt af van wie erin zit
-const IFV_W={gi:'ifvmg',conscript:'ifvmg',rocket:'ifvmsl2',sniper:'snipe',cmdo:'pistol',tesltrp:'zapinf'};
+const IFV_W={gi:'ifvmg',conscript:'ifvmg',rocket:'ifvmsl2',sniper:'snipe',cmdo:'pistol',tesltrp:'zapinf',chrono:'chrono'};
 // met een doel erbij: eenheden met een apart luchtafweerwapen (aa) gebruiken dat tegen luchtdoelen
 const wkOf=(u,t)=>t&&UT[u.type].aa&&armor(t)==='air'?UT[u.type].aa:u.type==='ifv'&&u.pass?(IFV_W[u.pass]||'ifvmsl'):u.dep&&UT[u.type].dep?UT[u.type].dep:UT[u.type].wpn;
 const canGar=u=>GARR.has(u.type)&&!u.dead;
@@ -953,6 +953,8 @@ const crushable=e=>e.k==='u'&&UT[e.type].cat==='inf'&&!UT[e.type].air&&e.type!==
 function crushAt(u){for(const e of G.units)if(enemy(u.o,e.o)&&crushable(e)&&Math.abs(e.x-u.x)<.45&&Math.abs(e.y-u.y)<.45&&Math.hypot(e.x-u.x,e.y-u.y)<.42){
   fx({k:'sp',x:e.x,y:e.y,z:2,life:.3});sfx('bite',e.x,e.y);kill(e,{o:u.o,id:u.id})}}
 // hoe snel een romp draait (radialen per seconde): lichte wagens snel, zware tanks en de oogster traag
+// hoe lang een voertuig nodig heeft om op topsnelheid te komen (seconden)
+const VACC={ifv:.3,flak:.35,drone:.25,demo:.5,tank:.55,mirage:.55,rhino:.65,tesla:.6,tdest:.65,prism:.65,arty:.7,harv:.9,mammoth:1};
 const VTURN={ifv:3.6,flak:3.6,drone:4.5,demo:2.6,tank:2.8,mirage:2.8,rhino:2.5,tesla:2.5,tdest:2.3,prism:2.2,arty:2,harv:1.8,mammoth:1.6};
 function moveAlong(u,dt){
   let p=u.path;if(!p||!p.length){u.path=null;return true}
@@ -967,7 +969,7 @@ function moveAlong(u,dt){
   // optrekken en afremmen: in ruim een halve seconde op topsnelheid, en voor het eindpunt rustig stoppen
   if(veh){const top=T.spd*RANKS[u.rank||0];if(G.t-(u.mvT??-9)>.15)u.v=0;u.mvT=G.t;
     let cap=spd;if(p.length===1)cap=Math.min(cap,Math.sqrt(2*top/.45*d)+.08);
-    const v=u.v||0;u.v=v<cap?Math.min(cap,v+top/.6*dt):Math.max(cap,v-top/.35*dt);spd=u.v}
+    const v=u.v||0;u.v=v<cap?Math.min(cap,v+top/(VACC[u.type]||.6)*dt):Math.max(cap,v-top/.35*dt);spd=u.v}
   const step=spd*dt;
   if(d<=step){u.x=w.x;u.y=w.y;p.shift()}else{u.x+=dx/d*step;u.y+=dy/d*step}
   u.moving=true;if(CRUSH.has(u.type))crushAt(u);
@@ -2065,6 +2067,9 @@ function drawVeh(c,pr,u,tm,t){
       line(c,pr(u.x-co*.08-ts*-.15+tc*-.12,u.y-si*.08+tc*-.15+ts*-.12,Hz+7.2),pr(u.x-co*.08-ts*.15+tc*-.12,u.y-si*.08+tc*.15+ts*-.12,Hz+7.2),tm.main,1.6);
       if(!u.pass)for(const a2 of[-.07,.07])for(const zz of[3.5,5.5]){const q=pr(u.x-co*.08+tc*.17-ts*a2,u.y-si*.08+ts*.17+tc*a2,Hz+zz);dot(c,q,1.3,'#15181b')}}
     if(u.pass==='gi'||u.pass==='conscript'){const e=pr(u.x-co*.08+tc*.42,u.y-si*.08+ts*.42,Hz+6);line(c,c0,e,'#2b2f33',1.8);if(u.flash>0)flash(c,e,6)}
+    // Chrono-IFV: een blauw gloeiende tijdstraler in plaats van de raketbuizen
+    else if(u.pass==='chrono'){const e=pr(u.x-co*.08+tc*.4,u.y-si*.08+ts*.4,Hz+7.5);line(c,c0,e,'#2f3a48',3.4);line(c,c0,e,'rgba(127,208,255,.8)',1.2);
+      c.globalCompositeOperation='lighter';flash(c,e,4+2*Math.sin(t*6)+(u.flash>0?8:0));c.globalCompositeOperation='source-over';dot(c,e,1.6,'#d8f2ff')}
     else{for(const sd of[-1,1]){const a=pr(u.x-co*.08-ts*sd*.1,u.y-si*.08+tc*sd*.1,Hz+7),b=pr(u.x-co*.08-ts*sd*.1+tc*.22,u.y-si*.08+tc*sd*.1+ts*.22,Hz+8);line(c,a,b,u.pass==='rocket'?'#5a6a3a':'#4a4f55',u.pass==='rocket'?4.5:3.5)}if(u.flash>0)flash(c,pr(u.x+tc*.3,u.y+ts*.3,Hz+8),8)}
     if(u.pass){const b=pr(u.x+co*.25,u.y+si*.25,Hz+1);dot(c,b,2,'#ffd86a')}
   }else if(u.type==='flak'){
@@ -3023,7 +3028,7 @@ function showEnd(win,outOnly){
 }
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-v10-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-v11-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',online:false,slots:[],pending:[]};
