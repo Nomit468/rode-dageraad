@@ -381,7 +381,7 @@ const BT={
   coil:{n:'Teslaspoel',w:1,h:1,side:'soviet',hp:800,pow:-75,cost:1500,sight:8,cat:'def',req:['radar'],wpn:'coil',ht:40,needPow:true,d:'Alleen Sovjets. Zware bliksemschichten tegen alles op de grond. Een Tesla-soldaat ernaast laadt hem op: dan werkt hij ook zonder stroom en schiet hij harder.'},
   wall:{n:'Muur',w:1,h:1,tech:true,wall:true,hp:500,pow:0,cost:50,sight:1,cat:'def',req:[],ht:12,d:'Betonnen muur die vijanden ophoudt. Na het plaatsen kun je meteen de volgende neerzetten; rechtsklik om te stoppen.'},
   airfield:{n:'Vliegveld',w:3,h:3,side:'allies',hp:1000,pow:-50,cost:1000,sight:9,cat:'bld',req:['radar'],ht:16,pads:4,d:'Alleen Geallieerden. Vier landingsplaatsen voor Harriers (Korea: Zwarte Adelaars). Toestellen vliegen naar hun doel, vuren hun raketten af en komen hier terug om bij te laden.'},
-  gcannon:{n:'Groot Kanon',w:2,h:2,nat:'france',hp:1400,pow:-100,cost:2000,sight:14,cat:'def',req:['factory','radar'],wpn:'grand',ht:30,needPow:true,d:'Alleen voor Frankrijk. Reusachtig kanon met een enorm bereik. Werkt alleen met genoeg stroom.'},
+  gcannon:{n:'Dikke Willem',w:2,h:2,nat:'france',hp:1400,pow:-100,cost:2000,sight:14,cat:'def',req:['factory','radar'],wpn:'grand',ht:30,needPow:true,d:'Alleen voor Frankrijk. De Dikke Willem: een reusachtig kanon met een enorm bereik. Vlak eromheen kan hij niet schieten. Werkt alleen met genoeg stroom.'},
 };
 const UT={
   conscript:{n:'Conscript',cat:'inf',side:'soviet',hp:150,spd:1.4,cost:100,sight:6,wpn:'conrifle',arm:'inf',req:['barracks'],d:'Sovjetsoldaat. Goedkoop en snel te trainen, sterk in grote aantallen.'},
@@ -481,7 +481,7 @@ const defOf=t=>BT[t]||UT[t];
 const NATIONS={
   usa:{n:'Amerika',side:'allies',sp:'Parachutisten',x:'Speciale kracht: parachutisten'},
   korea:{n:'Korea',side:'allies',x:'Eigen unit: Zwarte Adelaar (in plaats van de Harrier)'},
-  france:{n:'Frankrijk',side:'allies',x:'Eigen gebouw: Groot Kanon'},
+  france:{n:'Frankrijk',side:'allies',x:'Eigen gebouw: Dikke Willem'},
   germany:{n:'Duitsland',side:'allies',x:'Eigen unit: Tankjager'},
   uk:{n:'Groot-Brittannië',side:'allies',x:'Eigen unit: Sluipschutter'},
   russia:{n:'Rusland',side:'soviet',x:'Eigen unit: Teslatank'},
@@ -1930,13 +1930,36 @@ const BDRAW={
     box(c,pr,.12,.12,.76,.76,12*k,13.5*k,'#a3a6a8');
   },
   gcannon(c,pr,b,tm,k,t){
-    box(c,pr,0,0,2,2,0,6,'#6c7277');
-    cyl(c,pr,1,1,.8,6,6+12*k,'#80868c');band(c,pr,1,1,.78,6+9*k,tm.main);
-    const cz=6+12*k+4,ctr=pr(1,1,cz),dx=Math.cos(b.tur),dy=Math.sin(b.tur),e=pr(1+dx*1.5,1+dy*1.5,cz+8),back=e[1]<ctr[1];
-    if(back)line(c,ctr,e,'#2a2e33',7);
-    c.fillStyle=shade(tm.main,.85);c.beginPath();c.ellipse(ctr[0],ctr[1],22,12,0,0,7);c.fill();c.fillStyle='#8a9096';c.beginPath();c.ellipse(ctr[0],ctr[1]-4,16,8,0,0,7);c.fill();
-    if(!back)line(c,ctr,e,'#2a2e33',7);
-    if(b.flash>0)flash(c,e,14);
+    // de Dikke Willem: betonnen bunker met schuine wanden, een hoekige draaikoepel en een enorm lange loop met mondingsrem
+    box(c,pr,0,0,2,2,0,4,'#5c6166');
+    const z1=4+12*k;
+    poly(c,[pr(0,2,4),pr(2,2,4),pr(1.78,1.78,z1),pr(.22,1.78,z1)],'#7b8187');
+    poly(c,[pr(2,0,4),pr(2,2,4),pr(1.78,1.78,z1),pr(1.78,.22,z1)],'#585e64');
+    poly(c,[pr(.22,.22,z1),pr(1.78,.22,z1),pr(1.78,1.78,z1),pr(.22,1.78,z1)],'#8b9197');
+    line(c,pr(.26,1.76,z1),pr(1.74,1.76,z1),tm.main,2.2);
+    for(const q of[.45,1,1.55])dot(c,pr(q,1.9,6*k),1.2,'#3a3f44');
+    if(k<.5)return;
+    cyl(c,pr,1,1,.6,z1,z1+3,'#4b5156');
+    const tc=Math.cos(b.tur),ts=Math.sin(b.tur),tz=z1+3,th=tz+19*k,rk=b.flash>0?1:0;
+    const T=(a,s2,z)=>pr(1+tc*a-ts*s2,1+ts*a+tc*s2,z);
+    // loop: dik begin, lange slanke loop en een mondingsrem; bij een schot schuift hij terug
+    const L0=.35-rk*.15,L1=1.35-rk*.15,L2=2.95-rk*.22,bz=tz+11;
+    const tip=T(L2+.28,0,bz+9.6),ctr=pr(1,1,tz),back=tip[1]<ctr[1];
+    const barrel=()=>{line(c,T(L0,0,bz),T(L1,0,bz+4),'#2b2f34',15);line(c,T(L1,0,bz+4),T(L2,0,bz+9),'#30353a',10);line(c,T(L0,0,bz+2),T(L2,0,bz+11),'rgba(255,255,255,.13)',2.5);
+      for(const a of[.75,1.15,1.75,2.35])dot(c,T(a,0,bz+4+(a-.35)*1.9),a<1.35?7.6:5.4,'#3c4248');
+      line(c,T(L2,0,bz+9),T(L2+.28,0,bz+9.6),'#24282c',16);line(c,T(L2+.06,0,bz+9.1),T(L2+.22,0,bz+9.5),'#5b6167',4)};
+    if(back)barrel();
+    const H=[[.52,.44],[.68,.24],[.68,-.24],[.52,-.44],[-.5,-.48],[-.68,-.22],[-.68,.22],[-.5,.48]];
+    const top=H.map(([a,s2])=>T(a,s2,th)),side=H.map(([a,s2])=>T(a,s2,tz));
+    for(let i=0;i<H.length;i++){const j=(i+1)%H.length;poly(c,[side[i],side[j],top[j],top[i]],shade('#6f767c',.62+.4*((i<3)?1:0)))}
+    poly(c,top,'#80878d');
+    {let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of top){x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1])}
+      const g=c.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,'rgba(255,255,255,.3)');g.addColorStop(.6,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(0,0,0,.25)');c.fillStyle=g;c.beginPath();top.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fill();c.strokeStyle='rgba(0,0,0,.5)';c.lineWidth=.8;c.stroke()}
+    line(c,T(-.2,-.44,th),T(-.2,.44,th),tm.main,2.6);
+    for(const s2 of[-.22,0,.22])line(c,T(-.5,s2,th+.5),T(-.3,s2,th+.5),'rgba(0,0,0,.45)',1.4);
+    dot(c,T(.1,.2,th+1),3,shade('#80878d',.6));dot(c,T(.1,.2,th+1.6),2,shade('#80878d',1.25));
+    if(!back)barrel();
+    if(b.flash>0){c.globalCompositeOperation='lighter';flash(c,tip,22);c.globalCompositeOperation='source-over'}
   },
   tower(c,pr,b,tm,k,t){
     box(c,pr,.12,.12,.76,.76,0,14*k,'#7d8287');
