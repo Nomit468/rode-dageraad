@@ -457,6 +457,9 @@ const UT={
   desolator:{n:'Desolator',cat:'inf',nat:'iraq',hp:180,spd:1.2,cost:600,sight:6,wpn:'rad',arm:'inf',req:['barracks','radar'],d:'Alleen voor Irak. Straalwapen dat infanterie wegvaagt en een tijdje een gifgroene plas straling achterlaat.'},
   terror:{n:'Terrorist',cat:'inf',nat:'cuba',hp:90,spd:2.3,cost:200,sight:6,wpn:'suicide',arm:'inf',req:['barracks'],d:'Alleen voor Cuba. Rent op het doel af en blaast zichzelf op. Goedkoop en gevaarlijk in groepen.'},
   tdest:{n:'Tankjager',cat:'veh',nat:'germany',hp:480,spd:1.7,cost:900,sight:7,wpn:'tdgun',arm:'veh',req:['factory'],d:'Alleen voor Duitsland. Zwaar antitankkanon zonder draaibare koepel. Vernietigt tanks, maar is zwak tegen infanterie.'},
+  pzh:{n:'Pantserhouwitser',cat:'veh',nat:'netherlands',hp:300,spd:1.9,cost:1200,sight:8,wpn:'pzh',arm:'veh',req:['factory','radar'],d:'Alleen voor Nederland. Zwaar geschut dat van heel ver weg granaten op een gebied afvuurt. Van dichtbij kan hij niet schieten, dus bescherm hem goed.'},
+  bers:{n:'Bersaglieri-motor',cat:'veh',nat:'italy',hp:160,spd:4.4,cost:450,sight:11,wpn:'mg',arm:'veh',req:['factory'],d:'Alleen voor Italië. Razendsnelle verkenner op een motor met een mitrailleur en een groot zichtveld. Goed tegen soldaten en oogsters lastigvallen, zwak tegen tanks.'},
+  stank:{n:'S-tank',cat:'veh',nat:'sweden',hp:420,spd:2.2,cost:950,sight:7,wpn:'stgun',dep:'stgund',arm:'veh',req:['factory'],d:'Alleen voor Zweden. Tank zonder draaibare koepel: hij draait met zijn hele romp. Staat hij even stil, dan graaft hij zich in: de helft minder schade en een groter bereik.'},
   demo:{n:'Sloopwagen',cat:'veh',nat:'libya',hp:180,spd:1.7,cost:1500,sight:6,wpn:'demo',arm:'veh',req:['factory','radar'],d:'Alleen voor Libië. Rijdt een vijandelijke basis in en ontploft met een enorme klap. Ontploft ook als hij wordt neergeschoten.'},
   eagle:{n:'Zwarte Adelaar',cat:'veh',nat:'korea',air:true,jet:true,ammo:2,alt:48,hp:240,spd:5,cost:1200,sight:9,wpn:'eaglemsl',arm:'air',req:['factory','airfield'],d:'Alleen voor Korea, in plaats van de Harrier. Sneller en sterker. Klik op een doel: hij vuurt twee raketten af en vliegt terug naar het vliegveld om bij te laden. Alleen luchtafweer, raketsoldaten, IFV\'s en rocketeers kunnen hem in de lucht raken.'},
   harrier:{n:'Harrier',cat:'veh',side:'allies',notNat:'korea',air:true,jet:true,ammo:2,alt:46,hp:180,spd:4.6,cost:1200,sight:9,wpn:'harmsl',arm:'air',req:['factory','airfield'],d:'Geallieerde straaljager van het vliegveld. Klik op een doel: hij vuurt twee raketten af en vliegt terug om bij te laden. Op de grond is hij kwetsbaar; in de lucht raken alleen luchtafweer, raketsoldaten, IFV\'s en rocketeers hem.'},
@@ -483,6 +486,9 @@ const WP={
   aegis:{rng:10,dmg:45,rof:.9,kind:'rocket',spd:16,dbl:true,vs:{air:1}},
   sonic:{rng:5,dmg:60,rof:1.4,kind:'sonic',vs:{ship:1,sub:1}},
   squid:{rng:.9,dmg:45,rof:.5,kind:'melee',vs:{ship:1,sub:.5}},
+  pzh:{rng:16,min:4,dmg:110,rof:4.2,kind:'arty',spd:9,splash:1.4,vs:{inf:.9,veh:.6,bld:1.2,ship:.7}},
+  stgun:{rng:6,dmg:90,rof:2,kind:'shell',spd:15,vs:{inf:.3,veh:1.1,bld:.6,ship:.7}},
+  stgund:{rng:7.2,dmg:90,rof:2,kind:'shell',spd:15,vs:{inf:.3,veh:1.1,bld:.6,ship:.7}},
   sealmg:{rng:5,dmg:60,rof:.3,kind:'bullet',c4:true,vs:{inf:1,veh:0,bld:0,ship:0}},
   zap:{rng:4,dmg:135,rof:1.06,kind:'zap',vs:{inf:1,veh:1,bld:.5}},
   prism:{rng:10,dmg:100,rof:2.83,kind:'beam',chain:2,vs:{inf:.8,veh:.7,bld:2}},
@@ -520,7 +526,7 @@ const WP={
   grand:{rng:13,min:2,dmg:150,rof:2.12,kind:'shell',spd:20,vs:{inf:.7,veh:1,bld:1}},
 };
 const CATS=['bld','def','inf','veh','sea'];
-const CAT_TYPES={bld:['power','refinery','barracks','factory','radar','airfield','lab','spysat','nukepow','cloning','indplant','purifier','shipyard'],def:['wall','bunker','tower','prismt','coil','aa','gap','gcannon'],inf:['gi','conscript','rocket','dog','eng','tesltrp','rocketeer','spy','ivan','sniper','desolator','terror','chrono','cmdo','seal','yuri'],veh:['harv','tank','rhino','ifv','flak','drone','mirage','tesla','tdest','arty','demo','hawk','siege','prism','mammoth','harrier','eagle','kirov'],sea:['destroyer','aegis','dolphin','carrier','sub','seascorp','squid','dread','amph']};
+const CAT_TYPES={bld:['power','refinery','barracks','factory','radar','airfield','lab','spysat','nukepow','cloning','indplant','purifier','shipyard'],def:['wall','bunker','tower','prismt','coil','aa','gap','gcannon'],inf:['gi','conscript','rocket','dog','eng','tesltrp','rocketeer','spy','ivan','sniper','desolator','terror','chrono','cmdo','seal','yuri'],veh:['harv','tank','rhino','ifv','flak','drone','mirage','tesla','tdest','pzh','bers','stank','arty','demo','hawk','siege','prism','mammoth','harrier','eagle','kirov'],sea:['destroyer','aegis','dolphin','carrier','sub','seascorp','squid','dread','amph']};
 const RATE={bld:150,def:150,inf:90,veh:130,sea:130};
 const AI_MUL=[.65,1,1.35];
 const defOf=t=>BT[t]||UT[t];
@@ -535,6 +541,11 @@ const NATIONS={
   iraq:{n:'Irak',side:'soviet',x:'Eigen unit: Desolator'},
   cuba:{n:'Cuba',side:'soviet',x:'Eigen unit: Terrorist'},
   libya:{n:'Libië',side:'soviet',x:'Eigen unit: Sloopwagen'},
+  netherlands:{n:'Nederland',side:'allies',x:'Eigen unit: Pantserhouwitser'},
+  italy:{n:'Italië',side:'allies',x:'Eigen unit: Bersaglieri-motor'},
+  sweden:{n:'Zweden',side:'allies',x:'Eigen unit: S-tank'},
+  china:{n:'China',side:'soviet',x:'Speciale kracht: massaleger (goedkope, snelle Conscripts)'},
+  vietnam:{n:'Vietnam',side:'soviet',x:'Speciale kracht: junglestrijders (onzichtbaar bij bos)'},
 };
 const NAT_KEYS=Object.keys(NATIONS),SOV_NATS=NAT_KEYS.filter(k=>NATIONS[k].side==='soviet'),ALL_NATS=NAT_KEYS.filter(k=>NATIONS[k].side==='allies');
 const PARA_T=240,OIL_RATE=12;
@@ -901,7 +912,7 @@ function countB(o){const c={};for(const b of G.blds)if(b.o===o&&b.bt>=1)c[b.type
 function reqMet(o,req){if(!req)return true;for(const r of req)if(!G.blds.some(b=>b.o===o&&b.type===r&&b.bt>=1))return false;return true}
 const PRIM=new Set(['barracks','factory','shipyard']);
 // zoals in RA2: elk extra gebouw van dezelfde soort maakt de bouwtijd 20% korter (tot zes gebouwen)
-function costOf(o,type){const d=defOf(type),T=UT[type];let c=d.cost;if(T&&(T.cat==='veh'||T.cat==='sea')&&G.blds&&G.blds.some(b=>b.o===o&&b.type==='indplant'&&b.bt>=1&&!b.dead))c=Math.round(c*.75);return c}
+function costOf(o,type){const d=defOf(type),T=UT[type];let c=d.cost;if(type==='conscript'&&G.pl&&G.pl[o]&&G.pl[o].nat==='china')c=Math.round(c*.6);if(T&&(T.cat==='veh'||T.cat==='sea')&&G.blds&&G.blds.some(b=>b.o===o&&b.type==='indplant'&&b.bt>=1&&!b.dead))c=Math.round(c*.75);return c}
 function multiF(o,cat){const t=cat==='inf'?'barracks':cat==='veh'?'factory':cat==='sea'?'shipyard':'yard';let n=0;for(const b of G.blds)if(b.o===o&&b.type===t&&b.bt>=1&&!b.dead)n++;return 1/Math.pow(.8,Math.min(6,Math.max(1,n))-1)}
 function producer(o,cat){
   const t=cat==='inf'?'barracks':cat==='veh'?'factory':cat==='sea'?'shipyard':'yard';
@@ -981,7 +992,9 @@ function los(x0,y0,x1,y1){const d=Math.hypot(x1-x0,y1-y0),n=Math.ceil(d/.25);for
 function setPath(u,x,y){u.gx=x;u.gy=y;u.path=UT[u.type].air?[{x:clamp(x,.3,MAP-.3),y:clamp(y,.3,MAP-.3)}]:asSea(pwOf(u.type),()=>findPath(u.x,u.y,x,y));u.stuckN=0;u.pt=0;u.lx=u.x;u.ly=u.y;u.los=0}
 function teleport(u,x,y){u.st='tele';u.tid=0;u.resume=null;u.path=null;u.dx=clamp(x,.5,MAP-.5);u.dy=clamp(y,.5,MAP-.5);u.tt=G.t+.4+Math.hypot(u.dx-u.x,u.dy-u.y)*.08;fx({k:'chf',x:u.x,y:u.y,z:6,life:.6})}
 // eenheden die niet zelf achter vijanden aan gaan: ze schieten alleen op wat binnen hun bereik komt
-const NOCHASE=new Set(['mirage','prism','arty']);
+const NOCHASE=new Set(['mirage','prism','arty','pzh']);
+// blijft deze eenheid staan? Voor spelers alle NOCHASE-soorten; de computer laat alleen zijn Mirage als boom staan
+const holdsPos=u=>NOCHASE.has(u.type)&&(!isAI(u.o)||u.type==='mirage');
 function orderMove(u,x,y,am){u.gspd=0;u.home=null;if(u.type==='chrono'){teleport(u,x,y);u.am=!!am;return}u.land=u.unl=false;if(u.dep){u.dep=false;fxl({k:'ds',x:u.x,y:u.y,z:2,life:.6})}u.rt=0;u.st='move';u.am=!!am;u.tid=0;u.resume=null;u.auto=false;u.dx=x;u.dy=y;setPath(u,x,y)}
 // plekken rond een doel voor een groep, in dezelfde volgorde als de eenheden
 function groupSlots(us,tx,ty){const out=[],cx=tx|0,cy=ty|0,sl=[];for(let r=0;r<10&&sl.length<us.length;r++){const ring=[];for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;const x=cx+dx,y=cy+dy;if(walkable(x,y))ring.push({x:x+.5,y:y+.5,d:Math.hypot(dx,dy)})}ring.sort((a,b)=>a.d-b.d);sl.push(...ring)}
@@ -1006,14 +1019,14 @@ const canHit=(u,t)=>{const k=wkOf(u,t);if(!k)return false;const W=WP[k];if(t.k==
 function orderEng(us,t){for(const u of us){u.st='eng';u.tid=t.id;u.path=null;u.repath=0;u.am=false;u.resume=null}}
 function orderAttack(us,t){for(const u of us){if(!canHit(u,t))continue;u.home=null;u.st='attack';u.tid=t.id;u.auto=false;u.resume=null;u.am=false;u.path=null;u.repath=0}}
 // net als in RA2 rijden tanks soldaten plat; ingegraven GI's, Tesla-soldaten en Desolators niet
-const CRUSH=new Set(['tank','rhino','mammoth','heavy','mirage','prism','tdest','tesla','ifv','flak','harv']);
+const CRUSH=new Set(['tank','rhino','mammoth','heavy','mirage','prism','tdest','tesla','ifv','flak','harv','pzh','stank']);
 const crushable=e=>e.k==='u'&&UT[e.type].cat==='inf'&&!UT[e.type].air&&e.type!=='tesltrp'&&e.type!=='desolator'&&!e.dep&&e.hp>0&&!e.dead;
 function crushAt(u){for(const e of G.units)if(enemy(u.o,e.o)&&crushable(e)&&Math.abs(e.x-u.x)<.45&&Math.abs(e.y-u.y)<.45&&Math.hypot(e.x-u.x,e.y-u.y)<.42){
   fx({k:'sp',x:e.x,y:e.y,z:2,life:.3});sfx('bite',e.x,e.y);kill(e,{o:u.o,id:u.id})}}
 // hoe snel een romp draait (radialen per seconde): lichte wagens snel, zware tanks en de oogster traag
 // hoe lang een voertuig nodig heeft om op topsnelheid te komen (seconden)
-const VACC={ifv:.3,flak:.35,drone:.25,demo:.5,tank:.55,mirage:.55,rhino:.65,tesla:.6,tdest:.65,prism:.65,arty:.7,harv:.9,mammoth:1};
-const VTURN={ifv:3.6,flak:3.6,drone:4.5,demo:2.6,tank:2.8,mirage:2.8,rhino:2.5,tesla:2.5,tdest:2.3,prism:2.2,arty:2,harv:1.8,mammoth:1.6};
+const VACC={bers:.2,ifv:.3,flak:.35,drone:.25,demo:.5,tank:.55,mirage:.55,rhino:.65,tesla:.6,tdest:.65,prism:.65,arty:.7,harv:.9,mammoth:1};
+const VTURN={bers:5,stank:2.4,pzh:2.2,ifv:3.6,flak:3.6,drone:4.5,demo:2.6,tank:2.8,mirage:2.8,rhino:2.5,tesla:2.5,tdest:2.3,prism:2.2,arty:2,harv:1.8,mammoth:1.6};
 function moveAlong(u,dt){
   let p=u.path;if(!p||!p.length){u.path=null;return true}
   const T=UT[u.type],veh=T.cat==='veh'&&!T.air;
@@ -1040,8 +1053,8 @@ function moveAlong(u,dt){
   return false;
 }
 function nearestEnemy(x,y,o,r,W){
-  let best=null,bs=1e9;
-  for(const e of G.units){if(!enemy(o,e.o)||e.hp<=0||(e.type==='spy'&&W.kind!=='melee')||e.disg||e.st==='tele'||(W.kind==='latch'&&e.drone)||(W.kind==='melee'&&e.type==='drone')||(W.kind==='ivan'&&G.bombs.some(b=>b.id===e.id)))continue;const eff=W.vs[armor(e)]||0;if(eff===0)continue;const d=Math.hypot(e.x-x,e.y-y);if(d>r||(W.min&&d<W.min))continue;const s=d+(eff<.3?4:0)-(UT[e.type].wpn?.5:0);if(s<bs){bs=s;best=e}}
+  let best=null,bs=1e9;jungleUpdate();
+  for(const e of G.units){if(!enemy(o,e.o)||e.hp<=0||jungleHid(e,o)||(e.type==='spy'&&W.kind!=='melee')||e.disg||e.st==='tele'||(W.kind==='latch'&&e.drone)||(W.kind==='melee'&&e.type==='drone')||(W.kind==='ivan'&&G.bombs.some(b=>b.id===e.id)))continue;const eff=W.vs[armor(e)]||0;if(eff===0)continue;const d=Math.hypot(e.x-x,e.y-y);if(d>r||(W.min&&d<W.min))continue;const s=d+(eff<.3?4:0)-(UT[e.type].wpn?.5:0);if(s<bs){bs=s;best=e}}
   if(!W.vs.bld)return best;
   for(const e of G.blds){if(!enemy(o,e.o)||e.hp<=0||BT[e.type].wall||(W.kind==='ivan'&&G.bombs.some(b=>b.id===e.id)))continue;const d=distPE(x,y,e);if(d>r||(W.min&&d<W.min))continue;const s=d+2.5-(BT[e.type].wpn?1.5:0);if(s<bs){bs=s;best=e}}
   return best;
@@ -1068,6 +1081,7 @@ function updUnit0(u,dt){
   if(u.erase>0)u.erase=Math.max(0,u.erase-dt*.5);
   if(u.st==='tele'){if(G.t<u.tt)return;const w=nearestWalkable(u.dx|0,u.dy|0,5);if(w){u.x=w.x===(u.dx|0)&&w.y===(u.dy|0)?u.dx:w.x+.5;u.y=w.x===(u.dx|0)&&w.y===(u.dy|0)?u.dy:w.y+.5}u.st=u.tid?'attack':'idle';fx({k:'chf',x:u.x,y:u.y,z:6,life:.7});sfx('beam',u.x,u.y);return}
   // stilstaan meten aan de positie sinds de vorige stap; u.moving is hier al teruggezet en zegt nog niets
+  if(u.type==='stank'){const mv=u.sx0!==undefined&&Math.abs(u.x-u.sx0)+Math.abs(u.y-u.sy0)>1e-4;u.sx0=u.x;u.sy0=u.y;u.still=mv?0:(u.still||0)+dt;if(u.still>1.5&&!u.dep&&u.st!=='move')u.dep=true}
   if(u.type==='mirage'){const mv=u.px!==undefined&&Math.abs(u.x-u.px)+Math.abs(u.y-u.py)>1e-4;u.px=u.x;u.py=u.y;u.calm=mv?0:(u.calm||0)+dt;u.disg=u.calm>1.4}
   if((u.type==='mammoth'||u.rank===2)&&u.hp<T.hp)u.hp=Math.min(T.hp,u.hp+(u.type==='mammoth'?4:T.hp*.02)*dt);
   if(!T.wpn){updEng(u,dt);return}
@@ -1090,28 +1104,28 @@ function updUnit0(u,dt){
     if(u.st==='idle'&&!t&&gd>1.5&&u.scan<=0){orderMove(u,u.guard.x,u.guard.y,true)}}
   if((u.st==='idle'||(u.st==='move'&&u.am))&&u.scan<=0&&!(u.type==='yuri'&&u.ctrl&&(()=>{const m=ents.get(u.ctrl);return m&&!m.dead&&m.mc&&m.mc.by===u.id})())){
     u.scan=.35+Math.random()*.2;
-    const r=u.dep?W.rng:u.guard?Math.max(T.sight,W.rng+2):u.st==='idle'?((NOCHASE.has(u.type)||G.t<(u.leashT||0))&&!isAI(u.o)?W.rng:W.rng+(isAI(u.o)?3:1.2)):T.sight;
+    const r=u.dep?W.rng:u.guard?Math.max(T.sight,W.rng+2):u.st==='idle'?(holdsPos(u)||(G.t<(u.leashT||0)&&!isAI(u.o))?W.rng:W.rng+(isAI(u.o)?3:1.2)):T.sight;
     let e=nearestEnemy(u.x,u.y,u.o,r,W);
     if(T.aa){const A=WP[T.aa],e2=nearestEnemy(u.x,u.y,u.o,Math.max(r,A.rng),A);if(e2&&(!e||Math.hypot(e2.x-u.x,e2.y-u.y)<distPE(u.x,u.y,e)))e=e2}
     if(e){if(u.st==='move')u.resume={x:u.dx,y:u.dy};else if(!u.home)u.home={x:u.x,y:u.y};u.st='attack';u.tid=e.id;u.auto=true;t=e;u.path=null;u.repath=0;wk=wkOf(u,t);W=WP[wk]}
   }
   if(u.st==='attack'&&t){
     const d=distPE(u.x,u.y,t),a=Math.atan2(cyE(t)-u.y,cxE(t)-u.x);
-    if(u.auto&&d>T.sight+2.5){u.tid=0;if(u.resume){const r=u.resume;orderMove(u,r.x,r.y,true)}else{u.st='idle';u.path=null}return}
+    if(u.auto&&d>Math.max(T.sight+2.5,holdsPos(u)?W.rng:0)){u.tid=0;if(u.resume){const r=u.resume;orderMove(u,r.x,r.y,true)}else{u.st='idle';u.path=null}return}
     const c4=W.c4&&(t.k!=='u'||UT[t.type].sea);
     // een tank die een soldaat dichtbij heeft, rijdt erop af en schiet onderweg
-    if(CRUSH.has(u.type)&&crushable(t)&&d<W.rng+1&&!(u.auto&&!u.guard&&!u.am&&!isAI(u.o)&&(NOCHASE.has(u.type)||(u.home&&Math.hypot(u.x-u.home.x,u.y-u.home.y)>3)))){u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.4;setPath(u,t.x,t.y)}moveAlong(u,dt);u.tur=turn(u.tur,a,5*dt);
+    if(CRUSH.has(u.type)&&crushable(t)&&d<W.rng+1&&!(u.auto&&!u.guard&&!u.am&&(holdsPos(u)||(!isAI(u.o)&&u.home&&Math.hypot(u.x-u.home.x,u.y-u.home.y)>3)))){u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.4;setPath(u,t.x,t.y)}moveAlong(u,dt);u.tur=turn(u.tur,a,5*dt);
       if(!t.dead&&u.cd<=0&&Math.abs(angDiff(u.tur,a))<.25){fire(u,t,wk);u.cd=W.rof*(.9+Math.random()*.2)}return}
     if(d<=(c4?.8:W.rng)&&(!W.min||d>=W.min)){
       u.path=null;
-      if(T.cat==='inf'){u.face=turn(u.face,a,11*dt);u.tur=u.face}else{u.tur=turn(u.tur,a,(u.type==='mammoth'?3.2:5)*dt);if(u.type==='tdest'||u.type==='demo')u.face=turn(u.face,a,4*dt)}
+      if(T.cat==='inf'){u.face=turn(u.face,a,11*dt);u.tur=u.face}else{u.tur=turn(u.tur,a,(u.type==='mammoth'?3.2:5)*dt);if(u.type==='tdest'||u.type==='demo'||u.type==='stank')u.face=turn(u.face,a,4*dt)}
       if(c4){if(!G.bombs.some(b=>b.id===t.id)){G.bombs.push({id:t.id,t:1.6,o:u.o,src:u.id});sfx('click');sayTo(u.o,'C4 geplaatst','c4',1)}u.tid=0;u.st='idle';return}
       if(W.kind==='ivan'){if(u.cd>0)return;if(!G.bombs.some(b=>b.id===t.id)){G.bombs.push({id:t.id,t:5,o:u.o,src:u.id,iv:1});sfx('click');sayTo(u.o,'Bom geplakt','ivanb',1.5,false)}u.cd=W.rof;u.tid=0;u.st='idle';u.auto=false;return}
       if(u.cd<=0&&(W.kind==='bomb'||Math.abs(angDiff(u.tur,a))<.25)){fire(u,t,wk);u.cd=W.rof*(.9+Math.random()*.2)}
     }else{
       if(u.dep){u.tid=0;u.st='idle';u.path=null;return}
+      if(u.auto&&!u.guard&&!u.am&&holdsPos(u)){u.tid=0;u.st='idle';u.path=null;u.home=null;return}
       if(u.auto&&!u.guard&&!u.am&&!isAI(u.o)){
-        if(NOCHASE.has(u.type)){u.tid=0;u.st='idle';u.path=null;u.home=null;return}
         if(u.home&&Math.hypot(u.x-u.home.x,u.y-u.home.y)>3){const h=u.home;u.tid=0;orderMove(u,h.x,h.y,false);u.leashT=G.t+5;return}}
       if(u.type==='chrono'){const dx=u.x-cxE(t),dy=u.y-cyE(t),l=Math.hypot(dx,dy)||1;const keep=u.tid;teleport(u,cxE(t)+dx/l*(W.rng-1.2),cyE(t)+dy/l*(W.rng-1.2));u.tid=keep;return}
       u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.9+Math.random()*.4;setPath(u,cxE(t),cyE(t))}
@@ -1247,7 +1261,7 @@ function fire(s,t,wk){
   const inf=!isB&&UT[s.type].cat==='inf',air=!isB&&UT[s.type].air;
   const mz=air?Math.max(6,uz(s)+(inf?8:-4)):isB?BT[s.type].ht-4:inf?9:s.type==='tesla'?22:s.type==='prism'?17:11,off=isB?.45:inf?.3:air||s.type==='tesla'||s.type==='prism'?0:.55;
   const mx=sx+Math.cos(a)*off,my=sy+Math.sin(a)*off,hz=t.k==='b'?12:t.k==='br'||t.k==='g'?3:UT[t.type].air?Math.max(6,uz(t)):6,src={id:s.id,o:s.o};
-  s.flash=.07;
+  s.flash=.07;if(G.pl[s.o]&&G.pl[s.o].nat==='vietnam')s.jrev=G.t+2;
   if(W.kind==='bomb'){G.proj.push({x:sx,y:sy,x0:sx,y0:sy,z:mz,z0:mz,tx:tx+(Math.random()-.5)*.5,ty:ty+(Math.random()-.5)*.5,tid:t.id,o:s.o,wk,ft:0,dist:1,dl:0,trail:0,aid:s.id});sfx('arty',sx,sy);return}
   if(W.kind==='suicide'){kill(s,{o:s.o,id:s.id});return}
   if(s.type==='mirage')s.calm=-1.5;
@@ -1332,7 +1346,7 @@ function damage(e,amt,src){
   const att=src&&src.id?ents.get(src.id):null;if(att&&att.rank)amt*=RANKD[att.rank];
   // straaljagers in de lucht zijn snel en dus lastig te raken
   if(e.k==='u'&&UT[e.type].jet&&uz(e)>20)amt*=.6;if(att&&att.boost)amt*=att.boost;if(e.rank)amt*=RANKT[e.rank];
-  e.hp-=e.dep&&UT[e.type]&&UT[e.type].cat==='inf'?amt*.8:amt;
+  e.hp-=e.dep&&UT[e.type]&&UT[e.type].cat==='inf'?amt*.8:e.dep&&e.type==='stank'?amt*.5:amt;
   if(e.k==='b'&&enemy(src.o,e.o))sayTo(e.o,'Onze basis wordt aangevallen','base',18,true,true,[cxE(e),cyE(e)]);
   if(G.ai[e.o]&&enemy(src.o,e.o)){const A=G.ai[e.o],a=src.id&&ents.get(src.id);A.alert={x:cxE(e),y:cyE(e),t:G.t};if(a&&e.k==='b')A.threat={x:a.x,y:a.y,t:G.t}}
   if(e.hp<=0){kill(e,src);return}
@@ -1492,7 +1506,7 @@ function production(o,dt){
     if(it.ready)continue;
     if(!reqMet(o,def.req)||!producer(o,cat)){it.hold=true;continue}
     let rate=RATE[cat]*(P.low?.5:1)*(isAI(o)?AI_MUL[G.diff]:1);
-    rate*=multiF(o,cat);
+    rate*=multiF(o,cat);if(it.type==='conscript'&&P.nat==='china')rate*=1.2;
     const cost=costOf(o,it.type),need=cost-it.spent;let sp=Math.min(need,rate*dt,P.credits);
     if(sp<=0&&need>0){it.hold=true;sayTo(o,'Onvoldoende krediet','money',12);continue}
     it.hold=false;P.credits-=sp;it.spent+=sp;
@@ -1567,7 +1581,7 @@ function aiTick(o,dt){
     if(sov&&cnt.radar&&nk<3)opts.push('kirov','kirov');
     if(sov)opts.push('drone');if(cnt.radar)opts.push('siege');
     if(cnt.airfield&&jetCount(o)+P.q.veh.filter(i=>UT[i.type].jet).length<padCount(o))opts.push('harrier','harrier','eagle','eagle');
-    if(P.nat==='germany')opts.push('tdest','tdest');if(cnt.radar&&P.nat==='libya')opts.push('demo');
+    if(P.nat==='germany')opts.push('tdest','tdest');if(P.nat==='netherlands'&&cnt.radar)opts.push('pzh','pzh');if(P.nat==='italy')opts.push('bers','bers');if(P.nat==='sweden')opts.push('stank','stank','stank');if(cnt.radar&&P.nat==='libya')opts.push('demo');
     const ok=opts.filter(t=>sideOk(o,UT[t]));
     if(sov&&cnt.radar&&!nk&&G.t>[420,300,220][G.diff]&&!P.q.veh.some(i=>i.type==='kirov'))P.q.veh.push({type:'kirov',spent:0});
     else if(ok.length)P.q.veh.push({type:ok[Math.random()*ok.length|0],spent:0})}
@@ -1619,7 +1633,7 @@ function reveal(){const tm=teamOf(LOCAL);for(const u of G.units)if(teamOf(u.o)==
 function visibleE(e){
   if(e.k==='br')return!!expl[(cyE(e)|0)*MAP+(cxE(e)|0)]||!!expl[(e.ay|0)*MAP+(e.ax|0)]||!!expl[(e.by|0)*MAP+(e.bx|0)];
   if(e.o!==NEU&&!enemy(LOCAL,e.o))return true;
-  if(e.k==='u')return!!expl[(e.y|0)*MAP+(e.x|0)];
+  if(e.k==='u'){jungleUpdate();if(jungleHid(e,LOCAL))return false;return!!expl[(e.y|0)*MAP+(e.x|0)]}
   for(let yy=e.y;yy<e.y+e.h;yy++)for(let xx=e.x;xx<e.x+e.w;xx++)if(expl[yy*MAP+xx])return true;return false;
 }
 
@@ -2230,7 +2244,7 @@ function windows(c,pr,x,y,w,h,z,hg,n,low,t,sd){
 function beacon(c,p,t,ph){const on=((t*1.1+ph)%1.6)<.25;dot(c,p,1.6,on?'#ff4433':'#5a1a14');if(on){c.globalCompositeOperation='lighter';flash(c,p,7);c.globalCompositeOperation='source-over'}}
 function flash(c,p,r){const g=c.createRadialGradient(p[0],p[1],0,p[0],p[1],r);g.addColorStop(0,'rgba(255,255,220,1)');g.addColorStop(.4,'rgba(255,200,80,.8)');g.addColorStop(1,'rgba(255,120,0,0)');c.fillStyle=g;c.beginPath();c.arc(p[0],p[1],r,0,7);c.fill()}
 function hullPts(pr,cx,cy,len,wid,z,f){const co=Math.cos(f),si=Math.sin(f),hl=len/2,hw=wid/2;return[[hl,hw],[hl,-hw],[-hl,-hw],[-hl,hw]].map(([a,b])=>pr(cx+a*co-b*si,cy+a*si+b*co,z))}
-const VDIM={mirage:[.82,.56,6,6.4],tank:[.76,.52,6,6.2],rhino:[.9,.64,6.5,7.6],ifv:[.86,.5,6,0],flak:[.86,.54,5,0],heavy:[.95,.68,7,8],arty:[.86,.5,6,0],harv:[1.05,.76,9,0],tesla:[.8,.56,6,0],prism:[.82,.56,6,0],mammoth:[1.25,.9,8,10.5],tdest:[.86,.62,5,0],demo:[.95,.56,7,0]};
+const VDIM={mirage:[.82,.56,6,6.4],tank:[.76,.52,6,6.2],rhino:[.9,.64,6.5,7.6],ifv:[.86,.5,6,0],flak:[.86,.54,5,0],heavy:[.95,.68,7,8],arty:[.86,.5,6,0],harv:[1.05,.76,9,0],tesla:[.8,.56,6,0],prism:[.82,.56,6,0],mammoth:[1.25,.9,8,10.5],tdest:[.86,.62,5,0],demo:[.95,.56,7,0],pzh:[1,.62,6.5,8],stank:[.95,.6,4.5,0],bers:[.6,.22,4,0]};
 // voertuigen zijn van staal in de kleur van hun kant; de teamkleur zit alleen in strepen en ringen
 const vehMetal=u=>{const sov=G.pl&&G.pl[u.o]&&G.pl[u.o].fac==='soviet';return u.type==='harv'?(sov?'#8d6a42':'#a7b0b8'):sov?'#7a7360':'#7b8792'};
 function drawVeh(c,pr,u,tm,t){
@@ -2252,19 +2266,20 @@ function drawVeh(c,pr,u,tm,t){
     for(const a of[-.22,.18]){const p=E(a*L,-Wd*.4,Hz),q=E(a*L,Wd*.4,Hz);c.moveTo(p[0],p[1]);c.lineTo(q[0],q[1])}c.stroke();
     c.fillStyle='rgba(0,0,0,.35)';for(const a of[-.4,-.13,.13,.4])for(const b of[-.33,.33]){const p=E(a*L,b*Wd,Hz);c.fillRect(p[0]-.5,p[1]-.5,1,1)}
     if(u.type!=='harv')for(const sd of[-1,1])line(c,E(-L*.4,sd*Wd*.36,Hz),E(L*.36,sd*Wd*.36,Hz),tm.main,2.2)}
-  if(u.type==='tank'||u.type==='mirage'||u.type==='rhino'||u.type==='heavy'||u.type==='mammoth'||u.type==='tdest'){
+  if(u.type==='tank'||u.type==='mirage'||u.type==='rhino'||u.type==='heavy'||u.type==='mammoth'||u.type==='tdest'||u.type==='pzh'||u.type==='stank'){
     // elke tank een eigen silhouet: Grizzly slank met lange loop, Rhino breed en hoekig, Apocalypse enorm met twee lopen en raketbuizen
-    const ty=u.type,mam=ty==='mammoth',rh=ty==='rhino',mir=ty==='mirage',td=ty==='tdest',ta=td?f:u.tur,tc=Math.cos(ta),ts=Math.sin(ta),tz=Hz+(td?1:3);
+    const ty=u.type,mam=ty==='mammoth',rh=ty==='rhino',mir=ty==='mirage',pz=ty==='pzh',st=ty==='stank',td=ty==='tdest'||st,ta=td?f:u.tur,tc=Math.cos(ta),ts=Math.sin(ta),tz=Hz+(st?(u.dep?-1:0):td?1:3);
     const E=(a,b,z)=>pr(u.x+co*a-si*b,u.y+si*a+co*b,z);
     // schuine voorplaat en, bij zware tanks, zijpantser
     poly(c,[E(L*.45,-Wd*.4,Hz-.5),E(L*.45,Wd*.4,Hz-.5),E(L*.3,Wd*.4,Hz),E(L*.3,-Wd*.4,Hz)],shade(M,1.2));
+    if(st&&u.dep)for(const sd of[-1,1])poly(c,[E(-L*.55,sd*Wd*.62,0),E(L*.55,sd*Wd*.62,0),E(L*.45,sd*Wd*.55,4),E(-L*.45,sd*Wd*.55,4)],MAPS[MAPK].theme==='snow'?'#c9d2d8':'#7a6340');
     if(rh||mam)for(const sd of[-1,1])poly(c,[E(-L*.46,sd*Wd*.5,Hz*.75),E(L*.42,sd*Wd*.5,Hz*.75),E(L*.42,sd*Wd*.5,Hz*.3),E(-L*.46,sd*Wd*.5,Hz*.3)],shade(M,.72));
     {
     // terugslag: na een schot schuift de loop terug en komt in een derde seconde weer naar voren
     const rk=u.rkT!==undefined?Math.max(0,1-(t-u.rkT)/.32)**2:0;
-    const off=(mam?-.1:rh?-.02:td?.04:-.07)-rk*.05,cx=u.x+tc*off,cy=u.y+ts*off,T=(a,b2,z)=>pr(cx+tc*a-ts*b2,cy+ts*a+tc*b2,z);
-    const TP=td?[[.3,.26],[.38,0],[.3,-.26],[-.32,-.28],[-.32,.28]]:mam?[[.3,.3],[.4,.12],[.4,-.12],[.3,-.3],[-.3,-.32],[-.38,0],[-.3,.32]]:rh?[[.22,.22],[.3,.08],[.3,-.08],[.22,-.22],[-.22,-.24],[-.28,0],[-.22,.24]]:mir?[[.26,.2],[.26,-.2],[-.26,-.22],[-.26,.22]]:[[.18,.13],[.25,0],[.18,-.13],[-.22,-.15],[-.3,0],[-.22,.15]];
-    const bl=td?.9:mam?.95:rh?.66:mir?.62:.82,bw=td?3.8:mam?4.6:rh?4.8:mir?3.4:2.4,offs=mam?[-.11,.11]:ty==='heavy'?[-.08,.08]:[0];
+    const off=(mam?-.1:rh?-.02:pz?-.14:st?.1:td?.04:-.07)-rk*.05,cx=u.x+tc*off,cy=u.y+ts*off,T=(a,b2,z)=>pr(cx+tc*a-ts*b2,cy+ts*a+tc*b2,z);
+    const TP=st?[[.32,.27],[.42,0],[.32,-.27],[-.3,-.29],[-.3,.29]]:pz?[[.32,.3],[.38,.12],[.38,-.12],[.32,-.3],[-.42,-.31],[-.42,.31]]:td?[[.3,.26],[.38,0],[.3,-.26],[-.32,-.28],[-.32,.28]]:mam?[[.3,.3],[.4,.12],[.4,-.12],[.3,-.3],[-.3,-.32],[-.38,0],[-.3,.32]]:rh?[[.22,.22],[.3,.08],[.3,-.08],[.22,-.22],[-.22,-.24],[-.28,0],[-.22,.24]]:mir?[[.26,.2],[.26,-.2],[-.26,-.22],[-.26,.22]]:[[.18,.13],[.25,0],[.18,-.13],[-.22,-.15],[-.3,0],[-.22,.15]];
+    const bl=pz?1.3:st?.95:td?.9:mam?.95:rh?.66:mir?.62:.82,bw=pz?3.3:st?3.2:td?3.8:mam?4.6:rh?4.8:mir?3.4:2.4,offs=mam?[-.11,.11]:ty==='heavy'?[-.08,.08]:[0];
     const ends=offs.map(o=>[T(.15-rk*.1,o,tz+1),T(bl-rk*.17,o,tz+1)]);const back=ends[0][1][1]<pr(cx,cy,tz)[1];
     // loop met rookafzuiger halverwege en een mondingsrem aan het eind
     const barrel=()=>{for(const[a,b2]of ends){line(c,a,b2,'#25292d',bw);line(c,a,b2,'rgba(255,255,255,.12)',bw*.35);
@@ -2586,12 +2601,12 @@ function drawUnit(c,pr,u,t){const[gx_,gy_]=pr(u.x,u.y,0);
   // een stilstaande Mirage is voor iedereen een boom, net als in RA2; je eigen boom heeft een dunne ring in je teamkleur
   if(u.type==='mirage'&&u.disg){if(!enemy(LOCAL,u.o)){c.strokeStyle=TEAM[u.o].main;c.globalAlpha=.55;c.lineWidth=1.2;c.beginPath();c.ellipse(gx_,gy_+1,14,7,0,0,7);c.stroke();c.globalAlpha=1}
     drawTree(c,0,0,t,{sx:gx_,sy:gy_,h1:hash(u.id,1,3),h2:hash(u.id,2,3)});return}
-  {const S=US*infS(u);c.save();c.translate(gx_,gy_);c.scale(S,S);c.translate(-gx_,-gy_);
+  {const S=US*infS(u);c.save();if(u.jh&&!enemy(LOCAL,u.o))c.globalAlpha=.55;c.translate(gx_,gy_);c.scale(S,S);c.translate(-gx_,-gy_);
     // na een schot veert een voertuig even terug, tegen de schietrichting in
     const T=UT[u.type];if(T.cat==='veh'&&!T.air&&u.rkT!==undefined&&t-u.rkT<.3){const k=(1-(t-u.rkT)/.3)**2,[bx,by]=pr(u.x+Math.cos(u.tur),u.y+Math.sin(u.tur),0),l=Math.hypot(bx-gx_,by-gy_)||1;c.translate(-(bx-gx_)/l*k*1.4,-(by-gy_)/l*k*1.4-k*.5)}
     drawUnit0(c,pr,u,t);c.restore();c.globalAlpha=1}
   if(u.erase>0){c.globalCompositeOperation='lighter';c.fillStyle=`rgba(110,190,255,${Math.min(.7,u.erase*.8)})`;c.beginPath();c.ellipse(gx_,gy_-10*US,12*US,15*US,0,0,7);c.fill();c.globalCompositeOperation='source-over'}}
-function drawUnit0(c,pr,u,t){if(u.type==='spy'){if(enemy(LOCAL,u.o))drawInf(c,pr,{...u,type:'gi'},TEAM[LOCAL]||TEAM[0],t);else drawInf(c,pr,u,TEAM[u.o],t);return}const tm=TEAM[u.o];if(u.type==='dolphin'||u.type==='squid'){drawCreature(c,pr,u,tm,t);return}if(UT[u.type].sea){drawShip(c,pr,u,tm,t);return}if(u.type==='eagle'||u.type==='harrier')drawEagle(c,pr,u,tm,t);else if(UT[u.type].heli)drawHeli(c,pr,u,tm,t);else if(u.type==='drone')drawDrone(c,pr,u,tm,t);else if(u.type==='kirov')drawKirov(c,pr,u,tm,t);else if(u.type==='rocketeer')drawRocketeer(c,pr,u,tm,t);else if(u.type==='dog')drawDog(c,pr,u,tm,t);else if(u.type==='amph')drawAmph(c,pr,u,tm,t);else if(UT[u.type].cat==='inf')drawInf(c,pr,u,tm,t);else drawVeh(c,pr,u,tm,t)}
+function drawUnit0(c,pr,u,t){if(u.type==='spy'){if(enemy(LOCAL,u.o))drawInf(c,pr,{...u,type:'gi'},TEAM[LOCAL]||TEAM[0],t);else drawInf(c,pr,u,TEAM[u.o],t);return}const tm=TEAM[u.o];if(u.type==='dolphin'||u.type==='squid'){drawCreature(c,pr,u,tm,t);return}if(UT[u.type].sea){drawShip(c,pr,u,tm,t);return}if(u.type==='eagle'||u.type==='harrier')drawEagle(c,pr,u,tm,t);else if(UT[u.type].heli)drawHeli(c,pr,u,tm,t);else if(u.type==='drone')drawDrone(c,pr,u,tm,t);else if(u.type==='kirov')drawKirov(c,pr,u,tm,t);else if(u.type==='rocketeer')drawRocketeer(c,pr,u,tm,t);else if(u.type==='dog')drawDog(c,pr,u,tm,t);else if(u.type==='amph')drawAmph(c,pr,u,tm,t);else if(u.type==='bers')drawBike(c,pr,u,tm,t);else if(UT[u.type].cat==='inf')drawInf(c,pr,u,tm,t);else drawVeh(c,pr,u,tm,t)}
 // dolfijn springt boven het water uit; de reuzeninktvis is een paars lijf met zwiepende tentakels
 function drawCreature(c,pr,u,tm,t){const f=u.face,co=Math.cos(f),si=Math.sin(f),[gx,gy]=pr(u.x,u.y,0);
   c.strokeStyle='rgba(220,240,255,.35)';c.lineWidth=1;const r=(t*1.2+u.id)%1;c.beginPath();c.ellipse(gx,gy,8+r*8,(8+r*8)*.45,0,0,7);c.stroke();
@@ -2606,6 +2621,17 @@ function drawCreature(c,pr,u,tm,t){const f=u.face,co=Math.cos(f),si=Math.sin(f),
     c.strokeStyle='#6a3a6e';c.lineWidth=2.4;c.beginPath();c.moveTo(body[0],body[1]+2);c.quadraticCurveTo((body[0]+e[0])/2+w*20,(body[1]+e[1])/2,e[0],e[1]);c.stroke()}
   c.fillStyle='#7a4580';c.beginPath();c.ellipse(body[0],body[1]-3,7,5,0,0,7);c.fill();c.fillStyle='rgba(255,255,255,.18)';c.beginPath();c.ellipse(body[0]-2,body[1]-5,3,2,0,0,7);c.fill();
   dot(c,[body[0]+co*3,body[1]-2],1.4,'#ffd84a');c.fillStyle=tm.main;c.fillRect(body[0]-3,body[1]+1,6,1.4)}
+// Bersaglieri-motor: twee wielen, een berijder met de verenpluim op zijn helm en een mitrailleur op het stuur
+function drawBike(c,pr,u,tm,t){const f=u.face,co=Math.cos(f),si=Math.sin(f),E=(a,b,z)=>pr(u.x+co*a-si*b,u.y+si*a+co*b,z),lean=u.moving?Math.sin(t*9+u.id)*.4:0;
+  const[gx,gy]=pr(u.x,u.y,0);c.fillStyle='rgba(0,0,0,.3)';c.beginPath();c.ellipse(gx+2,gy+1,11,3.5,0,0,7);c.fill();
+  for(const a of[.26,-.24]){const w=E(a,0,3);c.strokeStyle='#151617';c.lineWidth=2.4;c.beginPath();c.ellipse(w[0],w[1],4,3.2,0,0,7);c.stroke();dot(c,w,1,'#7a8288')}
+  line(c,E(.26,0,3),E(.12,0,9),'#3a3f44',1.6);line(c,E(-.24,0,3),E(.05,0,6),'#3a3f44',2);poly(c,[E(.14,-.06,7),E(.14,.06,7),E(-.16,.07,7.5),E(-.16,-.07,7.5)],'#2a2f33');
+  poly(c,[E(.02,-.07,8),E(.02,.07,8),E(-.1,.07,7),E(-.1,-.07,7)],tm.main);
+  const hip=E(-.04,0,10),sh=E(.02+lean*.02,0,17),hd=E(.04,0,20);line(c,E(-.02,0,7),hip,'#3d4232',2.4);line(c,hip,sh,'#4a5640',4);dot(c,hd,2.4,'#e0b088');
+  c.fillStyle='#2b3020';c.beginPath();c.arc(hd[0],hd[1]-.6,2.6,Math.PI,0);c.fill();
+  // de zwarte verenpluim van de Bersaglieri, die meewappert in de wind
+  for(let k=0;k<4;k++){const w=Math.sin(t*12+k+u.id)*1.2;line(c,[hd[0]+1.5,hd[1]-2],[hd[0]+5+k*.8-co*3,hd[1]-1+k*1.2+w],'#141414',1.1)}
+  const hb=E(.16,0,11);line(c,sh,hb,'#4a5640',1.6);const tc=Math.cos(u.tur),ts=Math.sin(u.tur),mz=pr(u.x+co*.16+tc*.3,u.y+si*.16+ts*.3,11.5);line(c,hb,mz,'#1d1f21',1.8);if(u.flash>0)flash(c,mz,6)}
 // amfibische transporter: luchtkussenboot met zwarte rok, cabine en twee grote propellers achterop
 function drawAmph(c,pr,u,tm,t){const f=u.face,co=Math.cos(f),si=Math.sin(f),E=(a,b,z)=>pr(u.x+co*a-si*b,u.y+si*a+co*b,z),onW=!!terr&&wetT(terr[clamp(u.y|0,0,MAP-1)*MAP+clamp(u.x|0,0,MAP-1)]),bob=onW?Math.sin(t*3+u.id)*.8:0;
   const hull=(L,W,z)=>[E(L*.5,-W*.35,z),E(L*.5,W*.35,z),E(L*.35,W*.5,z),E(-L*.5,W*.5,z),E(-L*.5,-W*.5,z),E(L*.35,-W*.5,z)];
@@ -2935,7 +2961,14 @@ const mouse={x:0,y:0,inside:false,left:false,drag:false,bx:0,by:0,rdown:false,rp
 const keys={};
 function selUnits(){return sel.map(id=>ents.get(id)).filter(u=>u&&u.k==='u'&&!u.dead)}
 // een vermomde vijandelijke Mirage is voor jou gewoon een boom: niet aan te wijzen, behalve met A+klik
-const hidMirage=u=>u.type==='mirage'&&u.disg&&enemy(LOCAL,u.o);
+// junglestrijders (Vietnam): soldaten in of naast bos zijn onzichtbaar voor vijanden die niet binnen 3 vakjes staan; schieten verraadt ze even
+let jungleT=-1;
+function jungleUpdate(){if(!G.units||(jungleT>=0&&G.t-jungleT<.25&&G.t>=jungleT))return;jungleT=G.t;
+  for(const u of G.units){u.jh=null;if(u.dead||!G.pl[u.o]||G.pl[u.o].nat!=='vietnam'||UT[u.type].cat!=='inf'||UT[u.type].air||(u.jrev||0)>G.t)continue;
+    let tree=false;const x=u.x|0,y=u.y|0;for(let dy=-1;dy<=1&&!tree;dy++)for(let dx=-1;dx<=1&&!tree;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<MAP&&Y<MAP&&terr[Y*MAP+X]===TREE)tree=true}
+    if(!tree)continue;const seen=new Set();for(const v of G.units)if(!v.dead&&teamOf(v.o)!==teamOf(u.o)&&Math.abs(v.x-u.x)<3&&Math.abs(v.y-u.y)<3)seen.add(teamOf(v.o));u.jh=seen}}
+const jungleHid=(u,viewer)=>!!u.jh&&!u.jh.has(teamOf(viewer))&&teamOf(viewer)!==teamOf(u.o);
+const hidMirage=u=>(u.type==='mirage'&&u.disg&&enemy(LOCAL,u.o))||jungleHid(u,LOCAL);
 function pick(sx,sy,all){
   let best=null,bd=1e9;
   for(const u of G.units){if(u.dead||!visibleE(u)||(!all&&hidMirage(u)))continue;const inf=UT[u.type].cat==='inf',k=infS(u),[ux,uy]=w2s(u.x,u.y,(uz(u)+(inf?8*k:6))*US),d=Math.hypot(ux-sx,uy-sy);if(d<(u.type==='kirov'?44:inf?9.5*k:18)*US&&d<bd){bd=d;best=u}}
@@ -3422,7 +3455,7 @@ function chatOpen(){if(!started)return;$('chatbar').hidden=false;$('chatto').tex
 function chatClose(){$('chatbar').hidden=true;$('chatin').blur()}
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-v13-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-v14-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',weather:'var',seed:1,online:false,slots:[],pending:[]};
