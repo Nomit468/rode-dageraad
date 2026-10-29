@@ -368,9 +368,9 @@ const BT={
   bunker:{n:'Bunker',w:1,h:1,hp:650,pow:0,cost:500,sight:6,cat:'def',req:['barracks'],wpn:'mg',ht:14,d:'Mitrailleur. Maait infanterie neer, doet weinig tegen tanks.'},
   aa:{n:'Luchtafweer',w:1,h:1,hp:600,pow:-40,cost:1000,sight:9,cat:'def',req:['radar'],wpn:'aa',ht:24,needPow:true,d:'Vuurt raketten op luchtdoelen, zoals Kirov-luchtschepen en rocketeers. Werkt alleen met genoeg stroom.'},
   tower:{n:'Kanontoren',w:1,h:1,hp:750,pow:-30,cost:900,sight:7,cat:'def',req:['factory'],wpn:'cannon',ht:22,needPow:true,d:'Zwaar kanon tegen voertuigen. Werkt alleen met genoeg stroom.'},
-  oil:{n:'Olieboortoren',w:2,h:2,tech:true,hp:1000,pow:0,cost:1000,sight:4,ht:34,d:'Neutraal. Neem hem in met een ingenieur: je krijgt meteen 1000 krediet en daarna elke seconde wat olie-inkomsten.'},
-  hospital:{n:'Ziekenhuis',w:2,h:2,tech:true,hp:1200,pow:0,cost:1000,sight:5,ht:30,d:'Neutraal. Neem het in met een ingenieur: al je infanterie geneest dan langzaam vanzelf, waar ze ook zijn.'},
-  garage:{n:'Garage',w:2,h:2,tech:true,hp:1200,pow:0,cost:1000,sight:5,ht:28,d:'Neutraal. Neem hem in met een ingenieur: al je voertuigen repareren dan langzaam vanzelf.'},
+  oil:{n:'Olieboortoren',w:2,h:2,tech:true,hp:1000,pow:0,cost:1000,sight:4,ht:34,d:'Neutraal. Neem hem in met een ingenieur: je krijgt meteen 1000 krediet en daarna elke seconde wat olie-inkomsten. Je kunt er dan ook naast bouwen, voor een tweede basis.'},
+  hospital:{n:'Ziekenhuis',w:2,h:2,tech:true,hp:1200,pow:0,cost:1000,sight:5,ht:30,d:'Neutraal. Neem het in met een ingenieur: al je infanterie geneest dan langzaam vanzelf, waar ze ook zijn. Je kunt er dan ook naast bouwen.'},
+  garage:{n:'Garage',w:2,h:2,tech:true,hp:1200,pow:0,cost:1000,sight:5,ht:28,d:'Neutraal. Neem hem in met een ingenieur: al je voertuigen repareren dan langzaam vanzelf. Je kunt er dan ook naast bouwen.'},
   house:{n:'Woonhuis',w:2,h:2,tech:true,civil:true,cap:5,hp:1600,pow:0,cost:800,sight:6,ht:30,d:'Burgergebouw. Soldaten kunnen zich erin verschansen en schieten dan vanuit de ramen. Druk op D met het gebouw geselecteerd om ze eruit te halen.'},
   shipyard:{n:'Scheepswerf',w:3,h:3,water:true,hp:1500,pow:-20,cost:1500,sight:7,cat:'bld',req:['barracks'],ht:26,d:'Bouw je op het water, vlak bij je basis. Levert schepen: torpedobootjagers en vliegdekschepen voor de Geallieerden, onderzeeërs en slagschepen voor de Sovjets.'},
   prismt:{n:'Prismatoren',w:1,h:1,side:'allies',hp:700,pow:-75,cost:1500,sight:8,cat:'def',req:['radar'],wpn:'prismt',ht:36,needPow:true,d:'Alleen Geallieerden. Lichtstraal met groot bereik. Torens vlak bij elkaar kaatsen hun straal naar de toren die vuurt: hoe meer torens, hoe harder de klap.'},
@@ -585,8 +585,11 @@ function genMap(s,mk){
   const fits=(x,y)=>{for(let yy=y-1;yy<=y+2;yy++)for(let xx=x-1;xx<=x+2;xx++){if(xx<2||yy<2||xx>MAP-3||yy>MAP-3)return false;const i=yy*MAP+xx;if(occ[i])return false;
       if(yy>=y&&yy<=y+1&&xx>=x&&xx<=x+1&&(terr[i]!==GRASS||ore[i]>0||laneD(xx+.5,yy+.5)<.6))return false}
     return B.every(p=>Math.hypot(x+1-p.x,y+1-p.y)>14)};
-  const put=(type,cx,cy,r0,r1)=>{for(let k=0;k<40;k++){const a=R()*7,r=r0+R()*(r1-r0),x=Math.round(cx+Math.cos(a)*r-1),y=Math.round(cy+Math.sin(a)*r-1);
-    if(fits(x,y)){for(let yy=y-1;yy<=y+2;yy++)for(let xx=x-1;xx<=x+2;xx++)occ[yy*MAP+xx]=1;TECH.push({type,x,y});return true}}return false};
+  // rond een olieboortoren moet genoeg vrije grond liggen, want na het innemen bouw je daar verder
+  // eerst zoeken naar een plek met veel ruimte, lukt dat niet dan met minder, en anders zoals vroeger
+  const room=(x,y)=>{let n=0;for(let yy=y-3;yy<=y+4;yy++)for(let xx=x-3;xx<=x+4;xx++){if(xx<1||yy<1||xx>MAP-2||yy>MAP-2||(xx>=x&&xx<=x+1&&yy>=y&&yy<=y+1))continue;const i=yy*MAP+xx;if(terr[i]===GRASS&&!ore[i]&&!occ[i])n++}return n};
+  const put=(type,cx,cy,r0,r1)=>{for(let k=0;k<90;k++){const a=R()*7,r=r0+R()*(r1-r0),x=Math.round(cx+Math.cos(a)*r-1),y=Math.round(cy+Math.sin(a)*r-1);
+    if(fits(x,y)&&(type!=='oil'||k>=80||room(x,y)>=(k<40?36:20))){for(let yy=y-1;yy<=y+2;yy++)for(let xx=x-1;xx<=x+2;xx++)occ[yy*MAP+xx]=1;TECH.push({type,x,y});return true}}return false};
   for(const m of mids)put('oil',m.x,m.y,3,7);
   put('oil',C.x,C.y,6,10);put('oil',C.x,C.y,6,10);put('hospital',C.x,C.y,8,13);put('garage',C.x,C.y,8,13);
   for(let k=0;k<Math.floor(ringN/3);k++){const a=k/Math.max(1,Math.floor(ringN/3))*Math.PI*2+1.1;put('oil',C.x+Math.cos(a)*MAP*.3,C.y+Math.sin(a)*MAP*.3,0,4)}
@@ -1265,7 +1268,8 @@ function canPlace(o,type,x,y,gap){
   const T=BT[type];
   for(let yy=y;yy<y+T.h;yy++)for(let xx=x;xx<x+T.w;xx++)if(!tileFree(o,xx,yy,T.water))return false;
   if(gap){for(let yy=y-1;yy<=y+T.h;yy++)for(let xx=x-1;xx<=x+T.w;xx++){if(xx<0||yy<0||xx>=MAP||yy>=MAP)continue;if(bmap[yy*MAP+xx])return false}}
-  let near=false;for(const b of G.blds){if(b.o!==o)continue;const d=rectDist(x,y,T.w,T.h,b.x,b.y,b.w,b.h);if((!BT[b.type].tech&&d<=(T.water?7:isAI(o)?6:4))||(T.wall&&BT[b.type].wall&&d<=1)){near=true;break}}
+  // zoals in RA2 mag je ook naast een ingenomen olieboortoren, ziekenhuis of garage bouwen; niet naast muren of bezette huizen
+  let near=false;for(const b of G.blds){if(b.o!==o)continue;const B=BT[b.type],d=rectDist(x,y,T.w,T.h,b.x,b.y,b.w,b.h);if(((!B.tech||(!B.civil&&!B.wall))&&d<=(T.water?7:isAI(o)?6:4))||(T.wall&&B.wall&&d<=1)){near=true;break}}
   return near;
 }
 function power(o){let prod=0,use=0;for(const b of G.blds){if(b.o!==o||b.bt<1)continue;const p=BT[b.type].pow;if(p>0)prod+=p*(.5+.5*b.hp/BT[b.type].hp);else use-=p}if(G.pl&&G.pl[o]&&G.pl[o].blackout>G.t)prod=0;return{prod:Math.round(prod),use}}
@@ -2209,7 +2213,7 @@ function drawShroud(x0,x1,y0,y1){
 }
 function ghostPos(){const T=BT[mode.type],[wx,wy]=s2w(mouse.x,mouse.y);return[Math.floor(wx-T.w/2+.5),Math.floor(wy-T.h/2+.5)]}
 function drawGhostTiles(){
-  const T=BT[mode.type],[gx_,gy_]=ghostPos();mode.x=gx_;mode.y=gy_;const ok=canPlace(0,mode.type,gx_,gy_);mode.ok=ok;
+  const T=BT[mode.type],[gx_,gy_]=ghostPos();mode.x=gx_;mode.y=gy_;const ok=canPlace(LOCAL,mode.type,gx_,gy_);mode.ok=ok;
   for(let y=gy_;y<gy_+T.h;y++)for(let x=gx_;x<gx_+T.w;x++){const[px,py]=w2s(x,y);ctx.fillStyle=ok?'rgba(70,220,110,.38)':tileFree(0,x,y,T.water)?'rgba(240,180,50,.38)':'rgba(240,60,50,.45)';tilePath(ctx,px,py);ctx.fill()}
 }
 function drawGhostBld(t){if(!mouse.inside)return;ctx.globalAlpha=.5;const b={x:mode.x,y:mode.y,w:BT[mode.type].w,h:BT[mode.type].h,tur:-Math.PI/4,o:0};BDRAW[mode.type](ctx,(x,y,z)=>w2s(b.x+x,b.y+y,z),b,TEAM[0],1,t,false);ctx.globalAlpha=1}
@@ -2671,7 +2675,7 @@ function showEnd(win,outOnly){
 }
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-v6-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-v7-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',online:false,slots:[],pending:[]};
