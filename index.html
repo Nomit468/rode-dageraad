@@ -254,6 +254,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
           <dt>X</dt><dd>uiteen: de selectie verspreidt zich, handig tegen artillerie en gifwolken</dd>
           <dt>Enter</dt><dd>chatten; Tab wisselt tussen iedereen en alleen je team</dd>
           <dt>B</dt><dd>baken zetten op de plek van de muis, voor je teamgenoten</dd>
+          <dt>Dubbelklik op gebouw</dt><dd>een kazerne, wapenfabriek of scheepswerf primair maken: daar komt de productie uit</dd>
           <dt>T</dt><dd>alle eenheden van dezelfde soort als je selectie in beeld kiezen, twee keer snel T voor de hele kaart. Dubbelklikken op een eenheid kiest ook de zelfde soort in beeld</dd>
           <dt>M</dt><dd>muziek aan of uit (ook met de knop Muziek)</dd>
           <dt>Shift + 1–9</dt><dd>groep opslaan (Ctrl of Option kan ook), daarna 1–9 om hem te kiezen</dd>
@@ -877,6 +878,7 @@ const vsOf=(W,e)=>{const a=armor(e),v=W.vs[a];if(v!==undefined)return v;return a
 const dock=b=>({x:b.x+1,y:b.y+b.h});
 function countB(o){const c={};for(const b of G.blds)if(b.o===o&&b.bt>=1)c[b.type]=(c[b.type]||0)+1;return c}
 function reqMet(o,req){if(!req)return true;for(const r of req)if(!G.blds.some(b=>b.o===o&&b.type===r&&b.bt>=1))return false;return true}
+const PRIM=new Set(['barracks','factory','shipyard']);
 function producer(o,cat){
   const t=cat==='inf'?'barracks':cat==='veh'?'factory':cat==='sea'?'shipyard':'yard';
   return G.blds.find(b=>b.o===o&&b.type===t&&b.bt>=1&&b.primary)||G.blds.find(b=>b.o===o&&b.type===t&&b.bt>=1);
@@ -1712,7 +1714,7 @@ const EVA_EN={promo:'Unit promoted',board:'Unit loaded',noland:'Cannot land ther
   sat:'Spy satellite online',gar:'Building garrisoned',engfix:'Building repaired',tech:'Tech building captured',techl:'Tech building lost',oil:'Oil derrick captured',oill:'Oil derrick lost',
   cap:'Building captured',capd:'Our building has been captured',drone:'Terror drone detected',blost:'Building lost',lost:'Unit lost',base:'Our base is under attack',kdown:'Kirov down',
   brug:'Bridge destroyed',brugok:'Bridge repaired',unl:'Unloading',money:'Insufficient funds',ready:'Construction complete',unit:'Unit ready',wave:'Enemy forces approaching',
-  gem:'Gems discovered',paraon:'Paratroopers en route',sold:'Building sold',kirov:'Kirov airship detected',power:'Low power',droneoff:'Terror drone removed',crate:'Money crate',
+  gem:'Gems discovered',prim:'Primary building selected',paraon:'Paratroopers en route',sold:'Building sold',kirov:'Kirov airship detected',power:'Low power',droneoff:'Terror drone removed',crate:'Money crate',
   para:'Paratroopers ready',welcome:'Welcome back, commander'};
 const said={};
 function say(text,key,cool,voice=true,alert=false){key=key||text;cool=cool??3;if(G.t-(said[key]??-999)<cool)return false;said[key]=G.t;addMsg(text,alert);if(voice&&started)speak(EVA_EN[key]);return true}
@@ -2673,6 +2675,9 @@ function render(t){
     if(!show&&!b.rep&&!b.primaryMark)continue;const[sx,sy]=w2s(b.x+b.w/2,b.y+b.h/2,T.ht+16);
     if(show)hpBarIso(ctx,b,f);
     if(b.rep&&(t*2|0)%2){ctx.fillStyle='#5fb0ff';ctx.font='700 14px "Barlow Condensed",sans-serif';ctx.textAlign='center';ctx.fillText('REPARATIE',sx,sy-6)}}
+  {const cnt={};for(const b of G.blds)if(b.o===LOCAL&&PRIM.has(b.type)&&b.bt>=1)cnt[b.type]=(cnt[b.type]||0)+1;
+    for(const ty in cnt){if(cnt[ty]<2)continue;const p=producer(LOCAL,ty==='barracks'?'inf':ty==='factory'?'veh':'sea');if(!p||!visibleE(p))continue;const[sx,sy]=w2s(p.x+p.w/2,p.y+p.h/2,BT[ty].ht+30);
+      ctx.font='700 13px "Barlow Condensed",sans-serif';ctx.textAlign='center';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,.75)';ctx.strokeText('PRIMAIR',sx,sy);ctx.fillStyle='#ffd23a';ctx.fillText('PRIMAIR',sx,sy)}}
   for(const b of G.blds){if(!BT[b.type].civil||!visibleE(b))continue;const n=garN(b);if(!n&&b.id!==selB&&mouse.hover!==b.id)continue;const cap=BT[b.type].cap,[sx,sy]=w2s(b.x+b.w/2,b.y+b.h/2,BT[b.type].ht+8);
     for(let i=0;i<cap;i++){ctx.fillStyle='rgba(0,0,0,.7)';ctx.fillRect(sx-cap*3.5+i*7-1,sy-1,6,6);ctx.fillStyle=i<n?TEAM[b.o].main:'#3a4048';ctx.fillRect(sx-cap*3.5+i*7,sy,4,4)}}
   for(const bo of G.bombs){const b=ents.get(bo.id);if(!b||!visibleE(b))continue;const[sx,sy]=w2s(cxE(b),cyE(b),b.k==='b'?BT[b.type].ht*.4:b.k==='u'?uzS(b)+(UT[b.type].cat==='inf'?16:12):6);if((G.t*6|0)%2)dot(ctx,[sx,sy],3.5,'#ff2a1a');ctx.fillStyle='#fff';ctx.font='700 13px "Barlow Condensed",sans-serif';ctx.textAlign='center';ctx.fillText((bo.iv?'BOM ':'C4 ')+Math.ceil(bo.t),sx,sy-8)}
@@ -2843,6 +2848,8 @@ function leftClick(sx,sy,ev){
       else sel=[h.id];
       mouse.lastClick=now;mouse.lastId=h.id;selB=0;sfx('click');return;
     }
+    {const now=performance.now();if(PRIM.has(h.type)&&selB===h.id&&now-mouse.lastClick<350&&mouse.lastId===h.id){issue({t:'prim',id:h.id});h.primary=true;for(const x of G.blds)if(x!==h&&x.o===LOCAL&&x.type===h.type)x.primary=false}
+      mouse.lastClick=now;mouse.lastId=h.id}
     sel=[];selB=h.id;sfx('click');return;
   }
   if(foe(h)){
@@ -2908,6 +2915,8 @@ function applyCmd(o,c){
     case'sell':{const b=bld(c.id);if(b&&b.o===o)sellCmd(b);break}
     case'rep':{const b=bld(c.id);if(b&&b.o===o&&b.hp<BT[b.type].hp)b.rep=!b.rep;break}
     case'para':{const P=G.pl[o];if(P.para===0&&num(c.x)&&num(c.y)&&c.x>=0&&c.y>=0&&c.x<MAP&&c.y<MAP)paraDrop(o,c.x,c.y);break}
+    // primair gebouw: daar komt de productie van dat soort vandaan, zoals in RA2
+    case'prim':{const b=bld(c.id);if(b&&b.o===o&&PRIM.has(b.type)&&b.bt>=1){for(const x of G.blds)if(x.o===o&&x.type===b.type)x.primary=false;b.primary=true;sayTo(o,'Primair gebouw ingesteld','prim',.5)}break}
     case'rally':{const b=bld(c.id);if(b&&b.o===o&&num(c.x)&&num(c.y))b.rally={x:clamp(c.x,0,MAP),y:clamp(c.y,0,MAP)};break}
   }
 }
@@ -3325,7 +3334,7 @@ function startMatch(){
 }
 function snapCommon(){
   const u=G.units.map(u=>[u.id,UTL.indexOf(u.type),u.o,r2(u.x),r2(u.y),Math.round(u.hp),r2(u.face),r2(u.tur),(u.moving?1:0)|(u.flash>0?2:0)|(u.gemLoad?4:0)|(u.hs==='mine'?8:0)|(u.dep?16:0)|((u.rank||0)<<5)|(u.disg?128:0)|(u.st==='tele'?256:0)|(u.drone?512:0),u.load|0,u.pass?UTL.indexOf(u.pass):-1,Math.round((u.erase||0)*100),u.z===undefined?-1:Math.round(u.z),u.ammo??-1]);
-  const b=G.blds.map(b=>[b.id,BTL.indexOf(b.type),b.o,b.x,b.y,Math.round(b.hp),r2(b.bt),r2(b.tur),(b.flash>0?1:0)|(b.rep?2:0),b.gar?b.gar.length:0,Math.round((b.erase||0)*100)]);
+  const b=G.blds.map(b=>[b.id,BTL.indexOf(b.type),b.o,b.x,b.y,Math.round(b.hp),r2(b.bt),r2(b.tur),(b.flash>0?1:0)|(b.rep?2:0)|(b.primary?4:0),b.gar?b.gar.length:0,Math.round((b.erase||0)*100)]);
   const p=G.proj.filter(p=>!(p.dl>0)).map(p=>[r2(p.x),r2(p.y),Math.round(p.z),WPL.indexOf(p.wk),r2(p.tx),r2(p.ty),Math.round(p.tz??6)]);
   const oa=[];for(const i of oreDirty)oa.push(i,ore[i]);oreDirty.clear();
   const ev=NET.ev;NET.ev=[];
@@ -3391,7 +3400,7 @@ function applySnap(s){
   const seenB=new Set();bmap.fill(0);
   for(const a of s.b){const[id,ti,o,x,y,hp,bt,tur,fl,gc,er]=a,type=BTL[ti];if(!type)continue;const T=BT[type];let b=ents.get(id);
     if(!b||b.k!=='b'){b={id,k:'b',type,o,x,y,w:T.w,h:T.h,hp,bt,tur,flash:0,rep:false,rally:null,smk:0};G.blds.push(b);ents.set(id,b)}
-    b.o=o;b.hp=hp;b.bt=bt;b.tur=tur;b.gc=gc||0;b.erase=(er||0)/100;if(fl&1)b.flash=.08;b.rep=!!(fl&2);seenB.add(id);
+    b.o=o;b.hp=hp;b.bt=bt;b.tur=tur;b.gc=gc||0;b.erase=(er||0)/100;if(fl&1)b.flash=.08;b.rep=!!(fl&2);b.primary=!!(fl&4);seenB.add(id);
     for(let yy=y;yy<y+T.h;yy++)for(let xx=x;xx<x+T.w;xx++)bmap[yy*MAP+xx]=id}
   G.blds=G.blds.filter(b=>{if(seenB.has(b.id))return true;ents.delete(b.id);if(selB===b.id)selB=0;return false});
   G.proj=s.p.filter(a=>WPL[a[3]]).map(a=>({x:a[0],y:a[1],z:a[2],wk:WPL[a[3]],tx:a[4],ty:a[5],tz:a[6],dl:0}));
