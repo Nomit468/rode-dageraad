@@ -2163,6 +2163,7 @@ function render(t){
     drawInf(ctx,w2s,{type:f.ty&&UT[f.ty]&&UT[f.ty].cat==='inf'&&!UT[f.ty].air?f.ty:'gi',x:f.x,y:f.y,face:f.face,tur:f.face,o:f.o,id:0,moving:false,flash:0},TEAM[f.o]||TEAM[0],t);ctx.restore()}
   if(mode&&mode.k==='place')drawGhostTiles();
   const sb=selB&&ents.get(selB);
+  if(sb&&sb.o===LOCAL&&sb.bt>=1)rangeRing(sb.type,sb.x,sb.y);
   if(sb&&sb.o===LOCAL){const fp=[w2s(sb.x,sb.y),w2s(sb.x+sb.w,sb.y),w2s(sb.x+sb.w,sb.y+sb.h),w2s(sb.x,sb.y+sb.h)];ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1.5;ctx.beginPath();fp.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.stroke()}
   for(const b of G.blds){const[px,py]=w2s(b.x+b.w/2,b.y+b.h/2);if(px<-150||px>VW+150||py<-150||py>VH+120)continue;if(!visibleE(b))continue;DR.push({d:b.x+b.y+(b.w+b.h)/2,k:1,e:b})}
   for(const u of G.units){const[px,py]=w2s(u.x,u.y);if(px<-40||px>VW+40||py<-50||py>VH+30)continue;if(!visibleE(u))continue;DR.push({d:u.x+u.y+(UT[u.type].air?(uz(u)<6?2.5:u.type==='kirov'?600:500):0),k:0,e:u})}
@@ -2281,8 +2282,13 @@ function drawShroud(x0,x1,y0,y1){
     else if((x>0&&!expl[i-1])||(x<MAP-1&&!expl[i+1])||(y>0&&!expl[i-MAP])||(y<MAP-1&&!expl[i+MAP])){c.globalAlpha=.5;tilePath(c,px,py,.5);c.fill();c.globalAlpha=1}}
 }
 function ghostPos(){const T=BT[mode.type],[wx,wy]=s2w(mouse.x,mouse.y);return[Math.floor(wx-T.w/2+.5),Math.floor(wy-T.h/2+.5)]}
+// bereik van een verdedigingsgebouw als cirkel op de grond; rood als het gebouw door stroomtekort niet schiet
+function rangeRing(type,x,y){const T=BT[type],W=T.wpn&&WP[T.wpn];if(!W||!W.rng)return;const[cx,cy]=w2s(x+T.w/2,y+T.h/2),k=Math.SQRT2,off=T.needPow&&G.pl&&G.pl[LOCAL]&&G.pl[LOCAL].low;
+  const ring=(r,fill)=>{ctx.beginPath();ctx.ellipse(cx,cy,r*HW*k,r*HH*k,0,0,7);if(fill){ctx.fillStyle=fill;ctx.fill()}ctx.stroke()};
+  ctx.save();ctx.lineWidth=1.5;ctx.setLineDash([7,5]);ctx.strokeStyle=off?'rgba(255,90,70,.75)':'rgba(255,255,255,.7)';ring(W.rng,off?'rgba(255,60,40,.06)':'rgba(255,255,255,.06)');
+  if(W.min){ctx.strokeStyle='rgba(255,200,80,.6)';ring(W.min)}ctx.restore()}
 function drawGhostTiles(){
-  const T=BT[mode.type],[gx_,gy_]=ghostPos();mode.x=gx_;mode.y=gy_;const ok=canPlace(LOCAL,mode.type,gx_,gy_);mode.ok=ok;
+  const T=BT[mode.type],[gx_,gy_]=ghostPos();mode.x=gx_;mode.y=gy_;const ok=canPlace(LOCAL,mode.type,gx_,gy_);mode.ok=ok;rangeRing(mode.type,gx_,gy_);
   for(let y=gy_;y<gy_+T.h;y++)for(let x=gx_;x<gx_+T.w;x++){const[px,py]=w2s(x,y);ctx.fillStyle=ok?'rgba(70,220,110,.38)':tileFree(0,x,y,T.water)?'rgba(240,180,50,.38)':'rgba(240,60,50,.45)';tilePath(ctx,px,py);ctx.fill()}
 }
 function drawGhostBld(t){if(!mouse.inside)return;ctx.globalAlpha=.5;const b={x:mode.x,y:mode.y,w:BT[mode.type].w,h:BT[mode.type].h,tur:-Math.PI/4,o:0};BDRAW[mode.type](ctx,(x,y,z)=>w2s(b.x+x,b.y+y,z),b,TEAM[0],1,t,false);ctx.globalAlpha=1}
