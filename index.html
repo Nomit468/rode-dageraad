@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Realtime strategiespel in de stijl van Red Alert 2. Speel alleen of met maximaal drie vrienden.">
+<meta name="description" content="Realtime strategiespel in de stijl van Red Alert 2. Speel alleen of met maximaal zeven vrienden.">
 <title>Rode Dageraad</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -100,9 +100,9 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 #tip .row b{color:var(--amber);font-weight:700}
 #tip .req{color:var(--warn);font-size:12px;margin-top:4px}
 
-.overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:20px max(16px,env(safe-area-inset-right,0px)) 20px max(16px,env(safe-area-inset-left,0px));
+.overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:flex-start;justify-content:center;padding:20px max(16px,env(safe-area-inset-right,0px)) 20px max(16px,env(safe-area-inset-left,0px));
   background:radial-gradient(ellipse at 50% 40%,rgba(8,14,22,.55),rgba(2,4,7,.88));overflow:auto}
-.card{width:min(560px,100%);background:linear-gradient(180deg,rgba(22,32,44,.96),rgba(10,15,21,.97));border:1px solid #4d6884;box-shadow:0 0 0 1px #000,0 20px 60px rgba(0,0,0,.6);padding:26px 28px 24px}
+.card{margin:auto 0;width:min(560px,100%);background:linear-gradient(180deg,rgba(22,32,44,.96),rgba(10,15,21,.97));border:1px solid #4d6884;box-shadow:0 0 0 1px #000,0 20px 60px rgba(0,0,0,.6);padding:26px 28px 24px}
 .eyebrow{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim)}
 .card h1{margin:4px 0 6px;font-family:var(--f-display);font-weight:800;font-size:clamp(34px,7vw,54px);line-height:.95;letter-spacing:.04em;text-wrap:balance;
   background:linear-gradient(180deg,#fff 0%,#ffd2c9 45%,#e0402f 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -217,7 +217,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
       <div class="card" id="menu-card">
         <div class="eyebrow">Commandocentrum</div>
         <h1>RODE DAGERAAD</h1>
-        <p>Bouw een basis, oogst erts en vaag de vijand van de kaart. Speel alleen tegen de computer, of met maximaal drie vrienden op een kaart met vier bases.</p>
+        <p>Bouw een basis, oogst erts en vaag de vijand van de kaart. Speel alleen tegen de computer, of met maximaal zeven vrienden op een kaart met acht bases.</p>
         <label class="fl" for="nm">Je naam</label>
         <input class="in" id="nm" maxlength="16" placeholder="Commandant" autocomplete="nickname">
         <div class="menu-btns">
@@ -252,7 +252,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
         <div class="status" id="lobby-status" role="status"></div>
         <div class="fl">Spelvorm</div>
         <div class="seg" id="mode-seg">
-          <button data-m="ffa">Ieder voor zich</button><button data-m="2v2">Twee tegen twee</button><button data-m="coop">Samen tegen de computer</button>
+          <button data-m="ffa">Ieder voor zich</button><button data-m="2v2">Twee teams</button><button data-m="coop">Samen tegen de computer</button>
         </div>
         <div class="fl">Computer</div>
         <div class="seg" id="diff-seg">
@@ -332,8 +332,9 @@ let MAP=80,OX=MAP*HW,N=MAP*MAP;
 const cv=$('game'),ctx=cv.getContext('2d');
 let DPR=1,VW=800,VH=600;
 const cam={x:0,y:0};
-const TEAM=[{main:'#3f8cff',dark:'#1d4fa8',light:'#a9cbff',n:'Blauw'},{main:'#e0402f',dark:'#8e1d14',light:'#ffab9d',n:'Rood'},{main:'#e8b02a',dark:'#8a6410',light:'#ffe08a',n:'Geel'},{main:'#3fbf5a',dark:'#1e6e30',light:'#a6f0b4',n:'Groen'},{main:'#a49c86',dark:'#5e584a',light:'#d6d0bc',n:'Neutraal'}];
-const NEU=4;
+const TEAM=[{main:'#3f8cff',dark:'#1d4fa8',light:'#a9cbff',n:'Blauw'},{main:'#e0402f',dark:'#8e1d14',light:'#ffab9d',n:'Rood'},{main:'#e8b02a',dark:'#8a6410',light:'#ffe08a',n:'Geel'},{main:'#3fbf5a',dark:'#1e6e30',light:'#a6f0b4',n:'Groen'},{main:'#f07a1f',dark:'#93430a',light:'#ffc08a',n:'Oranje'},{main:'#9a5ad8',dark:'#55288a',light:'#d6b6f5',n:'Paars'},{main:'#2fc4d4',dark:'#137480',light:'#a6eef5',n:'Cyaan'},{main:'#e05aa8',dark:'#8a2462',light:'#f6b4da',n:'Roze'},{main:'#a49c86',dark:'#5e584a',light:'#d6d0bc',n:'Neutraal'}];
+// maximaal acht spelers; de neutrale eigenaar (olieboortorens, huizen, bruggen) komt daarna
+const PMAX=8,NEU=8;
 const GRASS=0,WATER=1,ROCK=2,TREE=3,BRIDGE=4,BRDOWN=5;
 // onder een brug ligt water: schepen varen eronderdoor, en is de brug kapot dan is het gewoon water
 const wetT=t=>t===WATER||t>=BRIDGE;
@@ -341,22 +342,23 @@ const wetT=t=>t===WATER||t>=BRIDGE;
 let START=[{x:12,y:64},{x:64,y:12},{x:12,y:12},{x:64,y:64}];
 // kaarten: grootte, hoeveel water/rots/bos, hoe breed de wegen, hoeveel erts en welk jaargetijde
 const MAPS={
-  river:{n:'Rivierdal',size:176,d:'Een rivier splitst de kaart in west en oost, met eilandjes in het midden. Bruggen kun je opblazen en met een ingenieur weer herstellen.',water:.3,rock:.71,tree:.64,lane:1,ore:1,ns:10,hill:.6,theme:'green',river:'v'},
-  big:{n:'Grote vlakte',size:232,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,hill:.61,theme:'green'},
-  islands:{n:'Eilanden',size:196,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,hill:.66,theme:'green'},
-  coast:{n:'Kustoorlog',size:196,d:'Eén groot eiland met open zee eromheen. Bouw een scheepswerf aan je kust en val de vijand ook vanaf het water aan.',water:.2,rock:.77,tree:.66,lane:1,ore:1.15,ns:11,hill:.63,theme:'green',ocean:.37},
-  winter:{n:'Winterfront',size:176,d:'Besneeuwd en rotsachtig. Een ijskoude rivier loopt van west naar oost; wie de bruggen heeft, heeft het front.',water:.29,rock:.63,tree:.6,lane:.9,ore:1,ns:9,hill:.58,theme:'snow',river:'h'},
+  river:{n:'Rivierdal',size:220,d:'Een rivier splitst de kaart in west en oost, met eilandjes in het midden. Bruggen kun je opblazen en met een ingenieur weer herstellen.',water:.3,rock:.71,tree:.64,lane:1,ore:1,ns:10,hill:.6,theme:'green',river:'v'},
+  big:{n:'Grote vlakte',size:290,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,hill:.61,theme:'green'},
+  islands:{n:'Eilanden',size:244,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,hill:.66,theme:'green'},
+  coast:{n:'Kustoorlog',size:244,d:'Eén groot eiland met open zee eromheen. Bouw een scheepswerf aan je kust en val de vijand ook vanaf het water aan.',water:.2,rock:.77,tree:.66,lane:1,ore:1.15,ns:11,hill:.63,theme:'green',ocean:.37},
+  winter:{n:'Winterfront',size:220,d:'Besneeuwd en rotsachtig. Een ijskoude rivier loopt van west naar oost; wie de bruggen heeft, heeft het front.',water:.29,rock:.63,tree:.6,lane:.9,ore:1,ns:9,hill:.58,theme:'snow',river:'h'},
 };
 let MAPK='river';
 function setMapSize(sz,ring){
   MAP=sz;OX=MAP*HW;N=MAP*MAP;const a=Math.round(sz*.15),b=Math.round(sz*.8);
-  START=[{x:a,y:b},{x:b,y:a},{x:a,y:a},{x:b,y:b}];
+  const m=Math.round(sz*.475);START=[{x:a,y:b},{x:b,y:a},{x:a,y:a},{x:b,y:b},{x:a,y:m},{x:b,y:m},{x:m,y:a},{x:m,y:b}];
   // op de kustkaart liggen de bases op een ring rond het midden, vlak bij de kust
-  if(ring){const r=sz*ring/Math.SQRT2,c=sz/2-1.5;START=[[-1,1],[1,-1],[-1,-1],[1,1]].map(([dx,dy])=>({x:Math.round(c+dx*r),y:Math.round(c+dy*r)}))}
+  if(ring){const r=sz*ring/Math.SQRT2,c=sz/2-1.5,S2=Math.SQRT2;START=[[-1,1],[1,-1],[-1,-1],[1,1],[-S2,0],[S2,0],[0,-S2],[0,S2]].map(([dx,dy])=>({x:Math.round(c+dx*r),y:Math.round(c+dy*r)}))}
   gS=new Float32Array(N);fS=new Float32Array(N);came=new Int32Array(N);stamp=new Uint32Array(N);closed=new Uint32Array(N);gen=0;
 }
-const SPOT_N=['West','Oost','Noord','Zuid'];
-const RING=[[2,1],[1,3],[3,0],[0,2]];
+const SPOT_N=['West','Oost','Noord','Zuid','Noordwest','Zuidoost','Noordoost','Zuidwest'];
+// buren langs de rand: Noord, Noordoost, Oost, Zuidoost, Zuid, Zuidwest, West, Noordwest
+const RING=[[2,6],[6,1],[1,5],[5,3],[3,7],[7,0],[0,4],[4,2]];
 const HCAP=600,BR_HP=2400;
 
 // ---------- types
@@ -861,12 +863,12 @@ function newGame(s,cfg,populate=true){
   Object.assign(G,{t:0,diff:cfg.diff,mode:cfg.mode,paused:false,over:null,
     pl:[...cfg.slots.map(c=>mkPlayer(c.kind==='ai'?[3500,6000,9000][cfg.diff]:5000,c)),mkPlayer(0,{kind:'neutral',team:99,nat:'usa'})],
     units:[],blds:[],proj:[],fx:[],pings:[],bombs:[],rads:[],drops:[],planes:[],crates:[],crateT:30,gemSeen:false,ai:{},
-    st:[0,1,2,3,4].map(()=>({built:0,lost:0,kills:0,earned:0}))});
+    st:Array.from({length:PMAX+1},()=>({built:0,lost:0,kills:0,earned:0}))});
   ents.clear();nextId=1;sel=[];selB=0;mode=null;groups={};shroudDirty=true;satOn=false;oreDirty.clear();
   // bruggen komen uit de kaart zelf; gastheer en gasten maken ze dus op dezelfde manier en met dezelfde nummers
   G.bridges=BRIDGES.map(d=>{const e={id:nextId++,k:'br',type:'bridge',o:NEU,...d,hp:BR_HP,down:false,flash:0};ents.set(e.id,e);return e});
   if(populate)for(const t of TECH)mkBld(NEU,t.type,t.x,t.y,true);
-  if(populate)for(let o=0;o<4;o++){
+  if(populate)for(let o=0;o<PMAX;o++){
     if(!active(o))continue;
     const st=START[o];mkBld(o,'yard',st.x,st.y,true);
     // op grote kaarten duurt de reis naar de vijand lang; daarom vertrekt de eerste golf daar eerder
@@ -1275,7 +1277,7 @@ function breakBridge(br,src){
   for(const u of G.units)if(!u.dead&&!UT[u.type].air&&!UT[u.type].sea&&terr[(u.y|0)*MAP+(u.x|0)]===BRDOWN)kill(u,src&&src.o>=0?src:null);
   for(let k=0;k<6;k++){const f=(k+.5)/6;fx({k:'ex',x:br.ax+(br.bx-br.ax)*f,y:br.ay+(br.by-br.ay)*f,z:4,s:1.1,life:.9,dl:k*.09,snd:k%2===0})}
   const x=cxE(br),y=cyE(br);debris(x,y,12);sfx('big',x,y);
-  for(let o=0;o<4;o++)if(active(o))sayTo(o,'Brug vernietigd','brug',3,true,false,[x,y]);
+  for(let o=0;o<PMAX;o++)if(active(o))sayTo(o,'Brug vernietigd','brug',3,true,false,[x,y]);
 }
 function repairBridge(br,o){
   br.down=false;br.hp=BR_HP;for(const i of br.tiles)terr[i]=BRIDGE;
@@ -1418,7 +1420,7 @@ const AI_ORDER=['power','refinery','barracks','factory','power','bunker','radar'
 function aiBase(o){return G.blds.find(b=>b.o===o&&b.type==='yard')||G.blds.find(b=>b.o===o&&!BT[b.type].tech)}
 function toCenter(b){const cx=b.x+b.w/2,cy=b.y+b.h/2,dx=MAP/2-cx,dy=MAP/2-cy,l=Math.hypot(dx,dy)||1;return{cx,cy,ux:dx/l,uy:dy/l}}
 // 0 op Rivierdal en Winterfront, 1 op de Grote vlakte
-const bigK=()=>clamp((MAP-176)/56,0,1);
+const bigK=()=>clamp((MAP-220)/70,0,1);
 function aiRally(o){const b=aiBase(o);if(!b)return{x:MAP/2,y:MAP/2};const c=toCenter(b),r=5.5+bigK()*7;return{x:c.cx+c.ux*r,y:c.cy+c.uy*r}}
 function aiSpot(o,type){
   const T=BT[type],base=aiBase(o);if(!base)return null;
@@ -2955,8 +2957,8 @@ let revealT=0,oreT=0,endT=0;
 function localAlerts(){for(const u of G.units)if(u.type==='kirov'&&enemy(LOCAL,u.o)&&!u.seen&&visibleE(u)){u.seen=true;if(say('Kirov-luchtschip gesignaleerd','kirov',25,true,true))ping(u.x,u.y)}}
 function tick(dt){
   G.t+=dt;
-  for(let o=0;o<4;o++){if(!active(o))continue;const P=G.pl[o],pw=power(o),low=pw.use>pw.prod;if(low&&!P.low)sayTo(o,'Te weinig stroom','power',10,true,true);P.low=low;P.prod=pw.prod;P.use=pw.use}
-  for(let o=0;o<4;o++)if(active(o)&&!G.pl[o].out){production(o,dt);if(isAI(o))aiTick(o,dt)}
+  for(let o=0;o<PMAX;o++){if(!active(o))continue;const P=G.pl[o],pw=power(o),low=pw.use>pw.prod;if(low&&!P.low)sayTo(o,'Te weinig stroom','power',10,true,true);P.low=low;P.prod=pw.prod;P.use=pw.use}
+  for(let o=0;o<PMAX;o++)if(active(o)&&!G.pl[o].out){production(o,dt);if(isAI(o))aiTick(o,dt)}
   for(const u of G.units)if(!u.dead)updUnit(u,dt);
   // een terreurdrone sloopt zijn voertuig van binnenuit, tot hij bij een wapenfabriek of een IFV met ingenieur wordt verwijderd
   for(const u of G.units){if(!u.drone||u.dead)continue;
@@ -2982,7 +2984,7 @@ function tick(dt){
   for(const b of G.blds)if(b.type==='oil'&&b.o!==NEU&&!b.dead&&G.pl[b.o]){G.pl[b.o].credits+=OIL_RATE*dt;G.st[b.o].earned+=OIL_RATE*dt}
   for(let i=G.drops.length-1;i>=0;i--){const d=G.drops[i];d.t-=dt;if(d.t>0)continue;G.drops.splice(i,1);
     const w=nearestWalkable(d.x|0,d.y|0,4);if(w){const u=mkUnit(d.o,'gi',w.x+.5,w.y+.5);if(isAI(d.o))u.mission=true}}
-  for(let o=0;o<4;o++){const P=G.pl[o];if(!active(o)||P.out||P.para===null||P.para<=0)continue;P.para-=dt;if(P.para<=0){P.para=0;sayTo(o,'Parachutisten gereed','para',5)}}
+  for(let o=0;o<PMAX;o++){const P=G.pl[o];if(!active(o)||P.out||P.para===null||P.para<=0)continue;P.para-=dt;if(P.para<=0){P.para=0;sayTo(o,'Parachutisten gereed','para',5)}}
   for(let i=G.bombs.length-1;i>=0;i--){const bo=G.bombs[i];bo.t-=dt;if(bo.t>0)continue;G.bombs.splice(i,1);const b=ents.get(bo.id);if(!b||b.dead||b.hp<=0)continue;
     if(bo.iv)ivanBoom(b,bo);else if(b.k==='br')breakBridge(b,{o:bo.o,id:bo.src});else kill(b,{o:bo.o,id:bo.src})}
   if(G.anyDead){G.anyDead=false;for(const e of G.units)if(e.dead)ents.delete(e.id);for(const e of G.blds)if(e.dead)ents.delete(e.id);G.units=G.units.filter(u=>!u.dead);G.blds=G.blds.filter(b=>!b.dead);sel=sel.filter(id=>ents.has(id));shroudDirty=true}
@@ -2993,16 +2995,16 @@ function tick(dt){
 }
 function checkEnd(){
   if(G.over)return;
-  for(let o=0;o<4;o++){
+  for(let o=0;o<PMAX;o++){
     const P=G.pl[o];if(!active(o)||P.out||G.blds.some(b=>b.o===o&&!BT[b.type].tech))continue;
     P.out=true;for(const u of G.units)if(u.o===o&&!u.dead)kill(u,null);
     const nm=P.name||(P.kind==='ai'?'Computer '+TEAM[o].n:TEAM[o].n);
-    for(let k=0;k<4;k++)if(k!==o)sayTo(k,nm+' is uitgeschakeld','out'+o,0,false);
+    for(let k=0;k<PMAX;k++)if(k!==o)sayTo(k,nm+' is uitgeschakeld','out'+o,0,false);
     if(o===LOCAL)showEnd(false,true);else netSend(o,{t:'out'});
   }
-  const teams=new Set();for(let o=0;o<4;o++)if(active(o)&&!G.pl[o].out)teams.add(G.pl[o].team);
+  const teams=new Set();for(let o=0;o<PMAX;o++)if(active(o)&&!G.pl[o].out)teams.add(G.pl[o].team);
   if(teams.size<=1){const win=teams.size?[...teams][0]:-1;G.over={win};
-    for(let o=0;o<4;o++)if(o!==LOCAL&&G.pl[o].kind==='human')netSend(o,{t:'end',win,st:G.st[o],time:r2(G.t)});
+    for(let o=0;o<PMAX;o++)if(o!==LOCAL&&G.pl[o].kind==='human')netSend(o,{t:'end',win,st:G.st[o],time:r2(G.t)});
     showEnd(teamOf(LOCAL)===win,false)}
 }
 function showEnd(win,outOnly){
@@ -3017,20 +3019,21 @@ function showEnd(win,outOnly){
 }
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-v9-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-v10-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',online:false,slots:[],pending:[]};
 const cleanName=v=>String(v||'').replace(/[\u0000-\u001f\u007f<>]/g,'').trim().slice(0,16);
 function myToken(){try{let t=localStorage.getItem('rd-token');if(!t){t=Math.random().toString(36).slice(2,12);localStorage.setItem('rd-token',t)}return t}catch(e){return NET.tok||(NET.tok=Math.random().toString(36).slice(2,12))}}
-function teamFor(mode,i,kind){return mode==='ffa'?i:mode==='2v2'?(i===0||i===2?0:1):(kind==='ai'?1:0)}
+// twee teams: even plekken (West, Noord, Noordwest, Noordoost) tegen oneven plekken
+function teamFor(mode,i,kind){return mode==='ffa'?i:mode==='2v2'?i%2:(kind==='ai'?1:0)}
 function netSend(o,msg){const sl=L.slots[o];if(sl&&sl.conn&&sl.conn.open){try{sl.conn.send(msg)}catch(e){}}}
 function netToHost(msg){if(NET.conn&&NET.conn.open){try{NET.conn.send(msg)}catch(e){}}}
 function genCode(){let c='';for(let i=0;i<6;i++)c+=CODE_CH[Math.random()*CODE_CH.length|0];return c}
 
 function hostOpen(online){
   NET.mode=online?'host':'solo';L.online=online;L.pending=[];
-  L.slots=[{kind:'human',name:myName(),nat:myNat(),token:myToken(),conn:null},{kind:online?'open':'ai',nat:online?'russia':rndSov()},{kind:online?'open':'ai',nat:online?'russia':rndSov()},{kind:online?'open':'off',nat:'usa'}];
+  L.slots=[{kind:'human',name:myName(),nat:myNat(),token:myToken(),conn:null},{kind:online?'open':'ai',nat:online?'russia':rndSov()},{kind:online?'open':'ai',nat:online?'russia':rndSov()},{kind:online?'open':'off',nat:'usa'},...[0,0,0,0].map(()=>({kind:'off',nat:'usa'}))];
   showLobby(true);
   if(!online){lobbyStatus('Je speelt alleen. Kies per plek of de computer meedoet.');return}
   if(typeof window.Peer!=='function'){lobbyStatus('De verbindingsdienst kon niet laden. Je kunt wel tegen de computer spelen.',true);return}
@@ -3094,7 +3097,7 @@ function snapCommon(){
 function netHostStep(dt){
   NET.snapT=(NET.snapT||0)-dt;if(NET.snapT>0)return;NET.snapT=.12;
   const c=snapCommon();
-  for(let o=1;o<4;o++){const P=G.pl[o];if(!P||P.kind!=='human')continue;
+  for(let o=1;o<PMAX;o++){const P=G.pl[o];if(!P||P.kind!=='human')continue;
     netSend(o,{...c,me:{c:Math.floor(P.credits),low:P.low,bo:P.blackout>G.t?r2(P.blackout-G.t):0,sp:P.para===null?null:Math.ceil(P.para),q:Object.fromEntries(CATS.map(k=>[k,P.q[k].map(i=>[i.type,Math.round(i.spent),i.ready?1:0,i.hold?1:0])])),st:G.st[o]}})}
 }
 
