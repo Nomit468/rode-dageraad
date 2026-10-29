@@ -880,7 +880,8 @@ function updUnit0(u,dt){
     if(u.dep&&u.z>3)return}
   if(u.erase>0)u.erase=Math.max(0,u.erase-dt*.5);
   if(u.st==='tele'){if(G.t<u.tt)return;const w=nearestWalkable(u.dx|0,u.dy|0,5);if(w){u.x=w.x===(u.dx|0)&&w.y===(u.dy|0)?u.dx:w.x+.5;u.y=w.x===(u.dx|0)&&w.y===(u.dy|0)?u.dy:w.y+.5}u.st=u.tid?'attack':'idle';fx({k:'chf',x:u.x,y:u.y,z:6,life:.7});sfx('beam',u.x,u.y);return}
-  if(u.type==='mirage'){u.calm=u.moving?0:(u.calm||0)+dt;u.disg=u.calm>1.4}
+  // stilstaan meten aan de positie sinds de vorige stap; u.moving is hier al teruggezet en zegt nog niets
+  if(u.type==='mirage'){const mv=u.px!==undefined&&Math.abs(u.x-u.px)+Math.abs(u.y-u.py)>1e-4;u.px=u.x;u.py=u.y;u.calm=mv?0:(u.calm||0)+dt;u.disg=u.calm>1.4}
   if((u.type==='mammoth'||u.rank===2)&&u.hp<T.hp)u.hp=Math.min(T.hp,u.hp+(u.type==='mammoth'?4:T.hp*.02)*dt);
   if(!T.wpn){updEng(u,dt);return}
   if(u.st==='gar'){const t=ents.get(u.tid);
@@ -2093,7 +2094,7 @@ function render(t){
     if(W.kind==='shell'){dot(ctx,[sx,sy],2.2,'#ffe9a8');}
     else if(W.kind==='bomb'){dot(ctx,[sx,sy],3.4,'#1c1d1f');dot(ctx,[sx-1,sy-1],1.2,'#777')}
     else{dot(ctx,[sx,sy],W.kind==='arty'?3:2.4,'#fff4d0');flash(ctx,[sx,sy],6)}}
-  for(const r of DR){if(r.k!==0)continue;const u=r.e;if(!u.rank)continue;const inf=UT[u.type].cat==='inf',[sx,sy]=w2s(u.x,u.y,(uz(u)+(inf?24:u.type==='kirov'?42:22))*US);
+  for(const r of DR){if(r.k!==0)continue;const u=r.e;if(!u.rank)continue;const inf=UT[u.type].cat==='inf',ty=u.type,vz=VDIM[ty]?VDIM[ty][2]+(ty==='prism'?24:ty==='tesla'?22:ty==='mammoth'?16:14):22,[sx,sy]=w2s(u.x,u.y,(uz(u)+(inf?23*infS(u):ty==='kirov'?42:vz))*US);
     for(let k=0;k<u.rank;k++){const y=sy-k*4;ctx.strokeStyle='rgba(0,0,0,.6)';ctx.lineWidth=3.2;ctx.beginPath();ctx.moveTo(sx-5,y-3);ctx.lineTo(sx,y);ctx.lineTo(sx+5,y-3);ctx.stroke();
       ctx.strokeStyle=u.rank===2?'#ff6a3a':'#ffd24a';ctx.lineWidth=1.8;ctx.beginPath();ctx.moveTo(sx-5,y-3);ctx.lineTo(sx,y);ctx.lineTo(sx+5,y-3);ctx.stroke()}}
   for(const p of G.planes){const ri=(clamp(p.y,0,MAP-1)|0)*MAP+(clamp(p.x,0,MAP-1)|0);if(!enemy(LOCAL,p.o)||expl[ri])drawPlane(ctx,p)}
