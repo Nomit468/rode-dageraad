@@ -218,7 +218,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
     <div id="msgs" aria-live="polite"></div>
     <div id="chatlog" aria-live="polite"></div>
     <div id="chatbar" hidden><button type="button" id="chatto" title="Tab wisselt tussen iedereen en je team">Iedereen</button><input id="chatin" maxlength="120" autocomplete="off" aria-label="Chatbericht" placeholder="Bericht, Enter verstuurt, Tab: iedereen of team, Esc sluit"></div>
-    <div id="legend"><kbd>Klik</kbd> selecteren en bevelen · <kbd>Sleep</kbd> kader · <kbd>Rechts</kbd> slepen om te schuiven · <kbd>A</kbd> aanval onderweg · <kbd>D</kbd> ingraven, uitstappen · <kbd>S</kbd> stop · <kbd>H</kbd> basis · <kbd>T</kbd> zelfde soort · <kbd>G</kbd> bewaken · <kbd>X</kbd> uiteen · <kbd>Shift+1–9</kbd> groep · <kbd>P</kbd> pauze</div>
+    <div id="legend"><kbd>Klik</kbd> selecteren en bevelen · <kbd>Sleep</kbd> kader · <kbd>2 vingers</kbd> schuiven · <kbd>A</kbd> aanval onderweg · <kbd>D</kbd> ingraven, uitstappen · <kbd>S</kbd> stop · <kbd>H</kbd> basis · <kbd>T</kbd> zelfde soort · <kbd>G</kbd> bewaken · <kbd>X</kbd> uiteen · <kbd>Shift+1–9</kbd> groep · <kbd>P</kbd> pauze</div>
     <div id="pausebar" hidden>GEPAUZEERD</div>
     <div id="roster" hidden aria-label="Spelers"></div>
 
@@ -243,6 +243,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
         <dl class="keys">
           <dt>Linkermuis</dt><dd>selecteren, verplaatsen en aanvallen</dd>
           <dt>Slepen</dt><dd>meerdere eenheden in een kader pakken</dd>
+          <dt>Twee vingers</dt><dd>op de touchpad schuiven om over de kaart te bewegen (een muiswiel kan ook; Shift + wiel schuift opzij)</dd>
           <dt>Rechtermuis</dt><dd>selectie opheffen, of slepen om de kaart te schuiven</dd>
           <dt>A + klik</dt><dd>aanvalsbeweging: onderweg alles aanvallen</dd>
           <dt>D</dt><dd>soldaten ingraven achter zandzakken, nog eens D om weer op te staan. Een Belegeringshelikopter landt ermee als kanon, een Nighthawk laat ermee zijn soldaten uitstappen</dd>
@@ -3011,6 +3012,9 @@ cv.addEventListener('pointerdown',e=>{
   if(e.button===0){mouse.left=true;mouse.drag=false;mouse.bx=mouse.x;mouse.by=mouse.y;mouse.cx=cam.x;mouse.cy=cam.y}
   else if(e.button===2||e.button===1){mouse.rdown=true;mouse.rpan=false;mouse.rx=mouse.x;mouse.ry=mouse.y;mouse.cx=cam.x;mouse.cy=cam.y}
 });
+// touchpad: met twee vingers schuiven verplaatst de kaart; een muiswiel schuift op en neer (Shift+wiel opzij). Knijpen doet niets, zodat de pagina niet inzoomt
+cv.addEventListener('wheel',e=>{e.preventDefault();if(!started||e.ctrlKey)return;const k=e.deltaMode===1?32:e.deltaMode===2?VH:1;
+  let dx=e.deltaX*k,dy=e.deltaY*k;if(e.shiftKey&&!dx){dx=dy;dy=0}cam.x+=dx*1.15;cam.y+=dy*1.15;clampCam()},{passive:false});
 cv.addEventListener('pointermove',e=>{
   const r=cv.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top;mouse.inside=true;mouse.type=e.pointerType;
   if(mouse.left&&!mouse.drag&&Math.hypot(mouse.x-mouse.bx,mouse.y-mouse.by)>7)mouse.drag=true;
