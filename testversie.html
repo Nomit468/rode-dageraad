@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="Realtime strategiespel in de stijl van Red Alert 2. Speel alleen of met maximaal drie vrienden.">
+<meta name="description" content="Realtime strategiespel in de stijl van Red Alert 2. Speel alleen of met maximaal zeven vrienden.">
 <title>Rode Dageraad (testversie)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -100,9 +100,9 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 #tip .row b{color:var(--amber);font-weight:700}
 #tip .req{color:var(--warn);font-size:12px;margin-top:4px}
 
-.overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;padding:20px max(16px,env(safe-area-inset-right,0px)) 20px max(16px,env(safe-area-inset-left,0px));
+.overlay{position:fixed;inset:0;z-index:10;display:flex;align-items:flex-start;justify-content:center;padding:20px max(16px,env(safe-area-inset-right,0px)) 20px max(16px,env(safe-area-inset-left,0px));
   background:radial-gradient(ellipse at 50% 40%,rgba(8,14,22,.55),rgba(2,4,7,.88));overflow:auto}
-.card{width:min(560px,100%);background:linear-gradient(180deg,rgba(22,32,44,.96),rgba(10,15,21,.97));border:1px solid #4d6884;box-shadow:0 0 0 1px #000,0 20px 60px rgba(0,0,0,.6);padding:26px 28px 24px}
+.card{margin:auto 0;width:min(560px,100%);background:linear-gradient(180deg,rgba(22,32,44,.96),rgba(10,15,21,.97));border:1px solid #4d6884;box-shadow:0 0 0 1px #000,0 20px 60px rgba(0,0,0,.6);padding:26px 28px 24px}
 .eyebrow{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim)}
 .card h1{margin:4px 0 6px;font-family:var(--f-display);font-weight:800;font-size:clamp(34px,7vw,54px);line-height:.95;letter-spacing:.04em;text-wrap:balance;
   background:linear-gradient(180deg,#fff 0%,#ffd2c9 45%,#e0402f 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -217,7 +217,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
       <div class="card" id="menu-card">
         <div class="eyebrow">Commandocentrum</div>
         <h1>RODE DAGERAAD</h1>
-        <p>Bouw een basis, oogst erts en vaag de vijand van de kaart. Speel alleen tegen de computer, of met maximaal drie vrienden op een kaart met vier bases.</p>
+        <p>Bouw een basis, oogst erts en vaag de vijand van de kaart. Speel alleen tegen de computer, of met maximaal zeven vrienden op een kaart met acht bases.</p>
         <label class="fl" for="nm">Je naam</label>
         <input class="in" id="nm" maxlength="16" placeholder="Commandant" autocomplete="nickname">
         <div class="menu-btns">
@@ -252,7 +252,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
         <div class="status" id="lobby-status" role="status"></div>
         <div class="fl">Spelvorm</div>
         <div class="seg" id="mode-seg">
-          <button data-m="ffa">Ieder voor zich</button><button data-m="2v2">Twee tegen twee</button><button data-m="coop">Samen tegen de computer</button>
+          <button data-m="ffa">Ieder voor zich</button><button data-m="2v2">Twee teams</button><button data-m="coop">Samen tegen de computer</button>
         </div>
         <div class="fl">Computer</div>
         <div class="seg" id="diff-seg">
@@ -332,8 +332,9 @@ let MAP=80,OX=MAP*HW,N=MAP*MAP;
 const cv=$('game'),ctx=cv.getContext('2d');
 let DPR=1,VW=800,VH=600;
 const cam={x:0,y:0};
-const TEAM=[{main:'#3f8cff',dark:'#1d4fa8',light:'#a9cbff',n:'Blauw'},{main:'#e0402f',dark:'#8e1d14',light:'#ffab9d',n:'Rood'},{main:'#e8b02a',dark:'#8a6410',light:'#ffe08a',n:'Geel'},{main:'#3fbf5a',dark:'#1e6e30',light:'#a6f0b4',n:'Groen'},{main:'#a49c86',dark:'#5e584a',light:'#d6d0bc',n:'Neutraal'}];
-const NEU=4;
+const TEAM=[{main:'#3f8cff',dark:'#1d4fa8',light:'#a9cbff',n:'Blauw'},{main:'#e0402f',dark:'#8e1d14',light:'#ffab9d',n:'Rood'},{main:'#e8b02a',dark:'#8a6410',light:'#ffe08a',n:'Geel'},{main:'#3fbf5a',dark:'#1e6e30',light:'#a6f0b4',n:'Groen'},{main:'#f07a1f',dark:'#93430a',light:'#ffc08a',n:'Oranje'},{main:'#9a5ad8',dark:'#55288a',light:'#d6b6f5',n:'Paars'},{main:'#2fc4d4',dark:'#137480',light:'#a6eef5',n:'Cyaan'},{main:'#e05aa8',dark:'#8a2462',light:'#f6b4da',n:'Roze'},{main:'#a49c86',dark:'#5e584a',light:'#d6d0bc',n:'Neutraal'}];
+// maximaal acht spelers; de neutrale eigenaar (olieboortorens, huizen, bruggen) komt daarna
+const PMAX=8,NEU=8;
 const GRASS=0,WATER=1,ROCK=2,TREE=3,BRIDGE=4,BRDOWN=5;
 // onder een brug ligt water: schepen varen eronderdoor, en is de brug kapot dan is het gewoon water
 const wetT=t=>t===WATER||t>=BRIDGE;
@@ -341,22 +342,23 @@ const wetT=t=>t===WATER||t>=BRIDGE;
 let START=[{x:12,y:64},{x:64,y:12},{x:12,y:12},{x:64,y:64}];
 // kaarten: grootte, hoeveel water/rots/bos, hoe breed de wegen, hoeveel erts en welk jaargetijde
 const MAPS={
-  river:{n:'Rivierdal',size:176,d:'Een rivier splitst de kaart in west en oost, met eilandjes in het midden. Bruggen kun je opblazen en met een ingenieur weer herstellen.',water:.3,rock:.71,tree:.64,lane:1,ore:1,ns:10,hill:.6,theme:'green',river:'v'},
-  big:{n:'Grote vlakte',size:232,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,hill:.61,theme:'green'},
-  islands:{n:'Eilanden',size:196,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,hill:.66,theme:'green'},
-  coast:{n:'Kustoorlog',size:196,d:'Eén groot eiland met open zee eromheen. Bouw een scheepswerf aan je kust en val de vijand ook vanaf het water aan.',water:.2,rock:.77,tree:.66,lane:1,ore:1.15,ns:11,hill:.63,theme:'green',ocean:.37},
-  winter:{n:'Winterfront',size:176,d:'Besneeuwd en rotsachtig. Een ijskoude rivier loopt van west naar oost; wie de bruggen heeft, heeft het front.',water:.29,rock:.63,tree:.6,lane:.9,ore:1,ns:9,hill:.58,theme:'snow',river:'h'},
+  river:{n:'Rivierdal',size:220,d:'Een rivier splitst de kaart in west en oost, met eilandjes in het midden. Bruggen kun je opblazen en met een ingenieur weer herstellen.',water:.3,rock:.71,tree:.64,lane:1,ore:1,ns:10,hill:.6,theme:'green',river:'v'},
+  big:{n:'Grote vlakte',size:290,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,hill:.61,theme:'green'},
+  islands:{n:'Eilanden',size:244,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,hill:.66,theme:'green'},
+  coast:{n:'Kustoorlog',size:244,d:'Eén groot eiland met open zee eromheen. Bouw een scheepswerf aan je kust en val de vijand ook vanaf het water aan.',water:.2,rock:.77,tree:.66,lane:1,ore:1.15,ns:11,hill:.63,theme:'green',ocean:.37},
+  winter:{n:'Winterfront',size:220,d:'Besneeuwd en rotsachtig. Een ijskoude rivier loopt van west naar oost; wie de bruggen heeft, heeft het front.',water:.29,rock:.63,tree:.6,lane:.9,ore:1,ns:9,hill:.58,theme:'snow',river:'h'},
 };
 let MAPK='river';
 function setMapSize(sz,ring){
   MAP=sz;OX=MAP*HW;N=MAP*MAP;const a=Math.round(sz*.15),b=Math.round(sz*.8);
-  START=[{x:a,y:b},{x:b,y:a},{x:a,y:a},{x:b,y:b}];
+  const m=Math.round(sz*.475);START=[{x:a,y:b},{x:b,y:a},{x:a,y:a},{x:b,y:b},{x:a,y:m},{x:b,y:m},{x:m,y:a},{x:m,y:b}];
   // op de kustkaart liggen de bases op een ring rond het midden, vlak bij de kust
-  if(ring){const r=sz*ring/Math.SQRT2,c=sz/2-1.5;START=[[-1,1],[1,-1],[-1,-1],[1,1]].map(([dx,dy])=>({x:Math.round(c+dx*r),y:Math.round(c+dy*r)}))}
+  if(ring){const r=sz*ring/Math.SQRT2,c=sz/2-1.5,S2=Math.SQRT2;START=[[-1,1],[1,-1],[-1,-1],[1,1],[-S2,0],[S2,0],[0,-S2],[0,S2]].map(([dx,dy])=>({x:Math.round(c+dx*r),y:Math.round(c+dy*r)}))}
   gS=new Float32Array(N);fS=new Float32Array(N);came=new Int32Array(N);stamp=new Uint32Array(N);closed=new Uint32Array(N);gen=0;
 }
-const SPOT_N=['West','Oost','Noord','Zuid'];
-const RING=[[2,1],[1,3],[3,0],[0,2]];
+const SPOT_N=['West','Oost','Noord','Zuid','Noordwest','Zuidoost','Noordoost','Zuidwest'];
+// buren langs de rand: Noord, Noordoost, Oost, Zuidoost, Zuid, Zuidwest, West, Noordwest
+const RING=[[2,6],[6,1],[1,5],[5,3],[3,7],[7,0],[0,4],[4,2]];
 const HCAP=600,BR_HP=2400;
 
 // ---------- types
@@ -381,7 +383,7 @@ const BT={
   coil:{n:'Teslaspoel',w:1,h:1,side:'soviet',hp:800,pow:-75,cost:1500,sight:8,cat:'def',req:['radar'],wpn:'coil',ht:40,needPow:true,d:'Alleen Sovjets. Zware bliksemschichten tegen alles op de grond. Een Tesla-soldaat ernaast laadt hem op: dan werkt hij ook zonder stroom en schiet hij harder.'},
   wall:{n:'Muur',w:1,h:1,tech:true,wall:true,hp:500,pow:0,cost:50,sight:1,cat:'def',req:[],ht:12,d:'Betonnen muur die vijanden ophoudt. Na het plaatsen kun je meteen de volgende neerzetten; rechtsklik om te stoppen.'},
   airfield:{n:'Vliegveld',w:3,h:3,side:'allies',hp:1000,pow:-50,cost:1000,sight:9,cat:'bld',req:['radar'],ht:16,pads:4,d:'Alleen Geallieerden. Vier landingsplaatsen voor Harriers (Korea: Zwarte Adelaars). Toestellen vliegen naar hun doel, vuren hun raketten af en komen hier terug om bij te laden.'},
-  gcannon:{n:'Groot Kanon',w:2,h:2,nat:'france',hp:1400,pow:-100,cost:2000,sight:14,cat:'def',req:['factory','radar'],wpn:'grand',ht:30,needPow:true,d:'Alleen voor Frankrijk. Reusachtig kanon met een enorm bereik. Werkt alleen met genoeg stroom.'},
+  gcannon:{n:'Dikke Willem',w:2,h:2,nat:'france',hp:1400,pow:-100,cost:2000,sight:14,cat:'def',req:['factory','radar'],wpn:'grand',ht:30,needPow:true,d:'Alleen voor Frankrijk. De Dikke Willem: een reusachtig kanon met een enorm bereik. Vlak eromheen kan hij niet schieten. Werkt alleen met genoeg stroom.'},
 };
 const UT={
   conscript:{n:'Conscript',cat:'inf',side:'soviet',hp:150,spd:1.4,cost:100,sight:6,wpn:'conrifle',arm:'inf',req:['barracks'],d:'Sovjetsoldaat. Goedkoop en snel te trainen, sterk in grote aantallen.'},
@@ -481,7 +483,7 @@ const defOf=t=>BT[t]||UT[t];
 const NATIONS={
   usa:{n:'Amerika',side:'allies',sp:'Parachutisten',x:'Speciale kracht: parachutisten'},
   korea:{n:'Korea',side:'allies',x:'Eigen unit: Zwarte Adelaar (in plaats van de Harrier)'},
-  france:{n:'Frankrijk',side:'allies',x:'Eigen gebouw: Groot Kanon'},
+  france:{n:'Frankrijk',side:'allies',x:'Eigen gebouw: Dikke Willem'},
   germany:{n:'Duitsland',side:'allies',x:'Eigen unit: Tankjager'},
   uk:{n:'Groot-Brittannië',side:'allies',x:'Eigen unit: Sluipschutter'},
   russia:{n:'Rusland',side:'soviet',x:'Eigen unit: Teslatank'},
@@ -861,12 +863,12 @@ function newGame(s,cfg,populate=true){
   Object.assign(G,{t:0,diff:cfg.diff,mode:cfg.mode,paused:false,over:null,
     pl:[...cfg.slots.map(c=>mkPlayer(c.kind==='ai'?[3500,6000,9000][cfg.diff]:5000,c)),mkPlayer(0,{kind:'neutral',team:99,nat:'usa'})],
     units:[],blds:[],proj:[],fx:[],pings:[],bombs:[],rads:[],drops:[],planes:[],crates:[],crateT:30,gemSeen:false,ai:{},
-    st:[0,1,2,3,4].map(()=>({built:0,lost:0,kills:0,earned:0}))});
+    st:Array.from({length:PMAX+1},()=>({built:0,lost:0,kills:0,earned:0}))});
   ents.clear();nextId=1;sel=[];selB=0;mode=null;groups={};shroudDirty=true;satOn=false;oreDirty.clear();
   // bruggen komen uit de kaart zelf; gastheer en gasten maken ze dus op dezelfde manier en met dezelfde nummers
   G.bridges=BRIDGES.map(d=>{const e={id:nextId++,k:'br',type:'bridge',o:NEU,...d,hp:BR_HP,down:false,flash:0};ents.set(e.id,e);return e});
   if(populate)for(const t of TECH)mkBld(NEU,t.type,t.x,t.y,true);
-  if(populate)for(let o=0;o<4;o++){
+  if(populate)for(let o=0;o<PMAX;o++){
     if(!active(o))continue;
     const st=START[o];mkBld(o,'yard',st.x,st.y,true);
     // op grote kaarten duurt de reis naar de vijand lang; daarom vertrekt de eerste golf daar eerder
@@ -1275,7 +1277,7 @@ function breakBridge(br,src){
   for(const u of G.units)if(!u.dead&&!UT[u.type].air&&!UT[u.type].sea&&terr[(u.y|0)*MAP+(u.x|0)]===BRDOWN)kill(u,src&&src.o>=0?src:null);
   for(let k=0;k<6;k++){const f=(k+.5)/6;fx({k:'ex',x:br.ax+(br.bx-br.ax)*f,y:br.ay+(br.by-br.ay)*f,z:4,s:1.1,life:.9,dl:k*.09,snd:k%2===0})}
   const x=cxE(br),y=cyE(br);debris(x,y,12);sfx('big',x,y);
-  for(let o=0;o<4;o++)if(active(o))sayTo(o,'Brug vernietigd','brug',3,true,false,[x,y]);
+  for(let o=0;o<PMAX;o++)if(active(o))sayTo(o,'Brug vernietigd','brug',3,true,false,[x,y]);
 }
 function repairBridge(br,o){
   br.down=false;br.hp=BR_HP;for(const i of br.tiles)terr[i]=BRIDGE;
@@ -1418,7 +1420,7 @@ const AI_ORDER=['power','refinery','barracks','factory','power','bunker','radar'
 function aiBase(o){return G.blds.find(b=>b.o===o&&b.type==='yard')||G.blds.find(b=>b.o===o&&!BT[b.type].tech)}
 function toCenter(b){const cx=b.x+b.w/2,cy=b.y+b.h/2,dx=MAP/2-cx,dy=MAP/2-cy,l=Math.hypot(dx,dy)||1;return{cx,cy,ux:dx/l,uy:dy/l}}
 // 0 op Rivierdal en Winterfront, 1 op de Grote vlakte
-const bigK=()=>clamp((MAP-176)/56,0,1);
+const bigK=()=>clamp((MAP-220)/70,0,1);
 function aiRally(o){const b=aiBase(o);if(!b)return{x:MAP/2,y:MAP/2};const c=toCenter(b),r=5.5+bigK()*7;return{x:c.cx+c.ux*r,y:c.cy+c.uy*r}}
 function aiSpot(o,type){
   const T=BT[type],base=aiBase(o);if(!base)return null;
@@ -1930,13 +1932,36 @@ const BDRAW={
     box(c,pr,.12,.12,.76,.76,12*k,13.5*k,'#a3a6a8');
   },
   gcannon(c,pr,b,tm,k,t){
-    box(c,pr,0,0,2,2,0,6,'#6c7277');
-    cyl(c,pr,1,1,.8,6,6+12*k,'#80868c');band(c,pr,1,1,.78,6+9*k,tm.main);
-    const cz=6+12*k+4,ctr=pr(1,1,cz),dx=Math.cos(b.tur),dy=Math.sin(b.tur),e=pr(1+dx*1.5,1+dy*1.5,cz+8),back=e[1]<ctr[1];
-    if(back)line(c,ctr,e,'#2a2e33',7);
-    c.fillStyle=shade(tm.main,.85);c.beginPath();c.ellipse(ctr[0],ctr[1],22,12,0,0,7);c.fill();c.fillStyle='#8a9096';c.beginPath();c.ellipse(ctr[0],ctr[1]-4,16,8,0,0,7);c.fill();
-    if(!back)line(c,ctr,e,'#2a2e33',7);
-    if(b.flash>0)flash(c,e,14);
+    // de Dikke Willem: betonnen bunker met schuine wanden, een hoekige draaikoepel en een enorm lange loop met mondingsrem
+    box(c,pr,0,0,2,2,0,4,'#5c6166');
+    const z1=4+12*k;
+    poly(c,[pr(0,2,4),pr(2,2,4),pr(1.78,1.78,z1),pr(.22,1.78,z1)],'#7b8187');
+    poly(c,[pr(2,0,4),pr(2,2,4),pr(1.78,1.78,z1),pr(1.78,.22,z1)],'#585e64');
+    poly(c,[pr(.22,.22,z1),pr(1.78,.22,z1),pr(1.78,1.78,z1),pr(.22,1.78,z1)],'#8b9197');
+    line(c,pr(.26,1.76,z1),pr(1.74,1.76,z1),tm.main,2.2);
+    for(const q of[.45,1,1.55])dot(c,pr(q,1.9,6*k),1.2,'#3a3f44');
+    if(k<.5)return;
+    cyl(c,pr,1,1,.6,z1,z1+3,'#4b5156');
+    const tc=Math.cos(b.tur),ts=Math.sin(b.tur),tz=z1+3,th=tz+19*k,rk=b.flash>0?1:0;
+    const T=(a,s2,z)=>pr(1+tc*a-ts*s2,1+ts*a+tc*s2,z);
+    // loop: dik begin, lange slanke loop en een mondingsrem; bij een schot schuift hij terug
+    const L0=.35-rk*.15,L1=1.35-rk*.15,L2=2.95-rk*.22,bz=tz+11;
+    const tip=T(L2+.28,0,bz+9.6),ctr=pr(1,1,tz),back=tip[1]<ctr[1];
+    const barrel=()=>{line(c,T(L0,0,bz),T(L1,0,bz+4),'#2b2f34',15);line(c,T(L1,0,bz+4),T(L2,0,bz+9),'#30353a',10);line(c,T(L0,0,bz+2),T(L2,0,bz+11),'rgba(255,255,255,.13)',2.5);
+      for(const a of[.75,1.15,1.75,2.35])dot(c,T(a,0,bz+4+(a-.35)*1.9),a<1.35?7.6:5.4,'#3c4248');
+      line(c,T(L2,0,bz+9),T(L2+.28,0,bz+9.6),'#24282c',16);line(c,T(L2+.06,0,bz+9.1),T(L2+.22,0,bz+9.5),'#5b6167',4)};
+    if(back)barrel();
+    const H=[[.52,.44],[.68,.24],[.68,-.24],[.52,-.44],[-.5,-.48],[-.68,-.22],[-.68,.22],[-.5,.48]];
+    const top=H.map(([a,s2])=>T(a,s2,th)),side=H.map(([a,s2])=>T(a,s2,tz));
+    for(let i=0;i<H.length;i++){const j=(i+1)%H.length;poly(c,[side[i],side[j],top[j],top[i]],shade('#6f767c',.62+.4*((i<3)?1:0)))}
+    poly(c,top,'#80878d');
+    {let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;for(const p of top){x0=Math.min(x0,p[0]);y0=Math.min(y0,p[1]);x1=Math.max(x1,p[0]);y1=Math.max(y1,p[1])}
+      const g=c.createLinearGradient(x0,y0,x1,y1);g.addColorStop(0,'rgba(255,255,255,.3)');g.addColorStop(.6,'rgba(255,255,255,0)');g.addColorStop(1,'rgba(0,0,0,.25)');c.fillStyle=g;c.beginPath();top.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.fill();c.strokeStyle='rgba(0,0,0,.5)';c.lineWidth=.8;c.stroke()}
+    line(c,T(-.2,-.44,th),T(-.2,.44,th),tm.main,2.6);
+    for(const s2 of[-.22,0,.22])line(c,T(-.5,s2,th+.5),T(-.3,s2,th+.5),'rgba(0,0,0,.45)',1.4);
+    dot(c,T(.1,.2,th+1),3,shade('#80878d',.6));dot(c,T(.1,.2,th+1.6),2,shade('#80878d',1.25));
+    if(!back)barrel();
+    if(b.flash>0){c.globalCompositeOperation='lighter';flash(c,tip,22);c.globalCompositeOperation='source-over'}
   },
   tower(c,pr,b,tm,k,t){
     box(c,pr,.12,.12,.76,.76,0,14*k,'#7d8287');
@@ -1998,7 +2023,10 @@ function drawVeh(c,pr,u,tm,t){
     const TP=td?[[.3,.26],[.38,0],[.3,-.26],[-.32,-.28],[-.32,.28]]:mam?[[.3,.3],[.4,.12],[.4,-.12],[.3,-.3],[-.3,-.32],[-.38,0],[-.3,.32]]:rh?[[.22,.22],[.3,.08],[.3,-.08],[.22,-.22],[-.22,-.24],[-.28,0],[-.22,.24]]:mir?[[.26,.2],[.26,-.2],[-.26,-.22],[-.26,.22]]:[[.18,.13],[.25,0],[.18,-.13],[-.22,-.15],[-.3,0],[-.22,.15]];
     const bl=td?.9:mam?.95:rh?.66:mir?.62:.82,bw=td?3.8:mam?4.6:rh?4.8:mir?3.4:2.4,offs=mam?[-.11,.11]:ty==='heavy'?[-.08,.08]:[0];
     const ends=offs.map(o=>[T(.15-rk*.1,o,tz+1),T(bl-rk*.17,o,tz+1)]);const back=ends[0][1][1]<pr(cx,cy,tz)[1];
-    const barrel=()=>{for(const[a,b2]of ends){line(c,a,b2,'#25292d',bw);line(c,a,b2,'rgba(255,255,255,.12)',bw*.35);if(rh||mam)dot(c,b2,bw*.62,'#2b2f33')}};
+    // loop met rookafzuiger halverwege en een mondingsrem aan het eind
+    const barrel=()=>{for(const[a,b2]of ends){line(c,a,b2,'#25292d',bw);line(c,a,b2,'rgba(255,255,255,.12)',bw*.35);
+      const m=[a[0]+(b2[0]-a[0])*.55,a[1]+(b2[1]-a[1])*.55];dot(c,m,bw*.7,'#2c3035');dot(c,[m[0]-bw*.15,m[1]-bw*.2],bw*.25,'rgba(255,255,255,.15)');
+      const e=[a[0]+(b2[0]-a[0])*.93,a[1]+(b2[1]-a[1])*.93];line(c,e,b2,'#1c1f22',bw*1.55);line(c,e,b2,'rgba(255,255,255,.1)',bw*.4);if(rh||mam)dot(c,b2,bw*.62,'#2b2f33')}};
     if(back)barrel();
     // koepel: zijkant en dak met licht van linksboven
     const top=TP.map(([a,b2])=>T(a,b2,tz+2)),side=TP.map(([a,b2])=>T(a,b2,tz-2.5));
@@ -2086,16 +2114,29 @@ function drawInf(c,pr,u,tm,t,air){
   c.fillStyle='#1c1d1a';c.fillRect(sx-2.9+ph*1.5,sy-1,2.2,1.4);c.fillRect(sx+.7-ph*1.5,sy-1,2.2,1.4);
   const d=pr(u.x+Math.cos(u.tur)*.3,u.y+Math.sin(u.tur)*.3,0),gxv=d[0]-sx,gyv=d[1]-sy,gl=Math.hypot(gxv,gyv)||1,ux=gxv/gl,uy=gyv/gl;
   const rk=u.type==='rocket',eng=u.type==='eng',spy=u.type==='spy',cs=u.type==='conscript',tt=u.type==='tesltrp'||u.type==='chrono',chr=u.type==='chrono',cm=u.type==='cmdo'||spy,sn=u.type==='sniper',ds=u.type==='desolator',tr_=u.type==='terror',iv=u.type==='ivan',gy0=sy-(rk?11.5:9)-bob;
-  const gun=()=>{
+  // geweren als echt silhouet: kolf, kast, magazijn, greep, handbescherming, loop en vizier; a = langs de loop, b = naar boven
+  const W=(o,parts)=>{const ax=ux,ay=uy*.42,l=Math.hypot(ax,ay)||1,dx=ax/l,dy=ay/l,sg=dx>=0?1:-1,nx=dy*sg,ny=-dx*sg;
+    for(const[pts,col]of parts){c.fillStyle=col;c.beginPath();pts.forEach((q,i)=>{const X=o[0]+dx*q[0]+nx*q[1],Y=o[1]+dy*q[0]+ny*q[1];i?c.lineTo(X,Y):c.moveTo(X,Y)});c.closePath();c.fill()}
+    return(a,b)=>[o[0]+dx*a+nx*b,o[1]+dy*a+ny*b]};
+  const arm=p=>line(c,[sx+ux*1.2,sy-11-bob],p,shade(sov0?'#6a5a42':'#5c6a48',.9),1.7);
+  const R=(a0,a1,b0,b1)=>[[a0,b0],[a1,b0],[a1,b1],[a0,b1]];
+  const sov0=G.pl&&G.pl[u.o]&&G.pl[u.o].fac==='soviet';
+  const gun=()=>{const o=[sx-ux*1.5,gy0-uy*.6];
+    if(sn){const P=W(o,[[R(-3.5,-.3,-.4,1.4),'#4f5a36'],[R(-.3,4.5,0,1.2),'#2a2d2f'],[R(4.5,14,.35,.85),'#18191a'],[R(.6,4.6,1.4,2.5),'#121314'],[R(.2,.8,1.2,1.5),'#121314'],[R(4.2,4.8,1.2,1.5),'#121314'],[[[1,0],[1.7,0],[1.4,-1.7],[.8,-1.6]],'#18191a']]);
+      dot(c,P(4.7,1.95),.6,'#9fd3ff');line(c,P(10,.4),P(10.6,-2.6),'#2a2a24',.6);line(c,P(10,.4),P(9.4,-2.6),'#2a2a24',.6);arm(P(1.2,0));return}
+    if(rk){const P=W([sx-ux*1,sy-12.5-bob-uy*.4],[[R(-4.5,9,0,2.8),'#4b5a34'],[R(-5.6,-4.5,-.4,3.2),'#2f3824'],[R(8.4,9.4,-.2,3),'#3a4628'],[R(2,3.4,2.8,4),'#1f2318'],[[[1,0],[2,0],[1.8,-2],[1,-2]],'#1f2318'],[R(-4.5,9,2.2,2.8),'rgba(255,255,255,.12)']]);
+      dot(c,P(9.6,1.4),1,'#141510');arm(P(1.4,0));return}
+    if(ds){const P=W(o,[[R(-2.5,8.5,0,2.4),'#3d4a1c'],[R(8.5,10,.4,2),'#2a3312'],[R(-1.5,2.5,2.4,4.6),'#5d6a2c']]);dot(c,P(.5,3.5),1.5,'#9dff4a');dot(c,P(10.2,1.2),1.4,'#9dff4a');arm(P(1,0));return}
+    if(tt&&!chr){const P=W(o,[[R(-1,7,0,2.2),'#4a4f55'],[R(1.5,2.3,-.4,2.6),'#b87333'],[R(3.5,4.3,-.4,2.6),'#b87333'],[R(5.5,6.3,-.4,2.6),'#b87333']]);dot(c,P(7.6,1.1),1.6,'#8fd3ff');arm(P(.5,0));return}
+    if(chr){const P=W(o,[[[[-2.5,-.2],[7.5,.2],[7.5,1.8],[-2.5,2]],'#3a4048'],[R(0,6.5,1.8,2.3),'#7fd0ff'],[R(7.5,10,.6,1.3),'#1a1d22']]);dot(c,P(10.2,.95),1.2,'#bfe8ff');arm(P(1,0));return}
+    if(cm){for(const s2 of[-1,1]){const P=W([o[0]+s2*2.4,o[1]],[[R(0,4.2,0,1.2),'#1d1f21'],[[[.4,0],[1.3,0],[1.1,-1.8],[.4,-1.7]],'#2a2420']]);arm(P(.6,0))}return}
+    if(spy){const P=W([o[0]+ux*2,o[1]+1],[[R(0,4,0,1.1),'#1d1f21'],[[[.3,0],[1.2,0],[1,-1.7],[.3,-1.6]],'#3b2f22']]);arm(P(.5,0));return}
     if(tr_){c.fillStyle='#c0392b';c.fillRect(sx-3,sy-11.5-bob,6,3);c.fillStyle='#222';c.fillRect(sx-.5,sy-12-bob,1,4);return}
     if(iv){const b=[sx+ux*4.5,sy-8.5-bob+uy*1.5];dot(c,b,2.8,'#26282a');line(c,[b[0],b[1]-2.6],[b[0]+1.6,b[1]-4.6],'#c9a46a',1);if((t*6|0)%2)dot(c,[b[0]+1.8,b[1]-4.8],1.1,'#ffb43a');return}
-    if(sn){line(c,[sx-ux*3,gy0-uy],[sx+ux*12,gy0+uy*4.5],'#2a2a22',1.6);return}
-    if(ds){line(c,[sx-ux*2,gy0-uy],[sx+ux*8,gy0+uy*3.5],'#3d4a1c',3);dot(c,[sx+ux*8,gy0+uy*3.5],1.6,'#9dff4a');return}
     if(eng){c.fillStyle='#d6a51c';c.fillRect(sx+ux*4-2,sy-7-bob,4,3);return}
-    if(spy){c.fillStyle='#3b2f22';c.fillRect(sx+ux*3-1.5,sy-8.5-bob,3,3.5);return}
-    if(tt){line(c,[sx,gy0],[sx+ux*6,gy0+uy*2.5],'#4a4f55',2.6);dot(c,[sx+ux*6.5,gy0+uy*2.7],1.6,'#8fd3ff');return}
-    if(cm){for(const s of[-1,1])line(c,[sx+s*2.4,gy0],[sx+s*2.4+ux*5,gy0+uy*2.5],'#1d1f21',1.6);return}
-    line(c,[sx-ux*2,gy0-uy*1],[sx+ux*(rk?9:8),gy0+uy*3.5],rk?'#4b5a34':'#1d1f21',rk?3.2:1.8)};
+    if(cs){const P=W(o,[[[[-3.6,-.6],[-.4,-.2],[-.4,1.2],[-3.6,1.6]],'#7a4a24'],[R(-.4,4,-.1,1.3),'#26282a'],[[[2,-.1],[3,-.1],[3.6,-2.6],[2.7,-2.9]],'#3b2c1c'],[[[.6,-.1],[1.3,-.1],[1.1,-1.7],[.5,-1.6]],'#26282a'],[R(4,7,0,1.2),'#7a4a24'],[R(7,10.5,.35,.8),'#141516'],[R(9.6,10,.8,1.6),'#141516']]);arm(P(1,0));return}
+    // GI en raketsoldaat zonder buis: een modern geweer met draaghandvat
+    const P=W(o,[[[[-3.4,-.7],[-.4,-.4],[-.4,1.1],[-3.4,1.6]],'#1e2022'],[R(-.4,4.2,-.1,1.3),'#2c3034'],[R(.5,3.2,1.3,1.9),'#1b1d1f'],[[[1.9,-.1],[2.8,-.1],[3,-2.7],[2.1,-2.7]],'#1b1d1f'],[[[.6,-.1],[1.3,-.1],[1.05,-1.8],[.45,-1.7]],'#1b1d1f'],[R(4.2,7.2,0,1.2),'#373b40'],[R(7.2,10.6,.35,.8),'#121314'],[R(9,9.4,.8,1.9),'#121314'],[R(-.4,7.2,1.05,1.3),'rgba(255,255,255,.14)']]);arm(P(1,0))};
   if(uy<0)gun();
   if(u.type==='gi'||u.type==='conscript'||u.type==='rocket'||u.type==='eng'){c.fillStyle=u.type==='eng'?'#5a4a2a':'#3d4232';c.fillRect(sx-ux*2.6-2,sy-12-bob,4,5)}
   const special=cm||sn||ds||tr_||tt||iv,sov=G.pl&&G.pl[u.o]&&G.pl[u.o].fac==='soviet',uni=sov?'#6a5a42':'#5c6a48',body=iv?'#6b4a2c':chr?'#3a5f8a':tt?'#4a4f55':spy?'#5a4a36':cm?'#2b2d30':sn?'#55663a':ds?'#8f9440':tr_?'#3a2f2a':eng?'#7a6a3a':uni;
@@ -2806,20 +2847,33 @@ const EMPTY={sea:'Bouw een scheepswerf op het water om schepen te maken.',bld:''
 function cameoPr(){return(x,y,z)=>[(x-y)*HW,(x+y)*HH-z]}
 function drawCameo(cvs,type){
   const W=104,H=76,c=cvs.getContext('2d');cvs.width=W*2;cvs.height=H*2;c.setTransform(2,0,0,2,0,0);
-  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#1d3550');bg.addColorStop(1,'#08111b');c.fillStyle=bg;c.fillRect(0,0,W,H);
-  c.strokeStyle='rgba(120,170,220,.08)';for(let i=-H;i<W;i+=8){c.beginPath();c.moveTo(i,H);c.lineTo(i+H,0);c.stroke()}
+  const T0=BT[type]||UT[type],sea=!!T0.sea||!!T0.water,air=!!(UT[type]&&UT[type].air),R=mulberry(type.length*977+type.charCodeAt(0)*31);
+  // achtergrond als een foto: heiige lucht, heuvels in de verte en grond (of zee) met wat structuur
+  const hz=air?H*.78:H*.46,sky=c.createLinearGradient(0,0,0,hz);sky.addColorStop(0,air?'#5f86a8':'#7f9db5');sky.addColorStop(1,'#c7d3d8');c.fillStyle=sky;c.fillRect(0,0,W,hz+1);
+  if(air)for(let i=0;i<4;i++){const x=R()*W,y=R()*hz*.7,r=8+R()*10;const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.beginPath();c.ellipse(x,y,r*1.6,r*.6,0,0,7);c.fill()}
+  for(const[col,amp,off]of[['rgba(110,130,140,.55)',5,-2],['rgba(80,100,85,.75)',3.5,1]]){c.fillStyle=col;c.beginPath();c.moveTo(0,hz);const ph=R()*6;for(let x=0;x<=W;x+=4)c.lineTo(x,hz+off-amp*(.6+.4*Math.sin(x*.07+ph)+.3*Math.sin(x*.19+ph*2)));c.lineTo(W,hz);c.closePath();c.fill()}
+  const gr=c.createLinearGradient(0,hz,0,H);
+  if(sea){gr.addColorStop(0,'#4f7f99');gr.addColorStop(1,'#163447')}else{gr.addColorStop(0,'#7d8a52');gr.addColorStop(1,'#34461f')}
+  c.fillStyle=gr;c.fillRect(0,hz,W,H-hz);
+  c.strokeStyle=sea?'rgba(220,240,255,.18)':'rgba(30,40,20,.22)';c.lineWidth=.8;for(let i=0;i<14;i++){const y=hz+3+R()*(H-hz),x=R()*W,l=4+R()*10;c.beginPath();c.moveTo(x,y);c.lineTo(x+l,y+(sea?0:.6));c.stroke()}
   const pr=cameoPr();
   if(BT[type]){
-    const T=BT[type],s=Math.min(W*.86/((T.w+T.h)*HW),H*.8/((T.w+T.h)*HH+T.ht+8)),cx=(T.w-T.h)*HW/2,cy=(T.w+T.h)*HH/2-T.ht/2-4;
-    c.save();c.translate(W/2-cx*s,H/2+2-cy*s);c.scale(s,s);
-    c.fillStyle=T.water?'#2d5a7a':'#3e5a2c';c.beginPath();const a=pr(-.3,-.3,0),b=pr(T.w+.3,-.3,0),d=pr(T.w+.3,T.h+.3,0),e=pr(-.3,T.h+.3,0);c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.lineTo(d[0],d[1]);c.lineTo(e[0],e[1]);c.closePath();c.fill();
+    const T=BT[type],s=Math.min(W*.9/((T.w+T.h)*HW),H*.86/((T.w+T.h)*HH+T.ht+8)),cx=(T.w-T.h)*HW/2,cy=(T.w+T.h)*HH/2-T.ht/2-4;
+    c.save();c.translate(W/2-cx*s,H/2+5-cy*s);c.scale(s,s);
+    c.fillStyle='rgba(0,0,0,.28)';c.beginPath();const a=pr(-.25,-.25,0),b=pr(T.w+.6,-.25,0),d=pr(T.w+.6,T.h+.6,0),e=pr(-.25,T.h+.6,0);c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.lineTo(d[0],d[1]);c.lineTo(e[0],e[1]);c.closePath();c.fill();
     BDRAW[type](c,pr,{x:0,y:0,w:T.w,h:T.h,tur:Math.PI*.3,flash:0,o:0},TEAM[0],1,1.2,false);c.restore();
   }else{
-    const T=UT[type],inf=T.cat==='inf',air=!!T.air,s=T.sea?(type==='carrier'||type==='dread'?.95:1.2):type==='kirov'?.85:type==='eagle'||type==='harrier'?2.1:T.heli?1.45:type==='drone'?2.8:type==='rocketeer'?2.4:inf?3.3:type==='harv'?1.9:2.3;
-    c.save();c.translate(W/2,air?H*.62+T.alt*s:H*(inf?.86:.66));c.scale(s,s);
-    if(!air){c.fillStyle=T.sea?'rgba(40,90,140,.9)':'rgba(62,90,44,.8)';c.beginPath();c.ellipse(0,0,inf?9:T.sea?40:30,inf?4.5:T.sea?18:15,0,0,7);c.fill()}
+    // soldaten van dichtbij, voertuigen groot in beeld
+    const T=UT[type],inf=T.cat==='inf',big=type==='mammoth'||type==='harv'||type==='arty',s=T.sea?(type==='carrier'||type==='dread'?.62:.8):type==='kirov'?.5:type==='eagle'||type==='harrier'?1.25:T.heli?.95:type==='drone'?1.6:type==='rocketeer'?1.5:inf?1.6:big?1.0:1.15;
+    c.save();c.translate(W/2+(inf?-3:0),air?H*.6+T.alt*s*US:H*(inf?.9:.7));c.scale(s,s);
+    if(!air){c.fillStyle=T.sea?'rgba(10,30,50,.3)':'rgba(0,0,0,.24)';c.beginPath();c.ellipse(2,1.5,inf?8:T.sea?44:26,inf?3:T.sea?15:10,0,0,7);c.fill()}
     drawUnit(c,pr,{x:0,y:0,type,o:0,face:.35,tur:.35,moving:false,flash:0,cargo:type==='harv'?400:0,load:type==='harv'?400:0,id:1},0);c.restore();
   }
+  // licht van linksboven, donkere randen en wat korrel, zoals een gerenderd plaatje
+  c.globalCompositeOperation='overlay';const lg=c.createLinearGradient(0,0,W,H);lg.addColorStop(0,'rgba(255,240,210,.35)');lg.addColorStop(1,'rgba(0,0,20,.35)');c.fillStyle=lg;c.fillRect(0,0,W,H);c.globalCompositeOperation='source-over';
+  const vg=c.createRadialGradient(W*.45,H*.45,H*.25,W/2,H/2,W*.68);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.5)');c.fillStyle=vg;c.fillRect(0,0,W,H);
+  for(let i=0;i<260;i++){c.fillStyle=R()<.5?'rgba(255,255,255,.05)':'rgba(0,0,0,.07)';c.fillRect(R()*W,R()*H,.6,.6)}
+  c.strokeStyle='rgba(255,255,255,.18)';c.lineWidth=1;c.strokeRect(.5,.5,W-1,H-1);
 }
 function buildUI(){
   const box=$('cameos');
@@ -2903,8 +2957,8 @@ let revealT=0,oreT=0,endT=0;
 function localAlerts(){for(const u of G.units)if(u.type==='kirov'&&enemy(LOCAL,u.o)&&!u.seen&&visibleE(u)){u.seen=true;if(say('Kirov-luchtschip gesignaleerd','kirov',25,true,true))ping(u.x,u.y)}}
 function tick(dt){
   G.t+=dt;
-  for(let o=0;o<4;o++){if(!active(o))continue;const P=G.pl[o],pw=power(o),low=pw.use>pw.prod;if(low&&!P.low)sayTo(o,'Te weinig stroom','power',10,true,true);P.low=low;P.prod=pw.prod;P.use=pw.use}
-  for(let o=0;o<4;o++)if(active(o)&&!G.pl[o].out){production(o,dt);if(isAI(o))aiTick(o,dt)}
+  for(let o=0;o<PMAX;o++){if(!active(o))continue;const P=G.pl[o],pw=power(o),low=pw.use>pw.prod;if(low&&!P.low)sayTo(o,'Te weinig stroom','power',10,true,true);P.low=low;P.prod=pw.prod;P.use=pw.use}
+  for(let o=0;o<PMAX;o++)if(active(o)&&!G.pl[o].out){production(o,dt);if(isAI(o))aiTick(o,dt)}
   for(const u of G.units)if(!u.dead)updUnit(u,dt);
   // een terreurdrone sloopt zijn voertuig van binnenuit, tot hij bij een wapenfabriek of een IFV met ingenieur wordt verwijderd
   for(const u of G.units){if(!u.drone||u.dead)continue;
@@ -2930,7 +2984,7 @@ function tick(dt){
   for(const b of G.blds)if(b.type==='oil'&&b.o!==NEU&&!b.dead&&G.pl[b.o]){G.pl[b.o].credits+=OIL_RATE*dt;G.st[b.o].earned+=OIL_RATE*dt}
   for(let i=G.drops.length-1;i>=0;i--){const d=G.drops[i];d.t-=dt;if(d.t>0)continue;G.drops.splice(i,1);
     const w=nearestWalkable(d.x|0,d.y|0,4);if(w){const u=mkUnit(d.o,'gi',w.x+.5,w.y+.5);if(isAI(d.o))u.mission=true}}
-  for(let o=0;o<4;o++){const P=G.pl[o];if(!active(o)||P.out||P.para===null||P.para<=0)continue;P.para-=dt;if(P.para<=0){P.para=0;sayTo(o,'Parachutisten gereed','para',5)}}
+  for(let o=0;o<PMAX;o++){const P=G.pl[o];if(!active(o)||P.out||P.para===null||P.para<=0)continue;P.para-=dt;if(P.para<=0){P.para=0;sayTo(o,'Parachutisten gereed','para',5)}}
   for(let i=G.bombs.length-1;i>=0;i--){const bo=G.bombs[i];bo.t-=dt;if(bo.t>0)continue;G.bombs.splice(i,1);const b=ents.get(bo.id);if(!b||b.dead||b.hp<=0)continue;
     if(bo.iv)ivanBoom(b,bo);else if(b.k==='br')breakBridge(b,{o:bo.o,id:bo.src});else kill(b,{o:bo.o,id:bo.src})}
   if(G.anyDead){G.anyDead=false;for(const e of G.units)if(e.dead)ents.delete(e.id);for(const e of G.blds)if(e.dead)ents.delete(e.id);G.units=G.units.filter(u=>!u.dead);G.blds=G.blds.filter(b=>!b.dead);sel=sel.filter(id=>ents.has(id));shroudDirty=true}
@@ -2941,16 +2995,16 @@ function tick(dt){
 }
 function checkEnd(){
   if(G.over)return;
-  for(let o=0;o<4;o++){
+  for(let o=0;o<PMAX;o++){
     const P=G.pl[o];if(!active(o)||P.out||G.blds.some(b=>b.o===o&&!BT[b.type].tech))continue;
     P.out=true;for(const u of G.units)if(u.o===o&&!u.dead)kill(u,null);
     const nm=P.name||(P.kind==='ai'?'Computer '+TEAM[o].n:TEAM[o].n);
-    for(let k=0;k<4;k++)if(k!==o)sayTo(k,nm+' is uitgeschakeld','out'+o,0,false);
+    for(let k=0;k<PMAX;k++)if(k!==o)sayTo(k,nm+' is uitgeschakeld','out'+o,0,false);
     if(o===LOCAL)showEnd(false,true);else netSend(o,{t:'out'});
   }
-  const teams=new Set();for(let o=0;o<4;o++)if(active(o)&&!G.pl[o].out)teams.add(G.pl[o].team);
+  const teams=new Set();for(let o=0;o<PMAX;o++)if(active(o)&&!G.pl[o].out)teams.add(G.pl[o].team);
   if(teams.size<=1){const win=teams.size?[...teams][0]:-1;G.over={win};
-    for(let o=0;o<4;o++)if(o!==LOCAL&&G.pl[o].kind==='human')netSend(o,{t:'end',win,st:G.st[o],time:r2(G.t)});
+    for(let o=0;o<PMAX;o++)if(o!==LOCAL&&G.pl[o].kind==='human')netSend(o,{t:'end',win,st:G.st[o],time:r2(G.t)});
     showEnd(teamOf(LOCAL)===win,false)}
 }
 function showEnd(win,outOnly){
@@ -2965,20 +3019,21 @@ function showEnd(win,outOnly){
 }
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-test3-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-test4-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',online:false,slots:[],pending:[]};
 const cleanName=v=>String(v||'').replace(/[\u0000-\u001f\u007f<>]/g,'').trim().slice(0,16);
 function myToken(){try{let t=localStorage.getItem('rd-token');if(!t){t=Math.random().toString(36).slice(2,12);localStorage.setItem('rd-token',t)}return t}catch(e){return NET.tok||(NET.tok=Math.random().toString(36).slice(2,12))}}
-function teamFor(mode,i,kind){return mode==='ffa'?i:mode==='2v2'?(i===0||i===2?0:1):(kind==='ai'?1:0)}
+// twee teams: even plekken (West, Noord, Noordwest, Noordoost) tegen oneven plekken
+function teamFor(mode,i,kind){return mode==='ffa'?i:mode==='2v2'?i%2:(kind==='ai'?1:0)}
 function netSend(o,msg){const sl=L.slots[o];if(sl&&sl.conn&&sl.conn.open){try{sl.conn.send(msg)}catch(e){}}}
 function netToHost(msg){if(NET.conn&&NET.conn.open){try{NET.conn.send(msg)}catch(e){}}}
 function genCode(){let c='';for(let i=0;i<6;i++)c+=CODE_CH[Math.random()*CODE_CH.length|0];return c}
 
 function hostOpen(online){
   NET.mode=online?'host':'solo';L.online=online;L.pending=[];
-  L.slots=[{kind:'human',name:myName(),nat:myNat(),token:myToken(),conn:null},{kind:online?'open':'ai',nat:online?'russia':rndSov()},{kind:online?'open':'ai',nat:online?'russia':rndSov()},{kind:online?'open':'off',nat:'usa'}];
+  L.slots=[{kind:'human',name:myName(),nat:myNat(),token:myToken(),conn:null},{kind:online?'open':'ai',nat:online?'russia':rndSov()},{kind:online?'open':'ai',nat:online?'russia':rndSov()},{kind:online?'open':'off',nat:'usa'},...[0,0,0,0].map(()=>({kind:'off',nat:'usa'}))];
   showLobby(true);
   if(!online){lobbyStatus('Je speelt alleen. Kies per plek of de computer meedoet.');return}
   if(typeof window.Peer!=='function'){lobbyStatus('De verbindingsdienst kon niet laden. Je kunt wel tegen de computer spelen.',true);return}
@@ -3042,7 +3097,7 @@ function snapCommon(){
 function netHostStep(dt){
   NET.snapT=(NET.snapT||0)-dt;if(NET.snapT>0)return;NET.snapT=.12;
   const c=snapCommon();
-  for(let o=1;o<4;o++){const P=G.pl[o];if(!P||P.kind!=='human')continue;
+  for(let o=1;o<PMAX;o++){const P=G.pl[o];if(!P||P.kind!=='human')continue;
     netSend(o,{...c,me:{c:Math.floor(P.credits),low:P.low,bo:P.blackout>G.t?r2(P.blackout-G.t):0,sp:P.para===null?null:Math.ceil(P.para),q:Object.fromEntries(CATS.map(k=>[k,P.q[k].map(i=>[i.type,Math.round(i.spent),i.ready?1:0,i.hold?1:0])])),st:G.st[o]}})}
 }
 
