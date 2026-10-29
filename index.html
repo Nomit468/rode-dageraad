@@ -2021,7 +2021,10 @@ function drawVeh(c,pr,u,tm,t){
     const TP=td?[[.3,.26],[.38,0],[.3,-.26],[-.32,-.28],[-.32,.28]]:mam?[[.3,.3],[.4,.12],[.4,-.12],[.3,-.3],[-.3,-.32],[-.38,0],[-.3,.32]]:rh?[[.22,.22],[.3,.08],[.3,-.08],[.22,-.22],[-.22,-.24],[-.28,0],[-.22,.24]]:mir?[[.26,.2],[.26,-.2],[-.26,-.22],[-.26,.22]]:[[.18,.13],[.25,0],[.18,-.13],[-.22,-.15],[-.3,0],[-.22,.15]];
     const bl=td?.9:mam?.95:rh?.66:mir?.62:.82,bw=td?3.8:mam?4.6:rh?4.8:mir?3.4:2.4,offs=mam?[-.11,.11]:ty==='heavy'?[-.08,.08]:[0];
     const ends=offs.map(o=>[T(.15-rk*.1,o,tz+1),T(bl-rk*.17,o,tz+1)]);const back=ends[0][1][1]<pr(cx,cy,tz)[1];
-    const barrel=()=>{for(const[a,b2]of ends){line(c,a,b2,'#25292d',bw);line(c,a,b2,'rgba(255,255,255,.12)',bw*.35);if(rh||mam)dot(c,b2,bw*.62,'#2b2f33')}};
+    // loop met rookafzuiger halverwege en een mondingsrem aan het eind
+    const barrel=()=>{for(const[a,b2]of ends){line(c,a,b2,'#25292d',bw);line(c,a,b2,'rgba(255,255,255,.12)',bw*.35);
+      const m=[a[0]+(b2[0]-a[0])*.55,a[1]+(b2[1]-a[1])*.55];dot(c,m,bw*.7,'#2c3035');dot(c,[m[0]-bw*.15,m[1]-bw*.2],bw*.25,'rgba(255,255,255,.15)');
+      const e=[a[0]+(b2[0]-a[0])*.93,a[1]+(b2[1]-a[1])*.93];line(c,e,b2,'#1c1f22',bw*1.55);line(c,e,b2,'rgba(255,255,255,.1)',bw*.4);if(rh||mam)dot(c,b2,bw*.62,'#2b2f33')}};
     if(back)barrel();
     // koepel: zijkant en dak met licht van linksboven
     const top=TP.map(([a,b2])=>T(a,b2,tz+2)),side=TP.map(([a,b2])=>T(a,b2,tz-2.5));
@@ -2109,16 +2112,29 @@ function drawInf(c,pr,u,tm,t,air){
   c.fillStyle='#1c1d1a';c.fillRect(sx-2.9+ph*1.5,sy-1,2.2,1.4);c.fillRect(sx+.7-ph*1.5,sy-1,2.2,1.4);
   const d=pr(u.x+Math.cos(u.tur)*.3,u.y+Math.sin(u.tur)*.3,0),gxv=d[0]-sx,gyv=d[1]-sy,gl=Math.hypot(gxv,gyv)||1,ux=gxv/gl,uy=gyv/gl;
   const rk=u.type==='rocket',eng=u.type==='eng',spy=u.type==='spy',cs=u.type==='conscript',tt=u.type==='tesltrp'||u.type==='chrono',chr=u.type==='chrono',cm=u.type==='cmdo'||spy,sn=u.type==='sniper',ds=u.type==='desolator',tr_=u.type==='terror',iv=u.type==='ivan',gy0=sy-(rk?11.5:9)-bob;
-  const gun=()=>{
+  // geweren als echt silhouet: kolf, kast, magazijn, greep, handbescherming, loop en vizier; a = langs de loop, b = naar boven
+  const W=(o,parts)=>{const ax=ux,ay=uy*.42,l=Math.hypot(ax,ay)||1,dx=ax/l,dy=ay/l,sg=dx>=0?1:-1,nx=dy*sg,ny=-dx*sg;
+    for(const[pts,col]of parts){c.fillStyle=col;c.beginPath();pts.forEach((q,i)=>{const X=o[0]+dx*q[0]+nx*q[1],Y=o[1]+dy*q[0]+ny*q[1];i?c.lineTo(X,Y):c.moveTo(X,Y)});c.closePath();c.fill()}
+    return(a,b)=>[o[0]+dx*a+nx*b,o[1]+dy*a+ny*b]};
+  const arm=p=>line(c,[sx+ux*1.2,sy-11-bob],p,shade(sov0?'#6a5a42':'#5c6a48',.9),1.7);
+  const R=(a0,a1,b0,b1)=>[[a0,b0],[a1,b0],[a1,b1],[a0,b1]];
+  const sov0=G.pl&&G.pl[u.o]&&G.pl[u.o].fac==='soviet';
+  const gun=()=>{const o=[sx-ux*1.5,gy0-uy*.6];
+    if(sn){const P=W(o,[[R(-3.5,-.3,-.4,1.4),'#4f5a36'],[R(-.3,4.5,0,1.2),'#2a2d2f'],[R(4.5,14,.35,.85),'#18191a'],[R(.6,4.6,1.4,2.5),'#121314'],[R(.2,.8,1.2,1.5),'#121314'],[R(4.2,4.8,1.2,1.5),'#121314'],[[[1,0],[1.7,0],[1.4,-1.7],[.8,-1.6]],'#18191a']]);
+      dot(c,P(4.7,1.95),.6,'#9fd3ff');line(c,P(10,.4),P(10.6,-2.6),'#2a2a24',.6);line(c,P(10,.4),P(9.4,-2.6),'#2a2a24',.6);arm(P(1.2,0));return}
+    if(rk){const P=W([sx-ux*1,sy-12.5-bob-uy*.4],[[R(-4.5,9,0,2.8),'#4b5a34'],[R(-5.6,-4.5,-.4,3.2),'#2f3824'],[R(8.4,9.4,-.2,3),'#3a4628'],[R(2,3.4,2.8,4),'#1f2318'],[[[1,0],[2,0],[1.8,-2],[1,-2]],'#1f2318'],[R(-4.5,9,2.2,2.8),'rgba(255,255,255,.12)']]);
+      dot(c,P(9.6,1.4),1,'#141510');arm(P(1.4,0));return}
+    if(ds){const P=W(o,[[R(-2.5,8.5,0,2.4),'#3d4a1c'],[R(8.5,10,.4,2),'#2a3312'],[R(-1.5,2.5,2.4,4.6),'#5d6a2c']]);dot(c,P(.5,3.5),1.5,'#9dff4a');dot(c,P(10.2,1.2),1.4,'#9dff4a');arm(P(1,0));return}
+    if(tt&&!chr){const P=W(o,[[R(-1,7,0,2.2),'#4a4f55'],[R(1.5,2.3,-.4,2.6),'#b87333'],[R(3.5,4.3,-.4,2.6),'#b87333'],[R(5.5,6.3,-.4,2.6),'#b87333']]);dot(c,P(7.6,1.1),1.6,'#8fd3ff');arm(P(.5,0));return}
+    if(chr){const P=W(o,[[[[-2.5,-.2],[7.5,.2],[7.5,1.8],[-2.5,2]],'#3a4048'],[R(0,6.5,1.8,2.3),'#7fd0ff'],[R(7.5,10,.6,1.3),'#1a1d22']]);dot(c,P(10.2,.95),1.2,'#bfe8ff');arm(P(1,0));return}
+    if(cm){for(const s2 of[-1,1]){const P=W([o[0]+s2*2.4,o[1]],[[R(0,4.2,0,1.2),'#1d1f21'],[[[.4,0],[1.3,0],[1.1,-1.8],[.4,-1.7]],'#2a2420']]);arm(P(.6,0))}return}
+    if(spy){const P=W([o[0]+ux*2,o[1]+1],[[R(0,4,0,1.1),'#1d1f21'],[[[.3,0],[1.2,0],[1,-1.7],[.3,-1.6]],'#3b2f22']]);arm(P(.5,0));return}
     if(tr_){c.fillStyle='#c0392b';c.fillRect(sx-3,sy-11.5-bob,6,3);c.fillStyle='#222';c.fillRect(sx-.5,sy-12-bob,1,4);return}
     if(iv){const b=[sx+ux*4.5,sy-8.5-bob+uy*1.5];dot(c,b,2.8,'#26282a');line(c,[b[0],b[1]-2.6],[b[0]+1.6,b[1]-4.6],'#c9a46a',1);if((t*6|0)%2)dot(c,[b[0]+1.8,b[1]-4.8],1.1,'#ffb43a');return}
-    if(sn){line(c,[sx-ux*3,gy0-uy],[sx+ux*12,gy0+uy*4.5],'#2a2a22',1.6);return}
-    if(ds){line(c,[sx-ux*2,gy0-uy],[sx+ux*8,gy0+uy*3.5],'#3d4a1c',3);dot(c,[sx+ux*8,gy0+uy*3.5],1.6,'#9dff4a');return}
     if(eng){c.fillStyle='#d6a51c';c.fillRect(sx+ux*4-2,sy-7-bob,4,3);return}
-    if(spy){c.fillStyle='#3b2f22';c.fillRect(sx+ux*3-1.5,sy-8.5-bob,3,3.5);return}
-    if(tt){line(c,[sx,gy0],[sx+ux*6,gy0+uy*2.5],'#4a4f55',2.6);dot(c,[sx+ux*6.5,gy0+uy*2.7],1.6,'#8fd3ff');return}
-    if(cm){for(const s of[-1,1])line(c,[sx+s*2.4,gy0],[sx+s*2.4+ux*5,gy0+uy*2.5],'#1d1f21',1.6);return}
-    line(c,[sx-ux*2,gy0-uy*1],[sx+ux*(rk?9:8),gy0+uy*3.5],rk?'#4b5a34':'#1d1f21',rk?3.2:1.8)};
+    if(cs){const P=W(o,[[[[-3.6,-.6],[-.4,-.2],[-.4,1.2],[-3.6,1.6]],'#7a4a24'],[R(-.4,4,-.1,1.3),'#26282a'],[[[2,-.1],[3,-.1],[3.6,-2.6],[2.7,-2.9]],'#3b2c1c'],[[[.6,-.1],[1.3,-.1],[1.1,-1.7],[.5,-1.6]],'#26282a'],[R(4,7,0,1.2),'#7a4a24'],[R(7,10.5,.35,.8),'#141516'],[R(9.6,10,.8,1.6),'#141516']]);arm(P(1,0));return}
+    // GI en raketsoldaat zonder buis: een modern geweer met draaghandvat
+    const P=W(o,[[[[-3.4,-.7],[-.4,-.4],[-.4,1.1],[-3.4,1.6]],'#1e2022'],[R(-.4,4.2,-.1,1.3),'#2c3034'],[R(.5,3.2,1.3,1.9),'#1b1d1f'],[[[1.9,-.1],[2.8,-.1],[3,-2.7],[2.1,-2.7]],'#1b1d1f'],[[[.6,-.1],[1.3,-.1],[1.05,-1.8],[.45,-1.7]],'#1b1d1f'],[R(4.2,7.2,0,1.2),'#373b40'],[R(7.2,10.6,.35,.8),'#121314'],[R(9,9.4,.8,1.9),'#121314'],[R(-.4,7.2,1.05,1.3),'rgba(255,255,255,.14)']]);arm(P(1,0))};
   if(uy<0)gun();
   if(u.type==='gi'||u.type==='conscript'||u.type==='rocket'||u.type==='eng'){c.fillStyle=u.type==='eng'?'#5a4a2a':'#3d4232';c.fillRect(sx-ux*2.6-2,sy-12-bob,4,5)}
   const special=cm||sn||ds||tr_||tt||iv,sov=G.pl&&G.pl[u.o]&&G.pl[u.o].fac==='soviet',uni=sov?'#6a5a42':'#5c6a48',body=iv?'#6b4a2c':chr?'#3a5f8a':tt?'#4a4f55':spy?'#5a4a36':cm?'#2b2d30':sn?'#55663a':ds?'#8f9440':tr_?'#3a2f2a':eng?'#7a6a3a':uni;
@@ -2829,20 +2845,33 @@ const EMPTY={sea:'Bouw een scheepswerf op het water om schepen te maken.',bld:''
 function cameoPr(){return(x,y,z)=>[(x-y)*HW,(x+y)*HH-z]}
 function drawCameo(cvs,type){
   const W=104,H=76,c=cvs.getContext('2d');cvs.width=W*2;cvs.height=H*2;c.setTransform(2,0,0,2,0,0);
-  const bg=c.createLinearGradient(0,0,0,H);bg.addColorStop(0,'#1d3550');bg.addColorStop(1,'#08111b');c.fillStyle=bg;c.fillRect(0,0,W,H);
-  c.strokeStyle='rgba(120,170,220,.08)';for(let i=-H;i<W;i+=8){c.beginPath();c.moveTo(i,H);c.lineTo(i+H,0);c.stroke()}
+  const T0=BT[type]||UT[type],sea=!!T0.sea||!!T0.water,air=!!(UT[type]&&UT[type].air),R=mulberry(type.length*977+type.charCodeAt(0)*31);
+  // achtergrond als een foto: heiige lucht, heuvels in de verte en grond (of zee) met wat structuur
+  const hz=air?H*.78:H*.46,sky=c.createLinearGradient(0,0,0,hz);sky.addColorStop(0,air?'#5f86a8':'#7f9db5');sky.addColorStop(1,'#c7d3d8');c.fillStyle=sky;c.fillRect(0,0,W,hz+1);
+  if(air)for(let i=0;i<4;i++){const x=R()*W,y=R()*hz*.7,r=8+R()*10;const g=c.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=g;c.beginPath();c.ellipse(x,y,r*1.6,r*.6,0,0,7);c.fill()}
+  for(const[col,amp,off]of[['rgba(110,130,140,.55)',5,-2],['rgba(80,100,85,.75)',3.5,1]]){c.fillStyle=col;c.beginPath();c.moveTo(0,hz);const ph=R()*6;for(let x=0;x<=W;x+=4)c.lineTo(x,hz+off-amp*(.6+.4*Math.sin(x*.07+ph)+.3*Math.sin(x*.19+ph*2)));c.lineTo(W,hz);c.closePath();c.fill()}
+  const gr=c.createLinearGradient(0,hz,0,H);
+  if(sea){gr.addColorStop(0,'#4f7f99');gr.addColorStop(1,'#163447')}else{gr.addColorStop(0,'#7d8a52');gr.addColorStop(1,'#34461f')}
+  c.fillStyle=gr;c.fillRect(0,hz,W,H-hz);
+  c.strokeStyle=sea?'rgba(220,240,255,.18)':'rgba(30,40,20,.22)';c.lineWidth=.8;for(let i=0;i<14;i++){const y=hz+3+R()*(H-hz),x=R()*W,l=4+R()*10;c.beginPath();c.moveTo(x,y);c.lineTo(x+l,y+(sea?0:.6));c.stroke()}
   const pr=cameoPr();
   if(BT[type]){
-    const T=BT[type],s=Math.min(W*.86/((T.w+T.h)*HW),H*.8/((T.w+T.h)*HH+T.ht+8)),cx=(T.w-T.h)*HW/2,cy=(T.w+T.h)*HH/2-T.ht/2-4;
-    c.save();c.translate(W/2-cx*s,H/2+2-cy*s);c.scale(s,s);
-    c.fillStyle=T.water?'#2d5a7a':'#3e5a2c';c.beginPath();const a=pr(-.3,-.3,0),b=pr(T.w+.3,-.3,0),d=pr(T.w+.3,T.h+.3,0),e=pr(-.3,T.h+.3,0);c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.lineTo(d[0],d[1]);c.lineTo(e[0],e[1]);c.closePath();c.fill();
+    const T=BT[type],s=Math.min(W*.9/((T.w+T.h)*HW),H*.86/((T.w+T.h)*HH+T.ht+8)),cx=(T.w-T.h)*HW/2,cy=(T.w+T.h)*HH/2-T.ht/2-4;
+    c.save();c.translate(W/2-cx*s,H/2+5-cy*s);c.scale(s,s);
+    c.fillStyle='rgba(0,0,0,.28)';c.beginPath();const a=pr(-.25,-.25,0),b=pr(T.w+.6,-.25,0),d=pr(T.w+.6,T.h+.6,0),e=pr(-.25,T.h+.6,0);c.moveTo(a[0],a[1]);c.lineTo(b[0],b[1]);c.lineTo(d[0],d[1]);c.lineTo(e[0],e[1]);c.closePath();c.fill();
     BDRAW[type](c,pr,{x:0,y:0,w:T.w,h:T.h,tur:Math.PI*.3,flash:0,o:0},TEAM[0],1,1.2,false);c.restore();
   }else{
-    const T=UT[type],inf=T.cat==='inf',air=!!T.air,s=T.sea?(type==='carrier'||type==='dread'?.95:1.2):type==='kirov'?.85:type==='eagle'||type==='harrier'?2.1:T.heli?1.45:type==='drone'?2.8:type==='rocketeer'?2.4:inf?3.3:type==='harv'?1.9:2.3;
-    c.save();c.translate(W/2,air?H*.62+T.alt*s:H*(inf?.86:.66));c.scale(s,s);
-    if(!air){c.fillStyle=T.sea?'rgba(40,90,140,.9)':'rgba(62,90,44,.8)';c.beginPath();c.ellipse(0,0,inf?9:T.sea?40:30,inf?4.5:T.sea?18:15,0,0,7);c.fill()}
+    // soldaten van dichtbij, voertuigen groot in beeld
+    const T=UT[type],inf=T.cat==='inf',big=type==='mammoth'||type==='harv'||type==='arty',s=T.sea?(type==='carrier'||type==='dread'?.62:.8):type==='kirov'?.5:type==='eagle'||type==='harrier'?1.25:T.heli?.95:type==='drone'?1.6:type==='rocketeer'?1.5:inf?1.6:big?1.0:1.15;
+    c.save();c.translate(W/2+(inf?-3:0),air?H*.6+T.alt*s*US:H*(inf?.9:.7));c.scale(s,s);
+    if(!air){c.fillStyle=T.sea?'rgba(10,30,50,.3)':'rgba(0,0,0,.24)';c.beginPath();c.ellipse(2,1.5,inf?8:T.sea?44:26,inf?3:T.sea?15:10,0,0,7);c.fill()}
     drawUnit(c,pr,{x:0,y:0,type,o:0,face:.35,tur:.35,moving:false,flash:0,cargo:type==='harv'?400:0,load:type==='harv'?400:0,id:1},0);c.restore();
   }
+  // licht van linksboven, donkere randen en wat korrel, zoals een gerenderd plaatje
+  c.globalCompositeOperation='overlay';const lg=c.createLinearGradient(0,0,W,H);lg.addColorStop(0,'rgba(255,240,210,.35)');lg.addColorStop(1,'rgba(0,0,20,.35)');c.fillStyle=lg;c.fillRect(0,0,W,H);c.globalCompositeOperation='source-over';
+  const vg=c.createRadialGradient(W*.45,H*.45,H*.25,W/2,H/2,W*.68);vg.addColorStop(0,'rgba(0,0,0,0)');vg.addColorStop(1,'rgba(0,0,0,.5)');c.fillStyle=vg;c.fillRect(0,0,W,H);
+  for(let i=0;i<260;i++){c.fillStyle=R()<.5?'rgba(255,255,255,.05)':'rgba(0,0,0,.07)';c.fillRect(R()*W,R()*H,.6,.6)}
+  c.strokeStyle='rgba(255,255,255,.18)';c.lineWidth=1;c.strokeRect(.5,.5,W-1,H-1);
 }
 function buildUI(){
   const box=$('cameos');
