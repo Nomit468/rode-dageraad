@@ -40,7 +40,8 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 #mm-off{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   background:repeating-linear-gradient(0deg,rgba(77,104,132,.08) 0 2px,transparent 2px 4px),#05080b;color:#5d7690;text-transform:uppercase;letter-spacing:.16em;font-size:12px;text-align:center}
 #mm-off b{font-family:var(--f-display);font-size:15px;color:#7f97b0;letter-spacing:.12em}
-.ops{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.ops{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.ops .op{grid-column:span 2}.ops .op.half{grid-column:span 3}
 .op{height:28px;border:1px solid #3a5169;background:linear-gradient(180deg,#2a3b4d,#18232f);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;padding:0}
 .op:hover{background:linear-gradient(180deg,#34495f,#1e2c3a)}
 .op[aria-pressed="true"]{background:linear-gradient(180deg,#5c4512,#2f2309);border-color:var(--amber);color:var(--amber)}
@@ -238,6 +239,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
           <dt>D</dt><dd>soldaten ingraven achter zandzakken, nog eens D om weer op te staan. Een Belegeringshelikopter landt ermee als kanon, een Nighthawk laat ermee zijn soldaten uitstappen</dd>
           <dt>A + klik op brug</dt><dd>een brug opblazen; een ingenieur herstelt hem weer</dd>
           <dt>T</dt><dd>alle eenheden van dezelfde soort als je selectie in beeld kiezen, twee keer snel T voor de hele kaart. Dubbelklikken op een eenheid kiest ook de zelfde soort in beeld</dd>
+          <dt>M</dt><dd>muziek aan of uit (ook met de knop Muziek)</dd>
           <dt>Shift + 1–9</dt><dd>groep opslaan (Ctrl of Option kan ook), daarna 1–9 om hem te kiezen</dd>
         </dl>
       </div>
@@ -297,8 +299,9 @@ body[data-fac="soviet"] #emblem .al{display:none}
     <div class="ops">
       <button class="op" id="b-repair" aria-pressed="false" title="Repareren (R)">Repareer</button>
       <button class="op" id="b-sell" aria-pressed="false" title="Verkopen (V)">Verkoop</button>
-      <button class="op" id="b-snd" aria-pressed="false" title="Geluid en stem">Geluid</button>
       <button class="op" id="b-pause" aria-pressed="false" title="Pauze (P)">Pauze</button>
+      <button class="op half" id="b-snd" aria-pressed="false" title="Geluid en stemmen">Geluid</button>
+      <button class="op half" id="b-mus" aria-pressed="true" title="Muziek aan of uit (M)">Muziek</button>
     </div>
     <button class="sp-btn" id="b-sp" aria-pressed="false" hidden><i id="sp-bar"></i><span id="sp-name"></span></button>
     <div class="buildwrap">
@@ -338,11 +341,11 @@ const wetT=t=>t===WATER||t>=BRIDGE;
 let START=[{x:12,y:64},{x:64,y:12},{x:12,y:12},{x:64,y:64}];
 // kaarten: grootte, hoeveel water/rots/bos, hoe breed de wegen, hoeveel erts en welk jaargetijde
 const MAPS={
-  river:{n:'Rivierdal',size:176,d:'Een rivier splitst de kaart in west en oost, met eilandjes in het midden. Bruggen kun je opblazen en met een ingenieur weer herstellen.',water:.3,rock:.71,tree:.64,lane:1,ore:1,ns:10,theme:'green',river:'v'},
-  big:{n:'Grote vlakte',size:232,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,theme:'green'},
-  islands:{n:'Eilanden',size:196,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,theme:'green'},
-  coast:{n:'Kustoorlog',size:196,d:'Eén groot eiland met open zee eromheen. Bouw een scheepswerf aan je kust en val de vijand ook vanaf het water aan.',water:.2,rock:.77,tree:.66,lane:1,ore:1.15,ns:11,theme:'green',ocean:.37},
-  winter:{n:'Winterfront',size:176,d:'Besneeuwd en rotsachtig. Een ijskoude rivier loopt van west naar oost; wie de bruggen heeft, heeft het front.',water:.29,rock:.63,tree:.6,lane:.9,ore:1,ns:9,theme:'snow',river:'h'},
+  river:{n:'Rivierdal',size:176,d:'Een rivier splitst de kaart in west en oost, met eilandjes in het midden. Bruggen kun je opblazen en met een ingenieur weer herstellen.',water:.3,rock:.71,tree:.64,lane:1,ore:1,ns:10,hill:.6,theme:'green',river:'v'},
+  big:{n:'Grote vlakte',size:232,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,hill:.61,theme:'green'},
+  islands:{n:'Eilanden',size:196,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,hill:.66,theme:'green'},
+  coast:{n:'Kustoorlog',size:196,d:'Eén groot eiland met open zee eromheen. Bouw een scheepswerf aan je kust en val de vijand ook vanaf het water aan.',water:.2,rock:.77,tree:.66,lane:1,ore:1.15,ns:11,hill:.63,theme:'green',ocean:.37},
+  winter:{n:'Winterfront',size:176,d:'Besneeuwd en rotsachtig. Een ijskoude rivier loopt van west naar oost; wie de bruggen heeft, heeft het front.',water:.29,rock:.63,tree:.6,lane:.9,ore:1,ns:9,hill:.58,theme:'snow',river:'h'},
 };
 let MAPK='river';
 function setMapSize(sz,ring){
@@ -513,11 +516,21 @@ function shade(hex,f){const k=hex+f;let v=shadeCache.get(k);if(v)return v;const 
 function segDist(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay;let t=((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy);t=clamp(t,0,1);return Math.hypot(ax+t*dx-px,ay+t*dy-py)}
 const easeOut=k=>1-(1-k)*(1-k);
 
-function w2s(x,y,z=0){return[(x-y)*HW+OX-cam.x,(x+y)*HH-cam.y-z]}
-function s2w(sx,sy){const wx=sx+cam.x-OX,wy=sy+cam.y;return[(wx/HW+wy/HH)/2,(wy/HH-wx/HW)/2]}
+// hoogte: een raster van hoekpunten met hoogte 0 of 1; daartussen wordt het terrein vloeiend, op kliffen steil
+const LV=30;let HGT=new Float32Array(1),CLF=new Uint8Array(1),HTN=new Uint8Array(1),HV=false;
+function HZ(x,y){if(!HV)return 0;if(x<0)x=0;else if(x>MAP)x=MAP;if(y<0)y=0;else if(y>MAP)y=MAP;const W=MAP+1;let x0=x|0,y0=y|0;if(x0>=MAP)x0=MAP-1;if(y0>=MAP)y0=MAP-1;
+  const fx=x-x0,fy=y-y0,i=y0*W+x0,a=HGT[i],b=HGT[i+1],c=HGT[i+W],d=HGT[i+W+1];return(a+(b-a)*fx+(c-a)*fy+(a-b-c+d)*fx*fy)*LV}
+const flatT=(x,y)=>{if(!HV)return true;const W=MAP+1,i=y*W+x,a=HGT[i];return HGT[i+1]===a&&HGT[i+W]===a&&HGT[i+W+1]===a};
+// welk punt van het terrein zie je op een plek van het scherm: langs de kijklijn het hoogste punt dat op of boven die lijn ligt
+function rayHit(fx,gy){const at=h=>{const fy=(gy+h)/HH;return[(fx+fy)/2,(fy-fx)/2]},f=h=>{const p=at(h);return HZ(p[0],p[1])-h};
+  {const p0=at(LV);if(HZ(p0[0],p0[1])>=LV-.01)return[...p0,LV];const p1=at(LV*.5),p2=at(0);if(HZ(p0[0],p0[1])===0&&HZ(p1[0],p1[1])===0&&HZ(p2[0],p2[1])===0)return[...p2,0]}
+  let prev=null;for(const h of[LV,LV*.75,LV*.5,LV*.25,0]){if(f(h)>=-.01){if(prev===null)return[...at(h),h];let a=h,b=prev;for(let k=0;k<5;k++){const m=(a+b)/2;if(f(m)>=0)a=m;else b=m}return[...at(a),a]}prev=h}
+  return[...at(0),0]}
+function w2s(x,y,z=0){return[(x-y)*HW+OX-cam.x,(x+y)*HH-cam.y-z-(HV?HZ(x,y):0)]}
+function s2w(sx,sy){const wx=sx+cam.x-OX,wy=sy+cam.y;if(HV){const r=rayHit(wx/HW,wy);return[r[0],r[1]]}return[(wx/HW+wy/HH)/2,(wy/HH-wx/HW)/2]}
 
 // ---------- map
-let terr,ore,gem,bmap,expl,seed=1337,TECH=[],BRIDGES=[],ROADC=new Float32Array(1);
+let terr,ore,gem,bmap,expl,seed=1337,TECH=[],BRIDGES=[],ROADC=new Float32Array(1),ASPH=new Uint8Array(1),PROPS=[];
 const GEM_MUL=3;
 function genMap(s,mk){
   MAPK=MAPS[mk]?mk:'river';const MP=MAPS[MAPK];setMapSize(MP.size,MP.ocean?MP.ocean-.075:0);
@@ -566,6 +579,65 @@ function genMap(s,mk){
   }
   if(MP.ocean){const R0=MP.ocean*MAP;for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){const d=Math.hypot(x+.5-MAP/2,y+.5-MAP/2),wob=(fbm(x/7,y/7,s+55)-.5)*MAP*.1;
     if(d>R0+wob&&B.every(p=>Math.hypot(x+.5-p.x,y+.5-p.y)>7))terr[y*MAP+x]=WATER}}
+  // stadje: asfaltstraten in een raster met huizen in de blokken, lantaarnpalen, hekken en geparkeerde auto's
+  ASPH=new Uint8Array(N);PROPS=[];const TWN=new Uint8Array(N),tocc=new Uint8Array(N),thouses=[];
+  {const cand=[C,...mids].map(p=>{const x=Math.round(p.x),y=Math.round(p.y);let sc=0;
+      for(let dy=-9;dy<=10;dy++)for(let dx=-9;dx<=10;dx++){const X=x+dx,Y=y+dy;if(X<2||Y<2||X>MAP-3||Y>MAP-3){sc-=3;continue}const t=terr[Y*MAP+X];sc+=t===WATER||t===BRIDGE?-3:1}
+      if(B.some(b=>Math.hypot(b.x-x,b.y-y)<26))sc-=999;return{x,y,sc}}).sort((a,b)=>b.sc-a.sc);
+    const towns=[cand[0]];if(MP.extra&&cand[1]&&Math.hypot(cand[1].x-cand[0].x,cand[1].y-cand[0].y)>34)towns.push(cand[1]);
+    const st=o=>o===-6||o===-5||o===0||o===1||o===6||o===7,isA=(x,y)=>x>=0&&y>=0&&x<MAP&&y<MAP&&ASPH[y*MAP+x]===1;
+    for(const tw of towns){if(tw.sc<260)continue;
+      for(let dy=-10;dy<=11;dy++)for(let dx=-10;dx<=11;dx++){const X=tw.x+dx,Y=tw.y+dy;if(X<2||Y<2||X>MAP-3||Y>MAP-3)continue;const i=Y*MAP+X,t=terr[i];if(t===WATER||t===BRIDGE)continue;
+        if(t===TREE||t===ROCK)terr[i]=GRASS;TWN[i]=1;if((st(dx)&&dy>=-7&&dy<=8)||(st(dy)&&dx>=-7&&dx<=8)){ASPH[i]=1;tocc[i]=1}}
+      // huizen in de vier blokken binnen het raster en rondom aan de buitenkant
+      const spots=[[-3,-3],[3,-3],[-3,3],[3,3],[-9,-3],[-9,3],[9,-3],[9,3],[-3,-9],[3,-9],[-3,9],[3,9]];
+      for(const[ox,oy]of spots){const x=tw.x+ox,y=tw.y+oy;let ok=true;
+        for(let yy=y-1;yy<=y+2&&ok;yy++)for(let xx=x-1;xx<=x+2&&ok;xx++){if(xx<2||yy<2||xx>MAP-3||yy>MAP-3){ok=false;break}const i=yy*MAP+xx;if(tocc[i]&&!ASPH[i])ok=false;
+          if(yy>=y&&yy<=y+1&&xx>=x&&xx<=x+1&&(terr[i]!==GRASS||ASPH[i]))ok=false}
+        if(!ok||B.some(p=>Math.hypot(x+1-p.x,y+1-p.y)<14))continue;for(let yy=y;yy<=y+1;yy++)for(let xx=x;xx<=x+1;xx++)tocc[yy*MAP+xx]=1;thouses.push({type:'house',x,y});
+        // een hek om de tuin aan de kant die van de straat af ligt
+        if(hash(x,y,s+41)<.6){const sd=hash(x,y,s+43)<.5?-1:1;PROPS.push({k:'fence',x:x-.6,y:y+(sd<0?-.6:2.6),x1:x+2.6,y1:y+(sd<0?-.6:2.6)})}}
+      // lantaarns en auto's langs de stoeprand
+      for(let dy=-7;dy<=8;dy++)for(let dx=-7;dx<=8;dx++){const X=tw.x+dx,Y=tw.y+dy;if(!isA(X,Y))continue;const hx=isA(X-1,Y)&&isA(X+1,Y),hy=isA(X,Y-1)&&isA(X,Y+1);if(hx&&hy)continue;
+        for(const[nx,ny]of[[0,-1],[0,1],[-1,0],[1,0]]){if(isA(X+nx,Y+ny))continue;const along=nx?Y:X,h=hash(X*3+nx,Y*3+ny,s+47);
+          if(((along-tw.y-tw.x)%3+3)%3===0&&h<.85)PROPS.push({k:'lamp',x:X+.5+nx*.46,y:Y+.5+ny*.46,dx:-nx,dy:-ny});
+          else if(h<.22)PROPS.push({k:'car',x:X+.5+nx*.22,y:Y+.5+ny*.22,ax:nx===0,col:['#a33a2e','#2e5ea3','#d7d2c4','#3f4a3a','#c9a13a','#5a5f66'][(h*97|0)%6]})}}}
+  }
+  // plateaus: hoger gelegen stukken met kliffen eromheen en per plateau twee hellingen. Niet bij bases, wegen, water of de stad
+  {const W=MAP+1;HGT=new Float32Array(W*W);CLF=new Uint8Array(N);HTN=new Uint8Array(N);HV=false;
+    const vok=(x,y)=>{if(x<4||y<4||x>MAP-4||y>MAP-4)return false;for(const b of B)if(Math.hypot(x-b.x,y-b.y)<17)return false;
+      for(const[p,q,w]of lanes)if(segDist(x,y,p.x,p.y,q.x,q.y)-w<3.4)return false;
+      for(let dy=-2;dy<=1;dy++)for(let dx=-2;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X<0||Y<0||X>=MAP||Y>=MAP)continue;const i=Y*MAP+X;if(wetT(terr[i])||TWN[i]||ASPH[i])return false}return true};
+    for(let y=0;y<=MAP;y++)for(let x=0;x<=MAP;x++)if(fbm(x/13,y/13,s+301)>MP.hill&&vok(x,y))HGT[y*W+x]=1;
+    const any=(x,y)=>{const i=y*W+x;return HGT[i]||HGT[i+1]||HGT[i+W]||HGT[i+W+1]},full=(x,y)=>{const i=y*W+x;return HGT[i]&&HGT[i+1]&&HGT[i+W]&&HGT[i+W+1]};
+    const seen=new Uint8Array(N);
+    for(let y0=0;y0<MAP;y0++)for(let x0=0;x0<MAP;x0++){const i0=y0*MAP+x0;if(seen[i0]||!any(x0,y0))continue;
+      const comp=[],st=[i0];seen[i0]=1;while(st.length){const c=st.pop();comp.push(c);const cx=c%MAP,cy=(c/MAP)|0;
+        for(let k=0;k<4;k++){const nx=cx+DX[k],ny=cy+DY[k];if(nx<0||ny<0||nx>=MAP||ny>=MAP)continue;const j=ny*MAP+nx;if(!seen[j]&&any(nx,ny)){seen[j]=1;st.push(j)}}}
+      const tops=comp.filter(c=>full(c%MAP,(c/MAP)|0)).length;
+      // te kleine plateaus weer plat maken
+      if(tops<24){for(const c of comp){const cx=c%MAP,cy=(c/MAP)|0;for(const[a,b]of[[0,0],[1,0],[0,1],[1,1]])HGT[(cy+b)*W+cx+a]=0}continue}
+      HV=true;const slope=comp.filter(c=>!full(c%MAP,(c/MAP)|0));
+      const lD=c=>{const x=c%MAP+.5,y=((c/MAP)|0)+.5;let m=99;for(const[p,q,w]of lanes)m=Math.min(m,segDist(x,y,p.x,p.y,q.x,q.y)-w);return m};
+      const by=slope.map(c=>[c,lD(c)]).sort((a,b)=>a[1]-b[1]),seeds=[];if(by.length)seeds.push(by[0][0]);
+      for(const[c]of by){if(seeds.length>=2)break;const sx=seeds[0]%MAP,sy=(seeds[0]/MAP)|0;if(Math.hypot(c%MAP-sx,((c/MAP)|0)-sy)>12)seeds.push(c)}
+      for(const c of slope){const cx=c%MAP,cy=(c/MAP)|0,ramp=seeds.some(q=>Math.hypot(cx-q%MAP,cy-((q/MAP)|0))<1.9);
+        if(ramp){terr[c]=GRASS;for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=cx+dx,Y=cy+dy;if(X<0||Y<0||X>=MAP||Y>=MAP)continue;const j=Y*MAP+X;if(full(X,Y)||!any(X,Y))if(terr[j]===TREE||terr[j]===ROCK)terr[j]=GRASS}}
+        else{terr[c]=ROCK;CLF[c]=1}}}
+    // elk flink stuk plateau moet bereikbaar zijn: graaf anders een helling naar het dichtstbijzijnde bereikbare vakje
+    if(HV){const pass=i=>terr[i]===GRASS||terr[i]===BRIDGE,s0=Math.floor(B[0].y)*MAP+Math.floor(B[0].x);
+      for(let it=0;it<40&&pass(s0);it++){const reach=new Uint8Array(N),q=[s0];reach[s0]=1;
+        while(q.length){const c=q.pop(),cx=c%MAP,cy=(c/MAP)|0;for(let k=0;k<4;k++){const nx=cx+DX[k],ny=cy+DY[k];if(nx<0||ny<0||nx>=MAP||ny>=MAP)continue;const j=ny*MAP+nx;if(!reach[j]&&pass(j)){reach[j]=1;q.push(j)}}}
+        let reg=null;const done=new Uint8Array(N);
+        for(let i=0;i<N&&!reg;i++){if(reach[i]||done[i]||!pass(i)||!full(i%MAP,(i/MAP)|0))continue;const r=[i],st=[i];done[i]=1;
+          while(st.length){const c=st.pop(),cx=c%MAP,cy=(c/MAP)|0;for(let k=0;k<4;k++){const nx=cx+DX[k],ny=cy+DY[k];if(nx<0||ny<0||nx>=MAP||ny>=MAP)continue;const j=ny*MAP+nx;if(!done[j]&&!reach[j]&&pass(j)){done[j]=1;r.push(j);st.push(j)}}}
+          if(r.length>=8)reg=r}
+        if(!reg)break;
+        const par=new Int32Array(N).fill(-2),qq=[];for(const c of reg){par[c]=-1;qq.push(c)}let hit=-1;
+        for(let h=0;h<qq.length&&hit<0;h++){const c=qq[h],cx=c%MAP,cy=(c/MAP)|0;for(let k=0;k<4;k++){const nx=cx+DX[k],ny=cy+DY[k];if(nx<1||ny<1||nx>=MAP-1||ny>=MAP-1)continue;const j=ny*MAP+nx;if(par[j]!==-2||wetT(terr[j]))continue;par[j]=c;if(reach[j]){hit=j;break}qq.push(j)}}
+        if(hit<0)break;
+        for(let c=hit;c>=0;c=par[c]){const cx=c%MAP,cy=(c/MAP)|0;for(const[dx,dy]of[[0,0],[1,0],[0,1]]){const j=(cy+dy)*MAP+cx+dx;if(!wetT(terr[j])){terr[j]=GRASS;CLF[j]=0}}}}}
+    if(HV)for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++)if(any(x,y))for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<MAP&&Y<MAP)HTN[Y*MAP+X]=1}}
   const nearBase=(x,y)=>B.some(p=>Math.hypot(x+.5-p.x,y+.5-p.y)<5.5),fr=MP.ore;
   const fields=[[C.x,C.y,4.6*fr]];
   for(const b of B){const dx=C.x-b.x,dy=C.y-b.y,l=Math.hypot(dx,dy),ux=dx/l,uy=dy/l;
@@ -577,14 +649,14 @@ function genMap(s,mk){
     for(let y=Math.floor(cy-r-1);y<=cy+r+1;y++)for(let x=Math.floor(cx-r-1);x<=cx+r+1;x++){
       if(x<1||y<1||x>MAP-2||y>MAP-2)continue;const i=y*MAP+x;
       const d=Math.hypot(x+.5-cx,y+.5-cy);
-      if(d<r+(hash(x,y,s+5)-.5)*1.4&&terr[i]===GRASS&&!nearBase(x,y))ore[i]=Math.max(ore[i],Math.round(220+(1-d/r)*230+hash(x,y,s+9)*50));
+      if(d<r+(hash(x,y,s+5)-.5)*1.4&&terr[i]===GRASS&&!TWN[i]&&flatT(x,y)&&!nearBase(x,y))ore[i]=Math.max(ore[i],Math.round(220+(1-d/r)*230+hash(x,y,s+9)*50));
     }
   }
   // neutrale gebouwen: olieboortorens en dorpjes, niet op de wegen en niet bij een basis
-  TECH=[];const occ=new Uint8Array(N);
+  TECH=[...thouses];const occ=tocc;
   const laneD=(x,y)=>{let m=99;for(const[p,q,w]of lanes)m=Math.min(m,segDist(x,y,p.x,p.y,q.x,q.y)-w);return m};
   const fits=(x,y)=>{for(let yy=y-1;yy<=y+2;yy++)for(let xx=x-1;xx<=x+2;xx++){if(xx<2||yy<2||xx>MAP-3||yy>MAP-3)return false;const i=yy*MAP+xx;if(occ[i])return false;
-      if(yy>=y&&yy<=y+1&&xx>=x&&xx<=x+1&&(terr[i]!==GRASS||ore[i]>0||laneD(xx+.5,yy+.5)<.6))return false}
+      if(yy>=y&&yy<=y+1&&xx>=x&&xx<=x+1&&(terr[i]!==GRASS||ore[i]>0||!flatT(xx,yy)||laneD(xx+.5,yy+.5)<.6))return false}
     return B.every(p=>Math.hypot(x+1-p.x,y+1-p.y)>14)};
   // rond een olieboortoren moet genoeg vrije grond liggen, want na het innemen bouw je daar verder
   // eerst zoeken naar een plek met veel ruimte, lukt dat niet dan met minder, en anders zoals vroeger
@@ -602,7 +674,7 @@ function genMap(s,mk){
     for(let y=Math.floor(cy-r-1);y<=cy+r+1;y++)for(let x=Math.floor(cx-r-1);x<=cx+r+1;x++){
       if(x<1||y<1||x>MAP-2||y>MAP-2)continue;const i=y*MAP+x;
       const d=Math.hypot(x+.5-cx,y+.5-cy);
-      if(d<r+(hash(x,y,s+17)-.5)&&terr[i]===GRASS){gem[i]=1;ore[i]=Math.round(300+(1-d/r)*150)}
+      if(d<r+(hash(x,y,s+17)-.5)&&terr[i]===GRASS&&!TWN[i]){gem[i]=1;ore[i]=Math.round(300+(1-d/r)*150)}
     }
   }
 }
@@ -629,12 +701,14 @@ function renderGround(){
     const i=y*MAP+x,t=terr[i],n=fbm(x/6,y/6,seed+5),big=.92+.16*vnoise(x/14,y/14,seed+77);let c;
     if(wetT(t)){GW[i]=1;for(const[dx,dy]of[[1,0],[-1,0],[0,1],[0,-1]]){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<MAP&&Y<MAP&&!wetT(terr[Y*MAP+X]))SHORE[i]=1}const dep=fbm(x/10,y/10,seed);c=snow?hsl2rgb(205,.38,.22+dep*.26):hsl2rgb(203,.46,.13+dep*.32)}
     else if(adjWater(x,y))c=snow?hsl2rgb(200,.14,.66+n*.08):hsl2rgb(38,.36,.46+n*.08);
+    else if(CLF[i])c=snow?hsl2rgb(212,.07,.5+n*.08):hsl2rgb(27,.26,.36+n*.07);
     else if(t===ROCK)c=snow?hsl2rgb(210,.06,.4+n*.1):hsl2rgb(24,.36,.33+n*.08);
     else if(t===TREE)c=snow?hsl2rgb(195,.1,.7+n*.08):hsl2rgb(78+n*14,.3+n*.06,.24+n*.06);
     else{c=snow?hsl2rgb(200+n*15,.1+n*.08,.8+n*.09):hsl2rgb(60+n*22,.3+n*.1,.33+n*.1);
       // zandvlekken in het gras en zandwegen tussen de bases, zoals in RA2
       const dn=fbm(x/7,y/7,seed+211),fd=clamp((dn-.55)/.1,0,1)*.8,rc=ROADC[i],fr=t===GRASS?clamp((1.35-rc)/.7,0,1)*.9:0,f=Math.max(fd,fr);
       if(f>0){const m=fbm(x/3,y/3,seed+223),d=snow?hsl2rgb(205,.08,.68+m*.08):hsl2rgb(34,.4,.42+m*.1);c=[c[0]+(d[0]-c[0])*f,c[1]+(d[1]-c[1])*f,c[2]+(d[2]-c[2])*f]}}
+    if(ASPH[i])c=snow?hsl2rgb(210,.05,.5):hsl2rgb(35,.04,.29);
     const k=wetT(t)?1:big;TCOL[i*3]=c[0]*k;TCOL[i*3+1]=c[1]*k;TCOL[i*3+2]=c[2]*k;
   }
   GND={TCOL,GW,snow};
@@ -645,13 +719,21 @@ function paintChunk(ch){
   const{TCOL,GW,snow}=GND,cv=document.createElement('canvas');cv.width=ch.w+GP*2;cv.height=ch.h+GP*2;ch.c=cv;ch.g=cv.getContext('2d');
   {
     const g=ch.g;g.setTransform(1,0,0,1,GP-ch.x,GP-ch.y);g.fillStyle='#030405';g.fillRect(ch.x-GP,ch.y-GP,ch.w+GP*2,ch.h+GP*2);
-    const inCh=(x,y,up)=>{const px=(x-y)*HW+OX,py=(x+y)*HH;return px+HW+8>=ch.x-GP&&px-HW-8<=ch.x+ch.w+GP&&py+TH+8>=ch.y-GP&&py-up<=ch.y+ch.h+GP};
+    const inCh=(x,y,up)=>{const px=(x-y)*HW+OX,py=(x+y)*HH;return px+HW+8>=ch.x-GP&&px-HW-8<=ch.x+ch.w+GP&&py+TH+8>=ch.y-GP&&py-up-LV<=ch.y+ch.h+GP};
     // grond per pixel: kleuren van de vier dichtstbijzijnde vakjes mengen, land en water apart, met een scherpe kust en schuim
     {const CW=ch.w+GP*2,CH=ch.h+GP*2,cw=Math.ceil(CW/2),chh=Math.ceil(CH/2),img=g.createImageData(cw,chh),D=img.data;
       let lr,lg,lb,lw,wr,wg,wb,wwt;
       const add=(ti,w)=>{const q=ti*3;if(GW[ti]){wr+=TCOL[q]*w;wg+=TCOL[q+1]*w;wb+=TCOL[q+2]*w;wwt+=w}else{lr+=TCOL[q]*w;lg+=TCOL[q+1]*w;lb+=TCOL[q+2]*w;lw+=w}};
       for(let py=0;py<chh;py++){const gy=ch.y-GP+py*2+1,fy=gy/HH;
-        for(let px=0;px<cw;px++){const gxp=ch.x-GP+px*2+1,fx=(gxp-OX)/HW,X=(fx+fy)/2-.5,Y=(fy-fx)/2-.5,o=(py*cw+px)*4;D[o+3]=255;
+        for(let px=0;px<cw;px++){const gxp=ch.x-GP+px*2+1,fx=(gxp-OX)/HW,o=(py*cw+px)*4;let X=(fx+fy)/2-.5,Y=(fy-fx)/2-.5,lt=1;D[o+3]=255;
+          // bij heuvels: zoek welk stuk terrein hier echt te zien is, en kleur hellingen naar het licht van linksboven
+          if(HV&&X>-.5&&Y>-.5&&X<MAP-.5&&Y<MAP-.5&&HTN[Math.floor(Y+.5)*MAP+Math.floor(X+.5)]){const r=rayHit(fx,gy);X=r[0]-.5;Y=r[1]-.5;
+            const tx=Math.floor(r[0]),ty=Math.floor(r[1]),ti=ty*MAP+tx,hh=r[2]/LV,slope=tx>=0&&ty>=0&&tx<MAP&&ty<MAP&&!flatT(tx,ty);
+            if(slope){const e=.06,dhx=(HZ(r[0]+e,r[1])-HZ(r[0]-e,r[1]))/(2*e*LV),dhy=(HZ(r[0],r[1]+e)-HZ(r[0],r[1]-e))/(2*e*LV);lt=Math.max(.58,Math.min(1.32,1+.34*dhx+.08*dhy))}
+            // rotswand: verticale groeven, onderaan donkerder; bovenop een lichte rand; op de lage grond een slagschaduw naar rechtsonder
+            if(slope&&CLF[ti]){let hs=Math.imul(gxp>>1,2654435761)>>>0;lt*=(.74+.3*hh)*(.86+.14*Math.sin(gxp*.42+((hs>>>16)&7)))}
+            else if(hh>.97&&HZ(r[0]+.32,r[1]+.32)<LV*.9)lt*=1.16;
+            else if(hh<.03&&HZ(r[0]-.7,r[1]-.25)>LV*.5)lt*=.72}
           if(X<-.5||Y<-.5||X>MAP-.5||Y>MAP-.5){D[o]=3;D[o+1]=4;D[o+2]=5;continue}
           let x0=Math.floor(X),y0=Math.floor(Y);let ax=X-x0,ay=Y-y0;ax=ax*ax*(3-2*ax);ay=ay*ay*(3-2*ay);
           let x1=x0+1,y1=y0+1;if(x0<0)x0=0;if(y0<0)y0=0;if(x1>MAP-1)x1=MAP-1;if(y1>MAP-1)y1=MAP-1;
@@ -662,7 +744,7 @@ function paintChunk(ch){
           let r=lr+(wr-lr)*sm,gg=lg+(wg-lg)*sm,b=lb+(wb-lb)*sm;
           let hsh=Math.imul(gxp,374761393)+Math.imul(gy,668265263);hsh=Math.imul(hsh^(hsh>>>13),1274126177);hsh=(hsh^(hsh>>>16))>>>0;
           if(wwt>.3&&wwt<.72){const f=1-Math.abs(wwt-.5)/.22,fo=f*f*(.45+.55*((hsh>>>8)&255)/255)*(snow?.35:.55);r+=(240-r)*fo;gg+=(246-gg)*fo;b+=(250-b)*fo}
-          D[o]=r;D[o+1]=gg;D[o+2]=b;
+          D[o]=r*lt;D[o+1]=gg*lt;D[o+2]=b*lt;
         }
       }
       // op halve resolutie berekend en vergroot; daarna een fijne korrel erover
@@ -673,22 +755,32 @@ function paintChunk(ch){
     for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){
       if(!inCh(x,y,30))continue;
       const i=y*MAP+x,t=terr[i],R=mulberry(seed*131+i*7919+11);
+      // asfalt: strak vlak met een stoeprand waar de straat ophoudt en een gestippelde middenstreep
+      if(ASPH[i]){const px=(x-y)*HW+OX,py=(x+y)*HH,A=(X,Y)=>X>=0&&Y>=0&&X<MAP&&Y<MAP&&ASPH[Y*MAP+X]===1;
+        tilePath(g,px,py,.6);g.fillStyle=snow?'#6c7176':'#46484b';g.fill();
+        for(let k=0;k<4;k++){g.fillStyle=R()<.5?'rgba(0,0,0,.18)':'rgba(255,255,255,.06)';const u=R(),v=R();g.fillRect((x+u-y-v)*HW+OX,(x+u+y+v)*HH,3,1)}
+        const P=[[px,py],[px+HW,py+HH],[px,py+TH],[px-HW,py+HH]],E=[[0,-1,0,1],[1,0,1,2],[0,1,2,3],[-1,0,3,0]];
+        for(const[dx,dy,a,b]of E)if(!A(x+dx,y+dy)){g.strokeStyle=snow?'#d9dde0':'#a19c90';g.lineWidth=2.4;g.beginPath();g.moveTo(P[a][0],P[a][1]);g.lineTo(P[b][0],P[b][1]);g.stroke()}
+        const hx=A(x-1,y)&&A(x+1,y),hy=A(x,y-1)&&A(x,y+1);
+        if(hx&&!hy&&!A(x,y-1)&&A(x,y+1)){g.strokeStyle='rgba(235,225,170,.7)';g.lineWidth=1.2;g.beginPath();g.moveTo(P[3][0]+(P[2][0]-P[3][0])*.3,P[3][1]+(P[2][1]-P[3][1])*.3);g.lineTo(P[3][0]+(P[2][0]-P[3][0])*.7,P[3][1]+(P[2][1]-P[3][1])*.7);g.stroke()}
+        if(hy&&!hx&&!A(x-1,y)&&A(x+1,y)){g.strokeStyle='rgba(235,225,170,.7)';g.lineWidth=1.2;g.beginPath();g.moveTo(P[1][0]+(P[2][0]-P[1][0])*.3,P[1][1]+(P[2][1]-P[1][1])*.3);g.lineTo(P[1][0]+(P[2][0]-P[1][0])*.7,P[1][1]+(P[2][1]-P[1][1])*.7);g.stroke()}
+        continue}
       if(wetT(t)){
         g.strokeStyle=snow?'rgba(235,248,255,.28)':'rgba(170,215,255,.13)';g.lineWidth=1;
-        for(let k=0;k<2;k++){const u=R(),v=R();const px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH;g.beginPath();g.moveTo(px-6,py);g.lineTo(px+6,py+(snow?3:0));g.stroke()}
+        for(let k=0;k<2;k++){const u=R(),v=R();const px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH-HZ(x+u,y+v);g.beginPath();g.moveTo(px-6,py);g.lineTo(px+6,py+(snow?3:0));g.stroke()}
         continue;
       }
       for(let k=0;k<3;k++){
-        const u=R(),v=R(),px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH;
+        const u=R(),v=R(),px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH-HZ(x+u,y+v);
         g.fillStyle=R()<.5?(snow?'rgba(90,110,130,.12)':'rgba(0,0,0,.14)'):(snow?'rgba(255,255,255,.3)':'rgba(255,255,220,.07)');g.fillRect(px,py,2,1);
       }
-      if(t===GRASS&&R()<.18){const u=R(),v=R(),px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH;g.fillStyle=snow?'rgba(140,160,180,.16)':'rgba(60,45,25,.18)';g.beginPath();g.ellipse(px,py,10+R()*10,4+R()*4,0,0,7);g.fill()}
+      if(t===GRASS&&R()<.18){const u=R(),v=R(),px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH-HZ(x+u,y+v);g.fillStyle=snow?'rgba(140,160,180,.16)':'rgba(60,45,25,.18)';g.beginPath();g.ellipse(px,py,10+R()*10,4+R()*4,0,0,7);g.fill()}
     }
     // rotsen, van achter naar voren
-    for(let sd=0;sd<2*MAP;sd++)for(let x=0;x<MAP;x++){const y=sd-x;if(y<0||y>=MAP||terr[y*MAP+x]!==ROCK||!inCh(x,y,40))continue;
+    for(let sd=0;sd<2*MAP;sd++)for(let x=0;x<MAP;x++){const y=sd-x;if(y<0||y>=MAP||terr[y*MAP+x]!==ROCK||CLF[y*MAP+x]||!inCh(x,y,40))continue;
       const R=mulberry(seed*977+(y*MAP+x)*104729+5);
       for(let k=0;k<2;k++){
-        const u=.25+R()*.5,v=.25+R()*.5,px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH,r=9+R()*9,h=8+R()*12;
+        const u=.25+R()*.5,v=.25+R()*.5,px=(x+u-y-v)*HW+OX,py=(x+u+y+v)*HH-HZ(x+u,y+v),r=9+R()*9,h=8+R()*12;
         const pts=[];for(let a=0;a<7;a++){const an=Math.PI+a/6*Math.PI,rr=r*(.75+R()*.35);pts.push([px+Math.cos(an)*rr,py+Math.sin(an)*rr*.5-(a>0&&a<6?h*Math.sin(a/6*Math.PI):0)])}
         g.fillStyle='rgba(0,0,0,.3)';g.beginPath();g.ellipse(px+3,py+2,r,r*.45,0,0,7);g.fill();
         const gr=g.createLinearGradient(px-r,py-h,px+r,py);gr.addColorStop(0,snow?'#eef3f7':'#c99a62');gr.addColorStop(1,snow?'#5a6068':'#6b4426');
@@ -709,7 +801,7 @@ function scorch(x,y,r){
   for(const ch of gch)if(ch.g)scorchOn(ch,x,y,r);
 }
 function scorchOn(ch,x,y,r){
-  const px=(x-y)*HW+OX,py=(x+y)*HH,rr=r*46;
+  const px=(x-y)*HW+OX,py=(x+y)*HH-HZ(x,y),rr=r*46;
   if(px+rr<ch.x-GP||px-rr>ch.x+ch.w+GP||py+rr/2<ch.y-GP||py-rr/2>ch.y+ch.h+GP)return;
   const gx=ch.g;gx.save();gx.setTransform(1,0,0,1,GP-ch.x,GP-ch.y);gx.translate(px,py);gx.scale(1,.5);
   const g=gx.createRadialGradient(0,0,0,0,0,rr);g.addColorStop(0,'rgba(18,12,6,.6)');g.addColorStop(.6,'rgba(18,12,6,.3)');g.addColorStop(1,'rgba(18,12,6,0)');
@@ -783,7 +875,7 @@ function newGame(s,cfg,populate=true){
     (G.pl[o].fac==='soviet'?['conscript','conscript','conscript','conscript','rhino','rhino']:['gi','gi','gi','tank','tank']).forEach((t,i)=>{const w=nearestWalkable(Math.floor(bx+(i%3)-1),Math.floor(by+Math.floor(i/3)),5);if(w){const u=mkUnit(o,t,w.x+.5,w.y+.5);u.face=u.tur=Math.atan2(dy,dx)}});
   }
   if(populate)reveal();const me=START[LOCAL];centerOn(me.x+1.5,me.y+1.5);
-  for(const b of document.querySelectorAll('.op'))b.setAttribute('aria-pressed',b.id==='b-snd'?String(S.on):'false');
+  for(const b of document.querySelectorAll('.op'))b.setAttribute('aria-pressed',b.id==='b-snd'?String(S.on):b.id==='b-mus'?String(MUS.on):'false');
   $('pausebar').hidden=true;
   // de grond rond je basis nu al tekenen en één beeld vooraf maken, dan hapert het spel niet in de eerste seconden
   gFrame++;{const m=1100;for(const ch of gch)if(ch.x<cam.x+VW+m&&ch.x+ch.w>cam.x-m&&ch.y<cam.y+VH+m&&ch.y+ch.h>cam.y-m)chunkC(ch)}
@@ -1276,7 +1368,7 @@ function updBld(b,dt){
 function rectDist(ax,ay,aw,ah,bx,by,bw,bh){const dx=Math.max(bx-(ax+aw),ax-(bx+bw),0),dy=Math.max(by-(ay+ah),ay-(by+bh),0);return Math.max(dx,dy)}
 function tileFree(o,x,y,water){
   if(x<0||y<0||x>=MAP||y>=MAP)return false;const i=y*MAP+x;
-  if(terr[i]!==(water?WATER:GRASS)||bmap[i]!==0||ore[i]>0)return false;
+  if(terr[i]!==(water?WATER:GRASS)||bmap[i]!==0||ore[i]>0||!flatT(x,y))return false;
   if(o===LOCAL&&!expl[i])return false;
   for(const u of G.units)if(!UT[u.type].air&&(u.x|0)===x&&(u.y|0)===y)return false;
   return true;
@@ -1408,7 +1500,8 @@ function enemyTarget(o,from){
 // ---------- fog
 function revealC(x,y,r){const x0=Math.max(0,Math.floor(x-r)),x1=Math.min(MAP-1,Math.ceil(x+r)),y0=Math.max(0,Math.floor(y-r)),y1=Math.min(MAP-1,Math.ceil(y+r)),r2=r*r;
   for(let yy=y0;yy<=y1;yy++)for(let xx=x0;xx<=x1;xx++){const dx=xx+.5-x,dy=yy+.5-y;if(dx*dx+dy*dy<=r2){const i=yy*MAP+xx;if(!expl[i]){expl[i]=1;shroudDirty=true;if(gem[i]&&ore[i]>0&&started&&!G.gemSeen){G.gemSeen=true;say('Edelstenen ontdekt','gem',0)}}}}}
-function reveal(){const tm=teamOf(LOCAL);for(const u of G.units)if(teamOf(u.o)===tm)revealC(u.x,u.y,UT[u.type].sight);for(const b of G.blds)if(teamOf(b.o)===tm)revealC(b.x+b.w/2,b.y+b.h/2,BT[b.type].sight+Math.max(b.w,b.h)/2)}
+// op een plateau kijk je twee vakjes verder
+function reveal(){const tm=teamOf(LOCAL);for(const u of G.units)if(teamOf(u.o)===tm)revealC(u.x,u.y,UT[u.type].sight+(HV&&!UT[u.type].air&&HZ(u.x,u.y)>LV*.6?2:0));for(const b of G.blds)if(teamOf(b.o)===tm)revealC(b.x+b.w/2,b.y+b.h/2,BT[b.type].sight+Math.max(b.w,b.h)/2)}
 function visibleE(e){
   if(e.k==='br')return!!expl[(cyE(e)|0)*MAP+(cxE(e)|0)]||!!expl[(e.ay|0)*MAP+(e.ax|0)]||!!expl[(e.by|0)*MAP+(e.bx|0)];
   if(e.o!==NEU&&!enemy(LOCAL,e.o))return true;
@@ -1425,10 +1518,13 @@ function netEv(e){if(NET.mode==='host')NET.ev.push(e)}
 function fxl(f){f.t=0;if(G.fx.length<700)G.fx.push(f)}
 function fx(f){fxl(f);if(NET.mode==='host'){const o={};for(const k in f)o[k]=typeof f[k]==='number'?r2(f[k]):f[k];NET.ev.push(['f',o])}}
 function boom(x,y,s,z=5){netEv(['b',r2(x),r2(y),s,z]);fxl({k:'ex',x,y,z,s,life:.45+s*.35,seed:Math.random()*6});
+  // zware klappen: een schokgolf over de grond, een tweede vuurbal en een kolom zwarte rook
+  if(s>=.8&&z<20){fxl({k:'sw',x,y,z:0,s,life:.3+s*.12});if(s>=1.3)fxl({k:'ex',x:x+(Math.random()-.5)*s*.5,y:y+(Math.random()-.5)*s*.5,z:z+6,s:s*.7,life:.4+s*.3,seed:Math.random()*6,dl:.09});
+    for(let i=0;i<2+s*2;i++)fxl({k:'sm',x:x+(Math.random()-.5)*.4,y:y+(Math.random()-.5)*.4,z:z+8+i*6,s:.7+s*.4,life:2.2+Math.random(),vz:22+Math.random()*14,c:'#1f1d1b',a:.75,dl:.08+i*.05})}
   for(let i=0;i<3+s*7;i++){const a=Math.random()*7,v=1.5+Math.random()*3*s;fxl({k:'sk',x,y,z:z+4,vx:Math.cos(a)*v,vy:Math.sin(a)*v,vz:40+Math.random()*120*s,life:.35+Math.random()*.35})}for(let i=0;i<2+s*3;i++)fxl({k:'sm',x:x+(Math.random()-.5)*s*.8,y:y+(Math.random()-.5)*s*.8,z:z+1,s:.5+s*.5,life:1.4+Math.random()*1.2,vz:10+Math.random()*8,c:'#3a3633'})}
 function debris(x,y,n){netEv(['d',r2(x),r2(y),n]);for(let i=0;i<n;i++){const a=Math.random()*7,v=1+Math.random()*2.5;fxl({k:'db',x,y,z:8,vx:Math.cos(a)*v,vy:Math.sin(a)*v,vz:60+Math.random()*90,life:1.2})}}
 function groundMark(x,y,a){
-  if(!gch.length)return;const px=(x-y)*HW+OX,py=(x+y)*HH,ca=Math.cos(a),sa=Math.sin(a),ang=Math.atan2((ca+sa)*HH,(ca-sa)*HW),snow=MAPS[MAPK].theme==='snow';
+  if(!gch.length)return;const px=(x-y)*HW+OX,py=(x+y)*HH-HZ(x,y),ca=Math.cos(a),sa=Math.sin(a),ang=Math.atan2((ca+sa)*HH,(ca-sa)*HW),snow=MAPS[MAPK].theme==='snow';
   for(const ch of gch){if(!ch.g||px<ch.x-8||px>ch.x+ch.w+8||py<ch.y-8||py>ch.y+ch.h+8)continue;const g=ch.g;g.save();g.setTransform(1,0,0,1,GP-ch.x,GP-ch.y);g.translate(px,py);g.rotate(ang);
     g.fillStyle=snow?'rgba(80,95,110,.11)':'rgba(38,28,14,.085)';g.fillRect(-4.5,-1.4,9,2.8);g.restore()}
 }
@@ -1456,6 +1552,8 @@ function ambient(dt){
   for(const f of G.fx){if(f.k!=='wreck'||f.dl>0)continue;f.sk=(f.sk||0)-dt;if(f.sk>0)continue;const hot=f.t<5;f.sk=hot?.14:.4;if(f.t>f.life-2)continue;
     fxl({k:'sm',x:f.x+(Math.random()-.5)*.3,y:f.y+(Math.random()-.5)*.3,z:10,s:hot?.6:.45,life:2.6,vz:hot?18:12,c:hot?'#252321':'#4a4642',a:hot?.7:.45});
     if(hot&&Math.random()<.6)fxl({k:'fi',x:f.x+(Math.random()-.5)*.4,y:f.y+(Math.random()-.5)*.4,z:8,life:.45})}
+  G.crushT=(G.crushT||0)-dt;if(G.crushT<=0&&PROPS.length){G.crushT=.2;for(const u of G.units){const T=UT[u.type];if(T.cat!=='veh'||T.air||T.sea||u.dead||!u.moving)continue;
+    for(const p of PROPS)if(p.k==='car'&&!p.crushed&&Math.abs(p.x-u.x)<.45&&Math.abs(p.y-u.y)<.45){p.crushed=true;for(let i=0;i<4;i++){const a=Math.random()*7;fxl({k:'db',x:p.x,y:p.y,z:5,vx:Math.cos(a)*1.5,vy:Math.sin(a)*1.5,vz:50+Math.random()*50,life:.9})}}}}
   for(const u of G.units)if(u.hs==='mine'&&Math.random()<dt*8)fxl({k:'ds',x:u.x+(Math.random()-.5)*.6,y:u.y+(Math.random()-.5)*.6,z:3,life:.7});
 }
 function ping(x,y){G.pings.push({x,y,t:G.t})}
@@ -1473,6 +1571,37 @@ function updFx(dt){
 const S={on:true,ac:null,master:null,noise:null,last:{}};
 function audioInit(){if(S.ac)return;try{S.ac=new(window.AudioContext||window.webkitAudioContext)();S.master=S.ac.createGain();S.master.gain.value=.45;S.master.connect(S.ac.destination);
   const len=S.ac.sampleRate*1.5,buf=S.ac.createBuffer(1,len,S.ac.sampleRate),d=buf.getChannelData(0);for(let i=0;i<len;i++)d[i]=Math.random()*2-1;S.noise=buf}catch(e){S.ac=null}}
+// ---------- muziek: een eigen stampend industrieel nummer dat het spel zelf maakt, in de geest van RA2 (geen echte RA2-muziek)
+const MUS={on:true,next:0,n:0,out:null,dist:null};
+try{MUS.on=localStorage.getItem('rd-mus')!=='0'}catch(e){}
+function musInit(){if(!S.ac||MUS.out)return;const c=S.ac,g=c.createGain();g.gain.value=0;const cp=c.createDynamicsCompressor();cp.threshold.value=-20;cp.ratio.value=5;g.connect(cp);cp.connect(c.destination);
+  const ws=c.createWaveShaper(),cu=new Float32Array(1024);for(let i=0;i<1024;i++)cu[i]=Math.tanh((i/512-1)*3.2);ws.curve=cu;const wg=c.createGain();wg.gain.value=.5;ws.connect(wg);wg.connect(g);MUS.out=g;MUS.dist=ws}
+function mOsc(type,f0,f1,t,dur,vol,dest,flt){const c=S.ac,o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);if(f1!==f0)o.frequency.exponentialRampToValueAtTime(f1,t+dur);
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);let n=o;if(flt){const f=c.createBiquadFilter();f.type='lowpass';f.frequency.setValueAtTime(flt[0],t);f.frequency.exponentialRampToValueAtTime(flt[1],t+dur);f.Q.value=flt[2]||4;o.connect(f);n=f}
+  n.connect(g);g.connect(dest||MUS.out);o.start(t);o.stop(t+dur+.02)}
+function mNoise(t,dur,freq,type,vol,q){const c=S.ac,src=c.createBufferSource();src.buffer=S.noise;src.playbackRate.value=.8+Math.random()*.4;const f=c.createBiquadFilter();f.type=type;f.frequency.value=freq;f.Q.value=q||.8;const g=c.createGain();
+  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);src.connect(f);f.connect(g);g.connect(MUS.out);src.start(t,Math.random()*.5);src.stop(t+dur+.02)}
+// E-mineur: twee maten baslijn, akkoorden voor het tweede deel
+const MB=[[41.2,0],[0,0],[41.2,1],[41.2,1],[0,0],[0,0],[49,1],[0,0],[41.2,0],[0,0],[41.2,1],[41.2,1],[0,0],[36.7,1],[0,0],[0,0],
+          [41.2,0],[0,0],[41.2,1],[41.2,1],[0,0],[0,0],[49,1],[0,0],[55,0],[0,0],[49,1],[0,0],[46.2,1],[0,0],[41.2,1],[0,0]];
+const MCH=[[164.8,196,246.9],[130.8,164.8,196],[146.8,185,220],[164.8,196,246.9]];
+const MBPM=88;
+function musStep(t,n){const st=n%16,bar=(n>>4)%24,sec=bar<8?0:bar<16?1:bar<20?2:3,sp=60/MBPM/4;
+  const drums=sec!==2||bar>=19;
+  if(drums&&(st===0||st===8||(sec===1&&st===11)||(sec===3&&st===14)))mOsc('sine',150,38,t,.34,.95);
+  if(drums&&(st===4||st===12)){mNoise(t,.2,1900,'bandpass',.55,.7);mOsc('triangle',200,120,t,.1,.3)}
+  if(drums&&st%2===0&&st%4!==0)mNoise(t,.06,8000,'highpass',.09);
+  const b=MB[(bar%2)*16+st];if(b[0]){const f=b[0]*(sec===3?2:1);mOsc('sawtooth',f*2,f*2,t,b[1]?sp*1.8:sp*3,.3,MUS.dist,[800,150,6]);mOsc('square',f,f,t,sp*1.6,.16,MUS.dist,[480,110,2])}
+  if((st===7||st===15)&&sec!==1)for(const r of[1,1.47,2.09])mOsc('square',560*r,540*r,t,.22,.035,null,[3200,1800,8]);
+  if(sec===1&&(st===0||st===6||st===10)){const ch=MCH[(bar>>1)%4];for(const f of ch)for(const d of[.997,1.003])mOsc('sawtooth',f*d,f*d,t,st===0?sp*5:sp*2.5,.05,null,[2400,700,1])}
+  if(sec===2&&st===0&&bar%2===0)mOsc('sawtooth',82.4,41.2,t,sp*14,.12,MUS.dist,[300,80,3]);
+}
+function musTick(){if(!S.ac)return;musInit();if(!MUS.out)return;const c=S.ac,want=started&&S.on&&MUS.on&&!(G.over);MUS.out.gain.setTargetAtTime(want?.14:0,c.currentTime,.25);
+  if(!want){MUS.next=0;return}const sp=60/MBPM/4;if(MUS.next<c.currentTime)MUS.next=c.currentTime+.06;
+  while(MUS.next<c.currentTime+.16){try{musStep(MUS.next,MUS.n)}catch(e){}MUS.next+=sp;MUS.n++}}
+function toggleMus(){MUS.on=!MUS.on;$('b-mus').setAttribute('aria-pressed',String(MUS.on));
+  // uit is meteen stil, ook de noten die al klaarstonden
+  if(!MUS.on&&MUS.out&&S.ac){const g=MUS.out.gain,t=S.ac.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(0,t)}try{localStorage.setItem('rd-mus',MUS.on?'1':'0')}catch(e){}}
 const GAP={rifle:.06,mg:.05,cannon:.08,rocket:.1,boom:.07,big:.2,hit:.06,click:.03,arty:.2,place:.1,bite:.15,zap:.12,beam:.15};
 function noiseBurst(t,dur,freq,type,vol,q){const src=S.ac.createBufferSource();src.buffer=S.noise;const f=S.ac.createBiquadFilter();f.type=type;f.frequency.value=freq;if(q)f.Q.value=q;const g=S.ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);src.connect(f);f.connect(g);g.connect(S.master);src.start(t,Math.random());src.stop(t+dur+.05);return f}
 function thump(t,f0,f1,dur,vol,type){const o=S.ac.createOscillator(),g=S.ac.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(S.master);o.start(t);o.stop(t+dur+.05)}
@@ -1497,18 +1626,65 @@ function sfx(kind,x,y){
     case'place':thump(t,220,90,.2,.25,'triangle');noiseBurst(t,.15,1200,'lowpass',.2);break;
   }
 }
-let nlVoice=null;
-function pickVoice(){try{const vs=speechSynthesis.getVoices();nlVoice=vs.find(v=>/^nl/i.test(v.lang))||null}catch(e){}}
+// stemmen in het Engels, zoals in RA2: een vrouwenstem als omroeper, een mannenstem voor de eenheden. Teksten op het scherm blijven Nederlands
+let evaVoice=null,unitVoice=null;
+function pickVoice(){try{const vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));const by=re=>vs.find(v=>re.test(v.name));
+  evaVoice=by(/samantha|zira|karen|serena|moira|female|google us english|aria|jenny/i)||vs.find(v=>/en-us/i.test(v.lang))||vs[0]||null;
+  unitVoice=by(/daniel|david|alex|fred|guy|ryan|male|google uk english male|arthur|oliver/i)||vs.find(v=>v!==evaVoice&&/en-gb/i.test(v.lang))||evaVoice}catch(e){}}
 try{speechSynthesis.onvoiceschanged=pickVoice;pickVoice()}catch(e){}
-function speak(text){if(!S.on)return;try{if(speechSynthesis.speaking&&speechSynthesis.pending)return;const u=new SpeechSynthesisUtterance(text);u.lang='nl-NL';if(nlVoice)u.voice=nlVoice;u.rate=1.08;u.pitch=.75;u.volume=.85;speechSynthesis.speak(u)}catch(e){}}
+// de omroeper gaat voor: tot zijn zin (geschat) klaar is, zwijgen de eenheden; daarna mag een eenheid een andere eenheid onderbreken
+let evaUntil=0;
+function speak(text,o){if(!S.on||!text)return;try{const eva=!o||o.eva,now=performance.now();
+    if(eva){if(speechSynthesis.speaking&&speechSynthesis.pending)return;evaUntil=now+400+text.length*75}
+    else{if(now<evaUntil)return;if(speechSynthesis.speaking)speechSynthesis.cancel()}
+    const u=new SpeechSynthesisUtterance(text);u.lang=eva?'en-US':'en-GB';const v=eva?evaVoice:unitVoice;if(v)u.voice=v;
+    u.rate=o&&o.rate||(eva?1.02:1.08);u.pitch=o&&o.pitch||(eva?1.05:.9);u.volume=eva?.85:.8;speechSynthesis.speak(u)}catch(e){}}
+// wat de omroeper zegt bij een melding (op sleutel); zonder vertaling blijft het stil
+const EVA_EN={promo:'Unit promoted',board:'Unit loaded',noland:'Cannot land there',c4:'C4 planted',spy:'Building infiltrated',spyd:'Our base has been infiltrated',
+  sat:'Spy satellite online',gar:'Building garrisoned',engfix:'Building repaired',tech:'Tech building captured',techl:'Tech building lost',oil:'Oil derrick captured',oill:'Oil derrick lost',
+  cap:'Building captured',capd:'Our building has been captured',drone:'Terror drone detected',blost:'Building lost',lost:'Unit lost',base:'Our base is under attack',kdown:'Kirov down',
+  brug:'Bridge destroyed',brugok:'Bridge repaired',unl:'Unloading',money:'Insufficient funds',ready:'Construction complete',unit:'Unit ready',wave:'Enemy forces approaching',
+  gem:'Gems discovered',paraon:'Paratroopers en route',sold:'Building sold',kirov:'Kirov airship detected',power:'Low power',droneoff:'Terror drone removed',crate:'Money crate',
+  para:'Paratroopers ready',welcome:'Welcome back, commander'};
 const said={};
-function say(text,key,cool,voice=true,alert=false){key=key||text;cool=cool??3;if(G.t-(said[key]??-999)<cool)return false;said[key]=G.t;addMsg(text,alert);if(voice&&started)speak(text);return true}
+function say(text,key,cool,voice=true,alert=false){key=key||text;cool=cool??3;if(G.t-(said[key]??-999)<cool)return false;said[key]=G.t;addMsg(text,alert);if(voice&&started)speak(EVA_EN[key]);return true}
+// eenheden antwoorden als je ze kiest of een bevel geeft: per soort een eigen stem en eigen zinnen
+const ACK={
+  gi:{s:['Standing by.','Ready, sir.','Awaiting orders.'],m:['On my way.','Moving out.','You got it.'],a:['Engaging!','Open fire!','Taking them down.']},
+  con:{s:['Conscript reporting.','For the Union.','Orders, comrade?'],m:['Moving, comrade.','At once.','Da.'],a:['For the Motherland!','Attack!','Fire!'],p:.75,r:1},
+  eng:{s:['Engineer here.','Need something fixed?'],m:['Right away.','On it.'],a:['Taking it over.']},
+  spy:{s:['Yes?','Discreetly, sir.'],m:['Of course.','Quietly now.'],a:['Consider it done.']},
+  tesla:{s:['Tesla trooper ready.','Charged up.'],m:['Moving.','Coils ready.'],a:['Feel the power!','Discharge!'],p:.65,r:.95},
+  elite:{s:['Commando here.','Ready to rock.'],m:['Moving in.','Keep it quiet.'],a:['Lock and load!','No problem.']},
+  ivan:{s:['Ivan is here!','You want bomb?'],m:['Going, going!','Ha ha!'],a:['Boom time!','Present for you!'],p:1.2,r:1.2},
+  tank:{s:['Tank ready.','Armor standing by.','Commander?'],m:['Rolling out.','Moving.','Affirmative.'],a:['Target acquired.','Firing!','Engaging target.']},
+  rhino:{s:['Rhino tank.','Armor ready.','Waiting, comrade.'],m:['Advancing.','Moving out.','Rolling.'],a:['Fire!','Destroy them!','Target locked.'],p:.7,r:.95},
+  heavy:{s:['Mammoth tank ready.','Heavy armor here.'],m:['Advancing slowly.','Moving forward.'],a:['Crush them!','Full firepower!'],p:.55,r:.88},
+  prism:{s:['Prism ready.','Crystal charged.'],m:['Moving.','Repositioning.'],a:['Light them up!','Beam away.'],p:1.05},
+  mirage:{s:['Mirage ready.','Now you see me.'],m:['Moving.','Relocating.'],a:['Surprise!','Open fire.']},
+  harv:{s:['Harvester ready.','Ore miner here.'],m:['Moving.','Heading out.'],a:['Collecting ore.']},
+  air:{s:['Pilot standing by.','Ready for takeoff.'],m:['Flying.','Heading there.'],a:['Attack run!','Going in!']},
+  kirov:{s:['Kirov reporting.','Airship ready.'],m:['Setting course.','Moving slowly.'],a:['Bombs away.','Target in sight.'],p:.5,r:.82},
+  sea:{s:['Ship ready.','Captain here.'],m:['Setting sail.','Full ahead.'],a:['Fire at will!','Engaging.']},
+};
+function ackSet(u){const t=u.type,T=UT[t];if(t==='dog'||t==='drone')return null;
+  if(T.sea)return ACK.sea;if(t==='kirov')return ACK.kirov;if(T.air)return ACK.air;if(t==='harv')return ACK.harv;
+  if(t==='eng')return ACK.eng;if(t==='spy')return ACK.spy;if(t==='tesltrp'||t==='desolator')return ACK.tesla;if(t==='cmdo'||t==='sniper'||t==='chrono')return ACK.elite;if(t==='ivan'||t==='terror')return ACK.ivan;
+  if(t==='mammoth')return ACK.heavy;if(t==='prism')return ACK.prism;if(t==='mirage')return ACK.mirage;
+  if(T.cat==='inf')return T.side==='soviet'||t==='conscript'?ACK.con:ACK.gi;
+  return T.side==='soviet'||G.pl[u.o]&&G.pl[u.o].fac==='soviet'?ACK.rhino:ACK.tank}
+let ackT=0,ackN=0;
+function ack(u,kind){if(!u||u.o!==LOCAL||!started)return;const now=performance.now();if(now-ackT<450)return;const A=ackSet(u);if(!A)return;const L=A[kind]||A.m;ackT=now;
+  speak(L[(ackN++)%L.length],{pitch:A.p||.9,rate:A.r||1.05})}
+// kiezen: alleen als er echt een nieuwe eenheid bij de selectie komt
+let ackSel=new Set();
+function selAck(){if(!started)return;let fresh=null;for(const id of sel)if(!ackSel.has(id)){fresh=id;break}if(fresh)ack(ents.get(fresh),'s');ackSel=new Set(sel)}
 // meldingen voor één speler: lokaal tonen, of als bericht naar die gast sturen
 function sayTo(o,text,key,cool,voice=true,alert=false,pingAt){
   if(o===LOCAL){const ok=say(text,key,cool,voice,alert);if(ok&&pingAt)ping(pingAt[0],pingAt[1]);return ok}
   const P=G.pl&&G.pl[o];if(NET.mode!=='host'||!P||P.kind!=='human')return false;
   P.said=P.said||{};key=key||text;cool=cool??3;if(G.t-(P.said[key]??-999)<cool)return false;P.said[key]=G.t;
-  netSend(o,{t:'say',text,voice,alert,ping:pingAt?pingAt.map(r2):null});return true;
+  netSend(o,{t:'say',text,key,voice,alert,ping:pingAt?pingAt.map(r2):null});return true;
 }
 function addMsg(text,alert){const box=$('msgs');const d=document.createElement('div');d.className='msg'+(alert?' alert':'');d.textContent=text;box.appendChild(d);while(box.children.length>3)box.firstChild.remove();setTimeout(()=>d.classList.add('fade'),2800);setTimeout(()=>d.remove(),3500)}
 
@@ -1694,7 +1870,22 @@ const BDRAW={
     if(b.o!==NEU){c.fillStyle=tm.main;c.fillRect(cc[0],cc[1],10,6);line(c,[cc[0],cc[1]+8],cc,'#ddd',1)}
   },
   house(c,pr,b,tm,k,t){
-    const v=((b.x*7+b.y*3)%3+3)%3,wall=['#c9b99a','#b8c4c9','#d0a98a'][v],roof=['#8a3b2a','#4a5a6a','#6b4a2a'][v],lit=garN(b)>0;
+    const v=((b.x*7+b.y*3)%3+3)%3,wall=['#c9b99a','#b8c4c9','#d0a98a'][v],roof=['#8a3b2a','#4a5a6a','#6b4a2a'][v],lit=garN(b)>0,sty=hash(b.x,b.y,7)*3|0;
+    const flag=z=>{if(lit&&b.o!==NEU){const f=pr(1,1,z);line(c,f,[f[0],f[1]-14],'#ddd',1.2);c.fillStyle=tm.main;c.fillRect(f[0],f[1]-14,9,5)}if(b.flash>0){const i=(t*30|0)%3;flash(c,pr(.46+i*.45,1.8,9*k),9)}};
+    const win=(z0,z1,n,col,wf=.7)=>{for(let i=0;i<n;i++){const x=.3+i*(1.4/n)+(.7-wf)/n/2;poly(c,[pr(x,1.8,z0),pr(x+wf/n,1.8,z0),pr(x+wf/n,1.8,z1),pr(x,1.8,z1)],col)}
+      for(let i=0;i<n;i++){const y=.3+i*(1.4/n)+(.7-wf)/n/2;poly(c,[pr(1.8,y,z0),pr(1.8,y+wf/n,z0),pr(1.8,y+wf/n,z1),pr(1.8,y,z1)],shade(col,.85))}};
+    if(sty===1){
+      // winkel: plat dak met rand, grote etalage en een gestreepte luifel
+      box(c,pr,0,0,2,2,0,2,'#5e5a52');box(c,pr,.15,.15,1.7,1.7,2,2+19*k,wall);const z=2+19*k;
+      box(c,pr,.1,.1,1.8,1.8,z,z+2.5*k,shade(wall,.8));box(c,pr,.6,.5,.5,.4,z+2.5*k,z+6*k,'#7d838a');
+      poly(c,[pr(.3,1.85,3*k),pr(1.7,1.85,3*k),pr(1.7,1.85,11*k),pr(.3,1.85,11*k)],lit?'#ffd86a':'#33404c');
+      for(let i=0;i<5;i++){const x=.2+i*.32;poly(c,[pr(x,1.85,13*k),pr(x+.32,1.85,13*k),pr(x+.32,2.15,10.5*k),pr(x,2.15,10.5*k)],i%2?'#e8e2d4':roof)}
+      win(5*k,12*k,3,lit?shade('#ffd86a',.85):'#20262e');flag(z+6*k);return}
+    if(sty===2){
+      // flat: drie verdiepingen, rijen ramen en een liftopbouw op het dak
+      box(c,pr,0,0,2,2,0,2,'#5e5a52');box(c,pr,.2,.2,1.6,1.6,2,2+34*k,shade(wall,.92));const z=2+34*k;
+      box(c,pr,.5,.5,.5,.5,z,z+5*k,'#8a8f94');
+      for(const f of[0,1,2])win((6+f*10)*k,(10+f*10)*k,3,lit||hash(b.x+f,b.y,9)<.25?'#ffd86a':'#3a4652',.42);flag(z+5*k);return}
     box(c,pr,0,0,2,2,0,2,'#5e5a52');box(c,pr,.2,.2,1.6,1.6,2,2+16*k,wall);
     const z1=2+16*k,z2=2+29*k;
     poly(c,[pr(.1,.1,z1),pr(1.9,.1,z1),pr(1.9,1,z2),pr(.1,1,z2)],shade(roof,1.15));
@@ -2032,6 +2223,20 @@ function drawShip(c,pr,u,tm,t){
     poly(c,hullPts(P2,u.x+co*.05,u.y+si*.05,.32,.3,13,f),'#8d959c');for(const s2 of[-.13,.13]){const a=at(-.1,s2,14),b=P2(u.x-co*.1-si*s2+tc*.2,u.y-si*.1+co*s2+ts*.2,20);line(c,a,b,'#4a4f55',3);dot(c,b,1.6,'#d03a2a')}
     if(u.flash>0)flash(c,at(0,0,20),10)}
 }
+// straatmeubilair: lantaarnpalen, hekken en geparkeerde auto's (die een tank platrijdt)
+function drawProp(c,p,t){const pr=(x,y,z)=>w2s(p.x+x,p.y+y,z);
+  if(p.k==='lamp'){const a=pr(0,0,0),b=pr(0,0,30),h=pr(p.dx*.22,p.dy*.22,29);c.fillStyle='rgba(0,0,0,.25)';c.beginPath();c.ellipse(a[0]+2,a[1]+1,3,1.5,0,0,7);c.fill();
+    line(c,a,b,'#33383d',2);line(c,b,h,'#33383d',1.4);dot(c,h,2.2,'#fff1c0');c.globalCompositeOperation='lighter';flash(c,h,6);c.globalCompositeOperation='source-over';return}
+  if(p.k==='fence'){const A=w2s(p.x,p.y,0),B=w2s(p.x1,p.y1,0),n=Math.max(2,Math.round(Math.hypot(p.x1-p.x,p.y1-p.y)*2.5));
+    for(let k=0;k<=n;k++){const f=k/n,q=w2s(p.x+(p.x1-p.x)*f,p.y+(p.y1-p.y)*f,0);line(c,q,[q[0],q[1]-7],'#6b5236',1.4)}
+    for(const z of[3,6])line(c,[A[0],A[1]-z],[B[0],B[1]-z],'#8a6a44',1.1);return}
+  if(p.k==='car'){const L=.62,W=.3,w=p.ax?W:L,h=p.ax?L:W,x0=-w/2,y0=-h/2,lp=(x,y,z)=>pr(x0+x,y0+y,z);
+    if(p.crushed){poly(c,[lp(0,0,1),lp(w,0,1),lp(w,h,1),lp(0,h,1)],'#2a2826');poly(c,[lp(w*.2,h*.2,2),lp(w*.8,h*.2,2),lp(w*.8,h*.8,2),lp(w*.2,h*.8,2)],shade(p.col,.45));return}
+    c.fillStyle='rgba(0,0,0,.3)';const s0=pr(.06,.04,0);c.beginPath();c.ellipse(s0[0],s0[1],15,6,0,0,7);c.fill();
+    for(const[wx,wy]of[[.15,.12],[.85,.12],[.15,.88],[.85,.88]])dot(c,lp(w*wx,h*wy,1.6),1.6,'#151617');
+    box(c,lp,0,0,w,h,1.5,5.5,p.col);box(c,lp,w*(p.ax?.12:.3),h*(p.ax?.3:.12),w*(p.ax?.76:.4),h*(p.ax?.4:.76),5.5,9,shade(p.col,.85));
+    poly(c,[lp(w*(p.ax?.12:.3),h*(p.ax?.7:.88),9),lp(w*(p.ax?.88:.7),h*(p.ax?.7:.88),9),lp(w*(p.ax?.88:.7),h*(p.ax?.7:.88),6),lp(w*(p.ax?.12:.3),h*(p.ax?.7:.88),6)],'#2b3640')}
+}
 function drawWreck(f){
   if(!f.img){const W=150,H=120,ax=75,ay=82,cv=document.createElement('canvas');cv.width=W*DPR;cv.height=H*DPR;const c=cv.getContext('2d');c.scale(DPR,DPR);
     const g0=w2s(f.x,f.y,0),prO=(x,y,z)=>{const[a,b]=w2s(x,y,z);return[a-g0[0]+ax,b-g0[1]+ay]};
@@ -2167,10 +2372,12 @@ function render(t){
   if(sb&&sb.o===LOCAL){const fp=[w2s(sb.x,sb.y),w2s(sb.x+sb.w,sb.y),w2s(sb.x+sb.w,sb.y+sb.h),w2s(sb.x,sb.y+sb.h)];ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1.5;ctx.beginPath();fp.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.stroke()}
   for(const b of G.blds){const[px,py]=w2s(b.x+b.w/2,b.y+b.h/2);if(px<-150||px>VW+150||py<-150||py>VH+120)continue;if(!visibleE(b))continue;DR.push({d:b.x+b.y+(b.w+b.h)/2,k:1,e:b})}
   for(const u of G.units){const[px,py]=w2s(u.x,u.y);if(px<-40||px>VW+40||py<-50||py>VH+30)continue;if(!visibleE(u))continue;DR.push({d:u.x+u.y+(UT[u.type].air?(uz(u)<6?2.5:u.type==='kirov'?600:500):0),k:0,e:u})}
+  for(const pp of PROPS){const[px,py]=w2s(pp.x,pp.y);if(px<-40||px>VW+40||py<-40||py>VH+30)continue;if(!expl[(pp.y|0)*MAP+(pp.x|0)])continue;DR.push({d:pp.x+pp.y-.3,k:3,e:pp})}
   DR.sort((a,b)=>a.d-b.d);
   const pw=(x,y,z)=>w2s(x,y,z);
   for(const r of DR){
     if(r.k===2)drawTree(ctx,r.x,r.y,t);
+    else if(r.k===3)drawProp(ctx,r.e,t);
     else if(r.k===1){const b=r.e,pr=(x,y,z)=>w2s(b.x+x,b.y+y,z),k=easeOut(b.bt);
       // slagschaduw naar rechtsonder: licht van linksboven
       if(!BT[b.type].wall){const sh=BT[b.type].ht*Math.max(.08,k),fp=[pr(0,0,0),pr(b.w,0,0),pr(b.w,b.h,0),pr(0,b.h,0)],pts=[...fp,...fp.map(p=>[p[0]+sh*.75,p[1]+sh*.3])];poly(ctx,hull(pts),'rgba(10,14,8,.26)')}
@@ -2182,7 +2389,9 @@ function render(t){
         // brand: één vlam onder de helft, drie onder een kwart
         if(f<.5&&!BT[b.type].wall){const n=f<.25?3:f<.4?2:1;for(let q=0;q<n;q++){const hx=.25+hash(b.id,q,11)*(b.w-.5),hy=.25+hash(b.id,q,13)*(b.h-.5);flame(ctx,pr(hx,hy,BT[b.type].ht*(.55+hash(b.id,q,15)*.35)),f<.25?6:4.6,t,b.id+q)}}}}
       if(b.bt<1){ctx.strokeStyle='rgba(255,210,80,.8)';ctx.setLineDash([4,4]);ctx.lineWidth=1;const fp=[pr(0,0,0),pr(b.w,0,0),pr(b.w,b.h,0),pr(0,b.h,0)];ctx.beginPath();fp.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.stroke();ctx.setLineDash([])}
-    }else drawUnit(ctx,pw,r.e,t);
+    }else{const u=r.e,h=HV?HZ(u.x,u.y):0;
+      // een eenheid krijgt overal de hoogte van het punt waar hij staat, anders rekt hij uit op een helling
+      drawUnit(ctx,h?(x,y,z)=>[(x-y)*HW+OX-cam.x,(x+y)*HH-cam.y-z-h]:pw,u,t)}
   }
   for(const p of G.proj){if(p.dl>0)continue;const[sx,sy]=w2s(p.x,p.y,p.z),W=WP[p.wk];
     if(W.kind==='shell'){dot(ctx,[sx,sy],2.2,'#ffe9a8');}
@@ -2269,7 +2478,10 @@ function drawFx(t){
         flash(c,b,10);c.globalCompositeOperation='source-over';break}
       case'beam':{const b=w2s(f.x2,f.y2,f.z2);c.globalCompositeOperation='lighter';line(c,[sx,sy],b,`rgba(80,200,255,${(1-p)*.55})`,6);line(c,[sx,sy],b,`rgba(240,252,255,${1-p})`,2);flash(c,b,12*(1-p)+4);c.globalCompositeOperation='source-over';break}
       case'fi':{c.globalCompositeOperation='lighter';c.fillStyle=`rgba(255,${120+Math.random()*80|0},30,${(1-p)*.9})`;c.beginPath();c.moveTo(sx-4,sy);c.quadraticCurveTo(sx,sy-14-Math.random()*6,sx+4,sy);c.fill();c.globalCompositeOperation='source-over';break}
-      case'db':c.fillStyle='#2a2622';c.fillRect(sx-1.5,sy-1.5,3,3);break;
+      case'db':{const a=f.t*11+(f.vx||0),w=2.2+((f.vx*7)&1)*1.6;c.save();c.translate(sx,sy);c.rotate(a);c.fillStyle='#2a2622';c.fillRect(-w,-1.2,w*2,2.4);c.fillStyle='rgba(150,140,125,.6)';c.fillRect(-w,-1.2,w*2,.8);c.restore();
+        if(f.z>4&&p<.6){c.globalCompositeOperation='lighter';dot(c,[sx,sy],1.2,`rgba(255,160,60,${.7-p})`);c.globalCompositeOperation='source-over'}break}
+      case'sw':{const[gx_,gy_]=w2s(f.x,f.y,0),R=(14+40*f.s)*(.25+p*1.1);c.save();c.translate(gx_,gy_);c.scale(1,.5);c.strokeStyle=`rgba(255,235,200,${(1-p)*.55})`;c.lineWidth=3*(1-p)+1;c.beginPath();c.arc(0,0,R,0,7);c.stroke();
+        c.strokeStyle=`rgba(120,100,80,${(1-p)*.35})`;c.lineWidth=6*(1-p)+1;c.beginPath();c.arc(0,0,R*.85,0,7);c.stroke();c.restore();break}
       case'ds':c.globalAlpha=(1-p)*.5;dot(c,[sx,sy-p*8],2+p*4,'#c7a24a');c.globalAlpha=1;break;
       case'mk':{c.strokeStyle=f.c;c.globalAlpha=1-p;c.lineWidth=2;const r=14*(1-p*.6);c.beginPath();c.ellipse(sx,sy,r,r*.5,0,0,7);c.stroke();c.globalAlpha=1;break}
     }
@@ -2278,7 +2490,7 @@ function drawFx(t){
 function drawShroud(x0,x1,y0,y1){
   const c=ctx;c.fillStyle='#000';
   for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const i=y*MAP+x;const[px,py]=w2s(x,y);if(!tileOnScreen(px,py+60))continue;
-    if(!expl[i]){tilePath(c,px,py,1.2);c.fill()}
+    if(!expl[i]){if(HV&&HTN[i]){const a=w2s(x,y),b=w2s(x+1,y),d=w2s(x+1,y+1),e=w2s(x,y+1);c.beginPath();c.moveTo(a[0],a[1]-1.5);c.lineTo(b[0]+3,b[1]);c.lineTo(d[0],d[1]+1.5);c.lineTo(e[0]-3,e[1]);c.closePath()}else tilePath(c,px,py,1.2);c.fill()}
     else if((x>0&&!expl[i-1])||(x<MAP-1&&!expl[i+1])||(y>0&&!expl[i-MAP])||(y<MAP-1&&!expl[i+MAP])){c.globalAlpha=.5;tilePath(c,px,py,.5);c.fill();c.globalAlpha=1}}
 }
 function ghostPos(){const T=BT[mode.type],[wx,wy]=s2w(mouse.x,mouse.y);return[Math.floor(wx-T.w/2+.5),Math.floor(wy-T.h/2+.5)]}
@@ -2348,7 +2560,8 @@ function marker(x,y,c){fxl({k:'mk',x,y,z:0,c,life:.5})}
 // bruggen zijn alleen aan te klikken als je ze wilt opblazen (A) of herstellen (ingenieur); anders loop je er gewoon overheen
 function pickBridge(sx,sy,down){const[wx,wy]=s2w(sx,sy+3);for(const br of G.bridges||[]){if(br.down!==down||!visibleE(br))continue;if(segDist(wx,wy,br.ax,br.ay,br.bx,br.by)<br.w+.25)return br}return null}
 // Alles wat een speler beveelt loopt via issue(): bij de gastheer meteen, bij een gast als bericht naar de gastheer
-function issue(c){if(isGuest())netToHost({t:'cmd',c});else applyCmd(LOCAL,c)}
+function issue(c){if(isGuest())netToHost({t:'cmd',c});else applyCmd(LOCAL,c);
+  if(Array.isArray(c.ids)&&c.ids.length&&/^(move|att|eng|spy|board|gar|harv|ref|dep)$/.test(c.t))ack(ents.get(c.ids[0]),c.t==='att'||c.am||c.t==='spy'||c.t==='eng'?'a':'m')}
 const idsOf=us=>us.map(u=>u.id);
 // bevelslijnen: alleen in je eigen scherm, van je eenheden naar waar ze heen gaan
 const ORD=new Map();
@@ -2573,6 +2786,7 @@ window.addEventListener('keydown',e=>{
   else if(k==='s'){const su=selUnits();if(su.length){issue({t:'stop',ids:idsOf(su)});for(const u of su)ORD.delete(u.id)}}
   else if(k==='h'){const y=G.blds.find(b=>b.o===LOCAL&&b.type==='yard')||G.blds.find(b=>b.o===LOCAL);if(y)centerOn(y.x+y.w/2,y.y+y.h/2)}
   else if(k==='p')togglePause();
+  else if(k==='m')toggleMus();
   else if(k==='r')setMode(mode&&mode.k==='repair'?null:{k:'repair'});
   else if(k==='v')setMode(mode&&mode.k==='sell'?null:{k:'sell'});
   else if(k==='escape'){if(mode)setMode(null);else{sel=[];selB=0}}
@@ -2623,6 +2837,7 @@ function buildUI(){
   $('b-repair').addEventListener('click',()=>{audioInit();setMode(mode&&mode.k==='repair'?null:{k:'repair'})});
   $('b-pause').addEventListener('click',togglePause);
   $('b-sp').addEventListener('click',()=>{audioInit();if(G.pl[LOCAL].para===0)setMode(mode&&mode.k==='para'?null:{k:'para'})});
+  $('b-mus').setAttribute('aria-pressed',String(MUS.on));$('b-mus').addEventListener('click',toggleMus);
   $('b-snd').addEventListener('click',()=>{S.on=!S.on;$('b-snd').setAttribute('aria-pressed',String(S.on));try{if(!S.on)speechSynthesis.cancel()}catch(e){}});
 }
 function showTip(el,type){
@@ -2746,11 +2961,11 @@ function showEnd(win,outOnly){
   const st=G.st[LOCAL]||{},m=Math.floor(G.t/60),sec=Math.floor(G.t%60);$('s-time').textContent=`${m}:${String(sec).padStart(2,'0')}`;
   $('s-built').textContent=st.built||0;$('s-kills').textContent=st.kills||0;$('s-lost').textContent=st.lost||0;$('s-earned').textContent='$ '+Math.round(st.earned||0);
   $('watch').hidden=!outOnly;
-  setTimeout(()=>{$('end').hidden=false},outOnly?600:1400);speak(outOnly?'Je bent uitgeschakeld':win?'Missie geslaagd':'Missie mislukt');
+  setTimeout(()=>{$('end').hidden=false},outOnly?600:1400);speak(outOnly?'You have been eliminated':win?'Mission accomplished':'Mission failed');
 }
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-v8-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-v9-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',online:false,slots:[],pending:[]};
@@ -2855,7 +3070,7 @@ function guestData(d){
     case'start':LOCAL=d.you|0;newGame(d.seed,d.cfg,false);G.t=d.time||0;started=true;$('start').hidden=true;say('Welkom, commandant','welcome',0);break;
     case'ore':if(Array.isArray(d.a)&&d.a.length===N)ore.set(d.a);break;
     case'snap':if(started)applySnap(d);break;
-    case'say':say(String(d.text),String(d.text)+Math.random(),0,!!d.voice,!!d.alert);if(Array.isArray(d.ping))ping(d.ping[0],d.ping[1]);break;
+    case'say':addMsg(String(d.text),!!d.alert);if(d.voice&&started)speak(EVA_EN[String(d.key||'')]);if(Array.isArray(d.ping))ping(d.ping[0],d.ping[1]);break;
     case'out':showEnd(false,true);break;
     case'reshroud':if(started)reshroud();break;
     case'reveal':if(started&&typeof d.x==='number')revealC(d.x,d.y,Math.min(20,+d.r||10));break;
@@ -2960,7 +3175,7 @@ function frame(now){
   if(started&&!G.over){if(isGuest())guestStep(dt);else if(!G.paused)tick(dt)}
   else if(G.over)updFx(dt);
   if(started&&NET.mode==='host'&&G.pl)netHostStep(dt);
-  satCheck();scroll(dt);render(G.t);updCursor();uiTick(dt);
+  satCheck();selAck();musTick();scroll(dt);render(G.t);updCursor();uiTick(dt);
   mmAcc+=dt;if(mmAcc>.2){mmAcc=0;mmDraw()}
   requestAnimationFrame(frame);
 }
