@@ -208,7 +208,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
   <div id="view">
     <canvas id="game" aria-label="Speelveld"></canvas>
     <div id="msgs" aria-live="polite"></div>
-    <div id="legend"><kbd>Klik</kbd> selecteren en bevelen · <kbd>Sleep</kbd> kader · <kbd>Rechts</kbd> deselecteren / slepen om te schuiven · <kbd>A</kbd> aanvalsbeweging (ook op bruggen) · <kbd>D</kbd> ingraven, landen, uitstappen · <kbd>S</kbd> stop · <kbd>H</kbd> basis · <kbd>Shift+1–9</kbd> groep · <kbd>P</kbd> pauze</div>
+    <div id="legend"><kbd>Klik</kbd> selecteren en bevelen · <kbd>Sleep</kbd> kader · <kbd>Rechts</kbd> deselecteren / slepen om te schuiven · <kbd>A</kbd> aanvalsbeweging · <kbd>D</kbd> ingraven, landen, uitstappen · <kbd>S</kbd> stop · <kbd>H</kbd> basis · <kbd>T</kbd> zelfde soort, 2× hele kaart · <kbd>Shift+1–9</kbd> groep · <kbd>P</kbd> pauze</div>
     <div id="pausebar" hidden>GEPAUZEERD</div>
     <div id="roster" hidden aria-label="Spelers"></div>
 
@@ -237,6 +237,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
           <dt>A + klik</dt><dd>aanvalsbeweging: onderweg alles aanvallen</dd>
           <dt>D</dt><dd>soldaten ingraven achter zandzakken, nog eens D om weer op te staan. Een Belegeringshelikopter landt ermee als kanon, een Nighthawk laat ermee zijn soldaten uitstappen</dd>
           <dt>A + klik op brug</dt><dd>een brug opblazen; een ingenieur herstelt hem weer</dd>
+          <dt>T</dt><dd>alle eenheden van dezelfde soort als je selectie in beeld kiezen, twee keer snel T voor de hele kaart. Dubbelklikken op een eenheid kiest ook de zelfde soort in beeld</dd>
           <dt>Shift + 1–9</dt><dd>groep opslaan (Ctrl of Option kan ook), daarna 1–9 om hem te kiezen</dd>
         </dl>
       </div>
@@ -2482,6 +2483,14 @@ window.addEventListener('keydown',e=>{
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   if(k==='a'){if(selUnits().length)setMode({k:'am'})}
   else if(k==='d'){const iv=selUnits().filter(u=>(u.type==='ifv'&&u.pass)||(u.type==='hawk'&&u.load>0));for(const u of iv)issue({t:'unload',id:u.id});const su=selUnits().filter(u=>UT[u.type].dep);if(iv.length&&!su.length){sfx('click')}else if(su.length){issue({t:'dep',ids:idsOf(su)});sfx('click')}else{const b=selB&&ents.get(selB);if(b&&b.o===LOCAL&&garN(b)>0){issue({t:'evac',id:b.id});sfx('click')}}}
+  else if(k==='t'){
+    // zoals in RA2: T kiest de zelfde soort in beeld, twee keer snel T op de hele kaart
+    const ty=new Set(selUnits().filter(u=>u.o===LOCAL).map(u=>u.type));if(!ty.size)return;
+    const now=performance.now(),all=now-(mouse.lastT||0)<400;mouse.lastT=all?0:now;
+    const inView=u=>{const[a,b]=w2s(u.x,u.y);return a>0&&b>0&&a<VW&&b<VH};
+    const ids=G.units.filter(u=>u.o===LOCAL&&!u.dead&&ty.has(u.type)&&(all||inView(u))).map(u=>u.id);
+    sel=[...new Set([...sel.filter(id=>ents.has(id)),...ids])];selB=0;sfx('click');
+    if(all)say(ids.length+' geselecteerd op de hele kaart','tsel',0,false)}
   else if(k==='s'){const su=selUnits();if(su.length){issue({t:'stop',ids:idsOf(su)});for(const u of su)ORD.delete(u.id)}}
   else if(k==='h'){const y=G.blds.find(b=>b.o===LOCAL&&b.type==='yard')||G.blds.find(b=>b.o===LOCAL);if(y)centerOn(y.x+y.w/2,y.y+y.h/2)}
   else if(k==='p')togglePause();
