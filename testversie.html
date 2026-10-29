@@ -1630,9 +1630,13 @@ function sfx(kind,x,y){
 }
 // stemmen in het Engels, zoals in RA2: een vrouwenstem als omroeper, een mannenstem voor de eenheden. Teksten op het scherm blijven Nederlands
 let evaVoice=null,unitVoice=null;
-function pickVoice(){try{const vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));const by=re=>vs.find(v=>re.test(v.name));
-  evaVoice=by(/samantha|zira|karen|serena|moira|female|google us english|aria|jenny/i)||vs.find(v=>/en-us/i.test(v.lang))||vs[0]||null;
-  unitVoice=by(/daniel|david|alex|fred|guy|ryan|male|google uk english male|arthur|oliver/i)||vs.find(v=>v!==evaVoice&&/en-gb/i.test(v.lang))||evaVoice}catch(e){}}
+// kies de best klinkende stem: eerst verbeterde of premium stemmen, dan de goede standaardstemmen; nooit de grapstemmen of de oude robotstemmen
+const VOICE_BAD=/albert|bad news|slecht nieuws|bahh|bèè|bells|bellen|boing|bubbles|luchtbellen|cello|fred|good news|goed nieuws|jester|nar|junior|organ|orgel|superstar|superster|trinoids|whisper|gefluister|wobble|zarvox|ralph|kathy|katja|grandma|grandpa|rocko|eddy|flo|reed|sandy|shelley/i;
+function pickVoice(){try{const vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang)&&!VOICE_BAD.test(v.name)),hq=/premium|enhanced|verbeterd|neural|natural/i;
+    // namen in volgorde van voorkeur; eerst een verbeterde versie van een van die stemmen, dan de gewone
+    const pick=names=>{const ns=names.split('|');for(const good of[true,false])for(const n of ns){const v=vs.find(v=>v.name.toLowerCase().includes(n)&&(!good||hq.test(v.name)));if(v)return v}return null};
+    evaVoice=pick('samantha|ava|allison|susan|zoe|serena|google us english|aria|jenny|zira|karen|moira|tessa')||vs.find(v=>/en-us/i.test(v.lang))||vs[0]||null;
+    unitVoice=pick('daniel|arthur|oliver|jamie|malcolm|evan|nathan|tom|aaron|google uk english male|guy|ryan|david|alex')||vs.find(v=>v!==evaVoice&&/en-gb/i.test(v.lang))||evaVoice}catch(e){}}
 try{speechSynthesis.onvoiceschanged=pickVoice;pickVoice()}catch(e){}
 // de omroeper gaat voor: tot zijn zin (geschat) klaar is, zwijgen de eenheden; daarna mag een eenheid een andere eenheid onderbreken
 let evaUntil=0;
@@ -1640,7 +1644,7 @@ function speak(text,o){if(!S.on||!text)return;try{const eva=!o||o.eva,now=perfor
     if(eva){if(speechSynthesis.speaking&&speechSynthesis.pending)return;evaUntil=now+400+text.length*75}
     else{if(now<evaUntil)return;if(speechSynthesis.speaking)speechSynthesis.cancel()}
     const u=new SpeechSynthesisUtterance(text);u.lang=eva?'en-US':'en-GB';const v=eva?evaVoice:unitVoice;if(v)u.voice=v;
-    u.rate=o&&o.rate||(eva?1.02:1.08);u.pitch=o&&o.pitch||(eva?1.05:.9);u.volume=eva?.85:.8;speechSynthesis.speak(u)}catch(e){}}
+    u.rate=o&&o.rate||(eva?1:1.05);u.pitch=o&&o.pitch||1;u.volume=eva?.85:.8;speechSynthesis.speak(u)}catch(e){}}
 // wat de omroeper zegt bij een melding (op sleutel); zonder vertaling blijft het stil
 const EVA_EN={promo:'Unit promoted',board:'Unit loaded',noland:'Cannot land there',c4:'C4 planted',spy:'Building infiltrated',spyd:'Our base has been infiltrated',
   sat:'Spy satellite online',gar:'Building garrisoned',engfix:'Building repaired',tech:'Tech building captured',techl:'Tech building lost',oil:'Oil derrick captured',oill:'Oil derrick lost',
@@ -1677,7 +1681,7 @@ function ackSet(u){const t=u.type,T=UT[t];if(t==='dog'||t==='drone')return null;
   return T.side==='soviet'||G.pl[u.o]&&G.pl[u.o].fac==='soviet'?ACK.rhino:ACK.tank}
 let ackT=0,ackN=0;
 function ack(u,kind){if(!u||u.o!==LOCAL||!started)return;const now=performance.now();if(now-ackT<450)return;const A=ackSet(u);if(!A)return;const L=A[kind]||A.m;ackT=now;
-  speak(L[(ackN++)%L.length],{pitch:A.p||.9,rate:A.r||1.05})}
+  speak(L[(ackN++)%L.length],{pitch:Math.max(.9,Math.min(1.08,A.p||1)),rate:A.r||1.05})}
 // kiezen: alleen als er echt een nieuwe eenheid bij de selectie komt
 let ackSel=new Set();
 function selAck(){if(!started)return;let fresh=null;for(const id of sel)if(!ackSel.has(id)){fresh=id;break}if(fresh)ack(ents.get(fresh),'s');ackSel=new Set(sel)}
@@ -3019,7 +3023,7 @@ function showEnd(win,outOnly){
 }
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-test4-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-test5-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',online:false,slots:[],pending:[]};
