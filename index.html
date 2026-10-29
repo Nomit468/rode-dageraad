@@ -337,11 +337,11 @@ const wetT=t=>t===WATER||t>=BRIDGE;
 let START=[{x:12,y:64},{x:64,y:12},{x:12,y:12},{x:64,y:64}];
 // kaarten: grootte, hoeveel water/rots/bos, hoe breed de wegen, hoeveel erts en welk jaargetijde
 const MAPS={
-  river:{n:'Rivierdal',size:124,d:'Een rivier splitst de kaart in west en oost, met eilandjes in het midden. Bruggen kun je opblazen en met een ingenieur weer herstellen.',water:.3,rock:.71,tree:.64,lane:1,ore:1,ns:10,theme:'green',river:'v'},
-  big:{n:'Grote vlakte',size:164,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,theme:'green'},
-  islands:{n:'Eilanden',size:140,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,theme:'green'},
-  coast:{n:'Kustoorlog',size:140,d:'Eén groot eiland met open zee eromheen. Bouw een scheepswerf aan je kust en val de vijand ook vanaf het water aan.',water:.2,rock:.77,tree:.66,lane:1,ore:1.15,ns:11,theme:'green',ocean:.37},
-  winter:{n:'Winterfront',size:124,d:'Besneeuwd en rotsachtig. Een ijskoude rivier loopt van west naar oost; wie de bruggen heeft, heeft het front.',water:.29,rock:.63,tree:.6,lane:.9,ore:1,ns:9,theme:'snow',river:'h'},
+  river:{n:'Rivierdal',size:176,d:'Een rivier splitst de kaart in west en oost, met eilandjes in het midden. Bruggen kun je opblazen en met een ingenieur weer herstellen.',water:.3,rock:.71,tree:.64,lane:1,ore:1,ns:10,theme:'green',river:'v'},
+  big:{n:'Grote vlakte',size:232,d:'Veel groter en vol erts. Je hebt tijd om op te bouwen voordat het echt losgaat.',water:.3,rock:.75,tree:.67,lane:1.1,ore:1.25,extra:true,ns:12,theme:'green'},
+  islands:{n:'Eilanden',size:196,d:'Veel water met smalle landbruggen. Luchteenheden en raketten worden belangrijk.',water:.55,rock:.82,tree:.66,lane:.7,margin:.2,ore:1.1,ns:7,theme:'green'},
+  coast:{n:'Kustoorlog',size:196,d:'Eén groot eiland met open zee eromheen. Bouw een scheepswerf aan je kust en val de vijand ook vanaf het water aan.',water:.2,rock:.77,tree:.66,lane:1,ore:1.15,ns:11,theme:'green',ocean:.37},
+  winter:{n:'Winterfront',size:176,d:'Besneeuwd en rotsachtig. Een ijskoude rivier loopt van west naar oost; wie de bruggen heeft, heeft het front.',water:.29,rock:.63,tree:.6,lane:.9,ore:1,ns:9,theme:'snow',river:'h'},
 };
 let MAPK='river';
 function setMapSize(sz,ring){
@@ -607,8 +607,9 @@ const walkable=(x,y)=>{if(x<0||y<0||x>=MAP||y>=MAP)return false;const i=y*MAP+x,
 function asSea(sea,f){const p=PATHW;PATHW=sea?1:0;try{return f()}finally{PATHW=p}}
 
 // ---------- ground canvas
-// De grond wordt in stukken van 2048 px getekend, zodat ook de grote kaart binnen de grenzen van elke browser blijft
-let gch=[],mmBase=null,SHORE=new Uint8Array(1);const GCH=2048,GP=2;
+// De grond wordt in stukken van 2048 px getekend, en pas als een stuk in beeld komt. Stukken ver buiten beeld gaan weer weg,
+// zodat ook de grootste kaart weinig geheugen kost. Brandplekken worden onthouden en opnieuw gezet als een stuk terugkomt
+let gch=[],mmBase=null,SHORE=new Uint8Array(1),GND=null,SCOR=[],gFrame=0;const GCH=2048,GP=2,GLIVE=16;
 function tilePath(c,px,py,e=0){c.beginPath();c.moveTo(px,py-e);c.lineTo(px+HW+e*2,py+HH);c.lineTo(px,py+TH+e);c.lineTo(px-HW-e*2,py+HH);c.closePath()}
 let GRAIN=null;
 function grainTile(){if(GRAIN)return GRAIN;GRAIN=document.createElement('canvas');GRAIN.width=GRAIN.height=128;const c=GRAIN.getContext('2d'),im=c.createImageData(128,128),d=im.data,R=mulberry(99);
@@ -616,7 +617,7 @@ function grainTile(){if(GRAIN)return GRAIN;GRAIN=document.createElement('canvas'
 function hsl2rgb(h,s,l){h=((h%360)+360)%360/360;const q=l<.5?l*(1+s):l+s-l*s,p=2*l-q,f=t=>{t=(t+1)%1;return t<1/6?p+(q-p)*6*t:t<.5?q:t<2/3?p+(q-p)*(2/3-t)*6:p};return[f(h+1/3)*255,f(h)*255,f(h-1/3)*255]}
 function adjWater(x,y){for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const X=x+dx,Y=y+dy;if(X>=0&&Y>=0&&X<MAP&&Y<MAP&&wetT(terr[Y*MAP+X]))return true}return false}
 function renderGround(){
-  const W=MAP*TW,H=MAP*TH,snow=MAPS[MAPK].theme==='snow';gch=[];
+  const W=MAP*TW,H=MAP*TH,snow=MAPS[MAPK].theme==='snow';gch=[];SCOR=[];
   // kleur per vakje (als getallen), plus een kaart van waar water ligt
   const TCOL=new Float32Array(N*3),GW=new Uint8Array(N);SHORE=new Uint8Array(N);
   for(let y=0;y<MAP;y++)for(let x=0;x<MAP;x++){
@@ -631,8 +632,13 @@ function renderGround(){
       if(f>0){const m=fbm(x/3,y/3,seed+223),d=snow?hsl2rgb(205,.08,.68+m*.08):hsl2rgb(34,.4,.42+m*.1);c=[c[0]+(d[0]-c[0])*f,c[1]+(d[1]-c[1])*f,c[2]+(d[2]-c[2])*f]}}
     const k=wetT(t)?1:big;TCOL[i*3]=c[0]*k;TCOL[i*3+1]=c[1]*k;TCOL[i*3+2]=c[2]*k;
   }
-  for(let y=0;y<H;y+=GCH)for(let x=0;x<W;x+=GCH){const c=document.createElement('canvas'),w=Math.min(GCH,W-x),h=Math.min(GCH,H-y);c.width=w+GP*2;c.height=h+GP*2;gch.push({x,y,w,h,c,g:c.getContext('2d')})}
-  for(const ch of gch){
+  GND={TCOL,GW,snow};
+  for(let y=0;y<H;y+=GCH)for(let x=0;x<W;x+=GCH)gch.push({x,y,w:Math.min(GCH,W-x),h:Math.min(GCH,H-y),c:null,g:null,u:0});
+  mmBase=null;
+}
+function paintChunk(ch){
+  const{TCOL,GW,snow}=GND,cv=document.createElement('canvas');cv.width=ch.w+GP*2;cv.height=ch.h+GP*2;ch.c=cv;ch.g=cv.getContext('2d');
+  {
     const g=ch.g;g.setTransform(1,0,0,1,GP-ch.x,GP-ch.y);g.fillStyle='#030405';g.fillRect(ch.x-GP,ch.y-GP,ch.w+GP*2,ch.h+GP*2);
     const inCh=(x,y,up)=>{const px=(x-y)*HW+OX,py=(x+y)*HH;return px+HW+8>=ch.x-GP&&px-HW-8<=ch.x+ch.w+GP&&py+TH+8>=ch.y-GP&&py-up<=ch.y+ch.h+GP};
     // grond per pixel: kleuren van de vier dichtstbijzijnde vakjes mengen, land en water apart, met een scherpe kust en schuim
@@ -685,17 +691,24 @@ function renderGround(){
       }
     }
   }
-  mmBase=null;
+  for(const[x,y,r]of SCOR)scorchOn(ch,x,y,r);
+}
+function chunkC(ch){
+  if(!ch.c){paintChunk(ch);const live=gch.filter(c=>c.c);
+    if(live.length>GLIVE){let o=null;for(const c of live)if(c!==ch&&c.u<gFrame&&(!o||c.u<o.u))o=c;if(o)o.c=o.g=null}}
+  ch.u=gFrame;return ch.c;
 }
 function scorch(x,y,r){
   netEv(['s',r2(x),r2(y),r]);if(!gch.length)return;
+  SCOR.push([x,y,r]);if(SCOR.length>2500)SCOR.shift();
+  for(const ch of gch)if(ch.g)scorchOn(ch,x,y,r);
+}
+function scorchOn(ch,x,y,r){
   const px=(x-y)*HW+OX,py=(x+y)*HH,rr=r*46;
-  for(const ch of gch){
-    if(px+rr<ch.x-GP||px-rr>ch.x+ch.w+GP||py+rr/2<ch.y-GP||py-rr/2>ch.y+ch.h+GP)continue;
-    const gx=ch.g;gx.save();gx.setTransform(1,0,0,1,GP-ch.x,GP-ch.y);gx.translate(px,py);gx.scale(1,.5);
-    const g=gx.createRadialGradient(0,0,0,0,0,rr);g.addColorStop(0,'rgba(18,12,6,.6)');g.addColorStop(.6,'rgba(18,12,6,.3)');g.addColorStop(1,'rgba(18,12,6,0)');
-    gx.fillStyle=g;gx.beginPath();gx.arc(0,0,rr,0,7);gx.fill();gx.restore();
-  }
+  if(px+rr<ch.x-GP||px-rr>ch.x+ch.w+GP||py+rr/2<ch.y-GP||py-rr/2>ch.y+ch.h+GP)return;
+  const gx=ch.g;gx.save();gx.setTransform(1,0,0,1,GP-ch.x,GP-ch.y);gx.translate(px,py);gx.scale(1,.5);
+  const g=gx.createRadialGradient(0,0,0,0,0,rr);g.addColorStop(0,'rgba(18,12,6,.6)');g.addColorStop(.6,'rgba(18,12,6,.3)');g.addColorStop(1,'rgba(18,12,6,0)');
+  gx.fillStyle=g;gx.beginPath();gx.arc(0,0,rr,0,7);gx.fill();gx.restore();
 }
 
 // ---------- state
@@ -1287,8 +1300,8 @@ function spawnUnit(o,type){
 const AI_ORDER=['power','refinery','barracks','factory','power','bunker','radar','aa','power','airfield','tower','power','lab','refinery','aa','prismt','coil','shipyard','gcannon','bunker','prismt','coil','power','tower','factory','power','tower','bunker','power','tower'];
 function aiBase(o){return G.blds.find(b=>b.o===o&&b.type==='yard')||G.blds.find(b=>b.o===o&&!BT[b.type].tech)}
 function toCenter(b){const cx=b.x+b.w/2,cy=b.y+b.h/2,dx=MAP/2-cx,dy=MAP/2-cy,l=Math.hypot(dx,dy)||1;return{cx,cy,ux:dx/l,uy:dy/l}}
-// 0 op een kaart van 100, 1 op de Grote vlakte
-const bigK=()=>clamp((MAP-124)/40,0,1);
+// 0 op Rivierdal en Winterfront, 1 op de Grote vlakte
+const bigK=()=>clamp((MAP-176)/56,0,1);
 function aiRally(o){const b=aiBase(o);if(!b)return{x:MAP/2,y:MAP/2};const c=toCenter(b),r=5.5+bigK()*7;return{x:c.cx+c.ux*r,y:c.cy+c.uy*r}}
 function aiSpot(o,type){
   const T=BT[type],base=aiBase(o);if(!base)return null;
@@ -1391,7 +1404,7 @@ function boom(x,y,s,z=5){netEv(['b',r2(x),r2(y),s,z]);fxl({k:'ex',x,y,z,s,life:.
 function debris(x,y,n){netEv(['d',r2(x),r2(y),n]);for(let i=0;i<n;i++){const a=Math.random()*7,v=1+Math.random()*2.5;fxl({k:'db',x,y,z:8,vx:Math.cos(a)*v,vy:Math.sin(a)*v,vz:60+Math.random()*90,life:1.2})}}
 function groundMark(x,y,a){
   if(!gch.length)return;const px=(x-y)*HW+OX,py=(x+y)*HH,ca=Math.cos(a),sa=Math.sin(a),ang=Math.atan2((ca+sa)*HH,(ca-sa)*HW),snow=MAPS[MAPK].theme==='snow';
-  for(const ch of gch){if(px<ch.x-8||px>ch.x+ch.w+8||py<ch.y-8||py>ch.y+ch.h+8)continue;const g=ch.g;g.save();g.setTransform(1,0,0,1,GP-ch.x,GP-ch.y);g.translate(px,py);g.rotate(ang);
+  for(const ch of gch){if(!ch.g||px<ch.x-8||px>ch.x+ch.w+8||py<ch.y-8||py>ch.y+ch.h+8)continue;const g=ch.g;g.save();g.setTransform(1,0,0,1,GP-ch.x,GP-ch.y);g.translate(px,py);g.rotate(ang);
     g.fillStyle=snow?'rgba(80,95,110,.11)':'rgba(38,28,14,.085)';g.fillRect(-4.5,-1.4,9,2.8);g.restore()}
 }
 // rook, stoom, raketsporen, stof en bandensporen: elke computer maakt die zelf uit de spelstand
@@ -2044,8 +2057,11 @@ function hull(pts){pts.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cr=(o,a,b)=>(a[0]
 function render(t){
   let shx=0,shy=0;if(SHAKE>.2){shx=(Math.random()-.5)*SHAKE;shy=(Math.random()-.5)*SHAKE*.6;SHAKE*=.86}else SHAKE=0;
   ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,VW,VH);ctx.setTransform(DPR,0,0,DPR,shx*DPR,shy*DPR);
+  gFrame++;let fresh=0;
   for(const ch of gch){const sx0=Math.max(ch.x,cam.x),sy0=Math.max(ch.y,cam.y),sx1=Math.min(ch.x+ch.w,cam.x+VW),sy1=Math.min(ch.y+ch.h,cam.y+VH);
-    if(sx1>sx0&&sy1>sy0)ctx.drawImage(ch.c,sx0-ch.x+GP,sy0-ch.y+GP,sx1-sx0,sy1-sy0,sx0-cam.x,sy0-cam.y,sx1-sx0,sy1-sy0)}
+    if(sx1>sx0&&sy1>sy0){if(!ch.c)fresh++;ctx.drawImage(chunkC(ch),sx0-ch.x+GP,sy0-ch.y+GP,sx1-sx0,sy1-sy0,sx0-cam.x,sy0-cam.y,sx1-sx0,sy1-sy0)}}
+  // stukken net naast het beeld houden, en per beeld er hooguit één alvast tekenen, zodat scrollen niet hapert
+  {const m=1100;for(const ch of gch)if(ch.x<cam.x+VW+m&&ch.x+ch.w>cam.x-m&&ch.y<cam.y+VH+m&&ch.y+ch.h>cam.y-m){if(ch.c)ch.u=gFrame;else if(!fresh){chunkC(ch);fresh++}}}
   const[x0,x1,y0,y1]=visRange();DR.length=0;
   for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const i=y*MAP+x,[px,py]=w2s(x,y);if(!tileOnScreen(px,py))continue;
     if(!expl[i])continue;
@@ -2202,7 +2218,11 @@ function mmDraw(){
   const on=radarOn();$('mm-off').hidden=on;if(!on)return;
   const{sc,ox,oy}=mmGeo(),w=MAP*TW*sc,h=MAP*TH*sc;
   mc.setTransform(DPR,0,0,DPR,0,0);mc.fillStyle='#000';mc.fillRect(0,0,MMW,MMH);
-  if(!mmBase){mmBase=document.createElement('canvas');mmBase.width=Math.ceil(w*DPR);mmBase.height=Math.ceil(h*DPR);const m=mmBase.getContext('2d'),k=mmBase.width/(MAP*TW);for(const ch of gch)m.drawImage(ch.c,GP,GP,ch.w,ch.h,ch.x*k,ch.y*k,ch.w*k,ch.h*k)}
+  if(!mmBase){mmBase=document.createElement('canvas');mmBase.width=Math.ceil(w*DPR);mmBase.height=Math.ceil(h*DPR);const m=mmBase.getContext('2d'),k=mmBase.width/(MAP*TW);
+    // de radar tekent de kleur per vakje zelf, want niet alle grondstukken bestaan
+    const tc=document.createElement('canvas');tc.width=tc.height=MAP;const tg=tc.getContext('2d'),im=tg.createImageData(MAP,MAP),D=im.data,T=GND.TCOL;
+    for(let i=0;i<N;i++){D[i*4]=T[i*3];D[i*4+1]=T[i*3+1];D[i*4+2]=T[i*3+2];D[i*4+3]=255}tg.putImageData(im,0,0);
+    m.setTransform(HW*k,HH*k,-HW*k,HH*k,OX*k,0);m.imageSmoothingEnabled=true;m.drawImage(tc,0,0)}
   mc.drawImage(mmBase,ox,oy,w,h);
   const tp=(x,y)=>[ox+((x-y)*HW+OX)*sc,oy+(x+y)*HH*sc];
   for(const br of G.bridges||[]){if(br.down)continue;const a=tp(br.ax,br.ay),b=tp(br.bx,br.by);mc.strokeStyle='#b9b2a2';mc.lineWidth=2;mc.beginPath();mc.moveTo(a[0],a[1]);mc.lineTo(b[0],b[1]);mc.stroke()}
@@ -2639,7 +2659,7 @@ function showEnd(win,outOnly){
 }
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-v5-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-v6-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',online:false,slots:[],pending:[]};
