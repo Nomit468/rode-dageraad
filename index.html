@@ -780,6 +780,9 @@ function newGame(s,cfg,populate=true){
   if(populate)reveal();const me=START[LOCAL];centerOn(me.x+1.5,me.y+1.5);
   for(const b of document.querySelectorAll('.op'))b.setAttribute('aria-pressed',b.id==='b-snd'?String(S.on):'false');
   $('pausebar').hidden=true;
+  // de grond rond je basis nu al tekenen en één beeld vooraf maken, dan hapert het spel niet in de eerste seconden
+  gFrame++;{const m=1100;for(const ch of gch)if(ch.x<cam.x+VW+m&&ch.x+ch.w>cam.x-m&&ch.y<cam.y+VH+m&&ch.y+ch.h>cam.y-m)chunkC(ch)}
+  render(G.t);
 }
 
 // ---------- pathfinding
@@ -2910,7 +2913,9 @@ function boot(){
   for(const b of document.querySelectorAll('#mode-seg button'))b.addEventListener('click',()=>{L.mode=b.dataset.m;broadcastLobby();renderLobby()});
   for(const b of document.querySelectorAll('#diff-seg button'))b.addEventListener('click',()=>{L.diff=+b.dataset.d;broadcastLobby();renderLobby()});
   for(const b of document.querySelectorAll('#map-seg button'))b.addEventListener('click',()=>{L.map=b.dataset.k;broadcastLobby();renderLobby()});
-  $('start-btn').addEventListener('click',()=>{audioInit();if(S.ac&&S.ac.state==='suspended')S.ac.resume();startMatch()});
+  // eerst de knop laten zien dat de kaart gemaakt wordt, dan pas het zware werk
+  $('start-btn').addEventListener('click',()=>{audioInit();if(S.ac&&S.ac.state==='suspended')S.ac.resume();const b=$('start-btn');if(b.disabled)return;const tx=b.textContent;b.disabled=true;b.textContent='Kaart wordt gemaakt…';
+    requestAnimationFrame(()=>setTimeout(()=>{b.disabled=false;b.textContent=tx;startMatch()},0))});
   $('leave-btn').addEventListener('click',()=>{try{peer&&peer.destroy()}catch(e){}location.href=location.pathname});
   $('copy').addEventListener('click',()=>{const link=location.origin+location.pathname+'?code='+L.code;const done=()=>{$('copy').textContent='Gekopieerd'};
     try{navigator.clipboard.writeText('Doe mee met Rode Dageraad: '+link+' (code '+L.code+')').then(done,()=>{$('code').focus()})}catch(e){}});
