@@ -40,7 +40,8 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 #mm-off{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   background:repeating-linear-gradient(0deg,rgba(77,104,132,.08) 0 2px,transparent 2px 4px),#05080b;color:#5d7690;text-transform:uppercase;letter-spacing:.16em;font-size:12px;text-align:center}
 #mm-off b{font-family:var(--f-display);font-size:15px;color:#7f97b0;letter-spacing:.12em}
-.ops{display:grid;grid-template-columns:repeat(4,1fr) 30px;gap:4px}
+.ops{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.ops .op{grid-column:span 2}.ops .op.half{grid-column:span 3}
 .op{height:28px;border:1px solid #3a5169;background:linear-gradient(180deg,#2a3b4d,#18232f);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;cursor:pointer;padding:0}
 .op:hover{background:linear-gradient(180deg,#34495f,#1e2c3a)}
 .op[aria-pressed="true"]{background:linear-gradient(180deg,#5c4512,#2f2309);border-color:var(--amber);color:var(--amber)}
@@ -238,7 +239,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
           <dt>D</dt><dd>soldaten ingraven achter zandzakken, nog eens D om weer op te staan. Een Belegeringshelikopter landt ermee als kanon, een Nighthawk laat ermee zijn soldaten uitstappen</dd>
           <dt>A + klik op brug</dt><dd>een brug opblazen; een ingenieur herstelt hem weer</dd>
           <dt>T</dt><dd>alle eenheden van dezelfde soort als je selectie in beeld kiezen, twee keer snel T voor de hele kaart. Dubbelklikken op een eenheid kiest ook de zelfde soort in beeld</dd>
-          <dt>M</dt><dd>muziek aan of uit (ook met de ♫-knop)</dd>
+          <dt>M</dt><dd>muziek aan of uit (ook met de knop Muziek)</dd>
           <dt>Shift + 1–9</dt><dd>groep opslaan (Ctrl of Option kan ook), daarna 1–9 om hem te kiezen</dd>
         </dl>
       </div>
@@ -298,9 +299,9 @@ body[data-fac="soviet"] #emblem .al{display:none}
     <div class="ops">
       <button class="op" id="b-repair" aria-pressed="false" title="Repareren (R)">Repareer</button>
       <button class="op" id="b-sell" aria-pressed="false" title="Verkopen (V)">Verkoop</button>
-      <button class="op" id="b-snd" aria-pressed="false" title="Geluid en stem">Geluid</button>
       <button class="op" id="b-pause" aria-pressed="false" title="Pauze (P)">Pauze</button>
-      <button class="op" id="b-mus" aria-pressed="true" title="Muziek (M)" aria-label="Muziek">♫</button>
+      <button class="op half" id="b-snd" aria-pressed="false" title="Geluid en stemmen">Geluid</button>
+      <button class="op half" id="b-mus" aria-pressed="true" title="Muziek aan of uit (M)">Muziek</button>
     </div>
     <button class="sp-btn" id="b-sp" aria-pressed="false" hidden><i id="sp-bar"></i><span id="sp-name"></span></button>
     <div class="buildwrap">
@@ -1584,20 +1585,23 @@ function mNoise(t,dur,freq,type,vol,q){const c=S.ac,src=c.createBufferSource();s
 const MB=[[41.2,0],[0,0],[41.2,1],[41.2,1],[0,0],[0,0],[49,1],[0,0],[41.2,0],[0,0],[41.2,1],[41.2,1],[0,0],[36.7,1],[0,0],[0,0],
           [41.2,0],[0,0],[41.2,1],[41.2,1],[0,0],[0,0],[49,1],[0,0],[55,0],[0,0],[49,1],[0,0],[46.2,1],[0,0],[41.2,1],[0,0]];
 const MCH=[[164.8,196,246.9],[130.8,164.8,196],[146.8,185,220],[164.8,196,246.9]];
-function musStep(t,n){const st=n%16,bar=(n>>4)%24,sec=bar<8?0:bar<16?1:bar<20?2:3,sp=60/132/4;
+const MBPM=88;
+function musStep(t,n){const st=n%16,bar=(n>>4)%24,sec=bar<8?0:bar<16?1:bar<20?2:3,sp=60/MBPM/4;
   const drums=sec!==2||bar>=19;
-  if(drums&&(st%4===0||(sec===1&&st===14)||(sec===3&&st===10)))mOsc('sine',160,40,t,.28,.95);
+  if(drums&&(st===0||st===8||(sec===1&&st===11)||(sec===3&&st===14)))mOsc('sine',150,38,t,.34,.95);
   if(drums&&(st===4||st===12)){mNoise(t,.2,1900,'bandpass',.55,.7);mOsc('triangle',200,120,t,.1,.3)}
-  if(drums&&st%2===1)mNoise(t,st%4===3?.12:.035,8000,'highpass',.12);
-  const b=MB[(bar%2)*16+st];if(b[0]){const f=b[0]*(sec===3?2:1);mOsc('sawtooth',f*2,f*2,t,b[1]?sp*1.6:sp*2.4,.32,MUS.dist,[900,160,6]);mOsc('square',f,f,t,sp*1.4,.18,MUS.dist,[500,120,2])}
+  if(drums&&st%2===0&&st%4!==0)mNoise(t,.06,8000,'highpass',.09);
+  const b=MB[(bar%2)*16+st];if(b[0]){const f=b[0]*(sec===3?2:1);mOsc('sawtooth',f*2,f*2,t,b[1]?sp*1.8:sp*3,.3,MUS.dist,[800,150,6]);mOsc('square',f,f,t,sp*1.6,.16,MUS.dist,[480,110,2])}
   if((st===7||st===15)&&sec!==1)for(const r of[1,1.47,2.09])mOsc('square',560*r,540*r,t,.22,.035,null,[3200,1800,8]);
   if(sec===1&&(st===0||st===6||st===10)){const ch=MCH[(bar>>1)%4];for(const f of ch)for(const d of[.997,1.003])mOsc('sawtooth',f*d,f*d,t,st===0?sp*5:sp*2.5,.05,null,[2400,700,1])}
   if(sec===2&&st===0&&bar%2===0)mOsc('sawtooth',82.4,41.2,t,sp*14,.12,MUS.dist,[300,80,3]);
 }
-function musTick(){if(!S.ac)return;musInit();if(!MUS.out)return;const c=S.ac,want=started&&S.on&&MUS.on&&!(G.over);MUS.out.gain.setTargetAtTime(want?.17:0,c.currentTime,.5);
-  if(!want){MUS.next=0;return}const sp=60/132/4;if(MUS.next<c.currentTime)MUS.next=c.currentTime+.06;
+function musTick(){if(!S.ac)return;musInit();if(!MUS.out)return;const c=S.ac,want=started&&S.on&&MUS.on&&!(G.over);MUS.out.gain.setTargetAtTime(want?.14:0,c.currentTime,.25);
+  if(!want){MUS.next=0;return}const sp=60/MBPM/4;if(MUS.next<c.currentTime)MUS.next=c.currentTime+.06;
   while(MUS.next<c.currentTime+.16){try{musStep(MUS.next,MUS.n)}catch(e){}MUS.next+=sp;MUS.n++}}
-function toggleMus(){MUS.on=!MUS.on;$('b-mus').setAttribute('aria-pressed',String(MUS.on));try{localStorage.setItem('rd-mus',MUS.on?'1':'0')}catch(e){}}
+function toggleMus(){MUS.on=!MUS.on;$('b-mus').setAttribute('aria-pressed',String(MUS.on));
+  // uit is meteen stil, ook de noten die al klaarstonden
+  if(!MUS.on&&MUS.out&&S.ac){const g=MUS.out.gain,t=S.ac.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(0,t)}try{localStorage.setItem('rd-mus',MUS.on?'1':'0')}catch(e){}}
 const GAP={rifle:.06,mg:.05,cannon:.08,rocket:.1,boom:.07,big:.2,hit:.06,click:.03,arty:.2,place:.1,bite:.15,zap:.12,beam:.15};
 function noiseBurst(t,dur,freq,type,vol,q){const src=S.ac.createBufferSource();src.buffer=S.noise;const f=S.ac.createBiquadFilter();f.type=type;f.frequency.value=freq;if(q)f.Q.value=q;const g=S.ac.createGain();g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);src.connect(f);f.connect(g);g.connect(S.master);src.start(t,Math.random());src.stop(t+dur+.05);return f}
 function thump(t,f0,f1,dur,vol,type){const o=S.ac.createOscillator(),g=S.ac.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(f1,t+dur);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(S.master);o.start(t);o.stop(t+dur+.05)}
@@ -2961,7 +2965,7 @@ function showEnd(win,outOnly){
 }
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-test2-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-test3-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',online:false,slots:[],pending:[]};
