@@ -437,7 +437,7 @@ const UT={
   cmdo:{n:'Commando',cat:'inf',hp:150,spd:1.7,cost:1000,sight:8,wpn:'pistol',arm:'inf',req:['barracks','lab'],max:1,d:'Schiet soldaten met één schot neer en blaast gebouwen op met C4: klik op een vijandelijk gebouw. Doet niets tegen voertuigen. Je kunt er maar één tegelijk hebben.'},
   seal:{n:'Navy SEAL',cat:'inf',side:'allies',amph:true,hp:150,spd:1.7,cost:1000,sight:8,wpn:'sealmg',arm:'inf',req:['barracks','lab'],d:'Alleen Geallieerden. Zwemt door water, maait soldaten neer met zijn machinegeweer en blaast gebouwen en schepen op met C4: klik erop. Doet niets tegen tanks.'},
   yuri:{n:'Yuri',cat:'inf',side:'soviet',hp:150,spd:1.5,cost:1200,sight:8,wpn:'mind',arm:'inf',req:['barracks','lab'],d:'Alleen Sovjets. Neemt met gedachtecontrole één vijandelijke eenheid over; kies hij een nieuwe, dan is de vorige weer vrij. Sterft Yuri, dan ook. Werkt niet op vliegtuigen en terreurdrones.'},
-  harv:{n:'Oogster',cat:'veh',hp:1200,spd:1.36,cost:1400,sight:5,arm:'veh',req:['factory','refinery'],d:'Haalt erts op en brengt het naar de raffinaderij. Klik met een oogster op een veld om hem daar te laten werken. Blauwe edelstenen leveren drie keer zoveel op.'},
+  harv:{n:'Oogster',cat:'veh',hp:1200,spd:1.36,cost:1400,sight:5,arm:'veh',req:['factory','refinery'],d:'Haalt erts op en brengt het naar de raffinaderij. Klik met een oogster op een veld om hem daar te laten werken. Blauwe edelstenen leveren drie keer zoveel op. Geallieerden rijden een Chrono-oogster: vol springt hij terug naar de raffinaderij, maar hij is maar half zo sterk. Sovjets rijden een War Miner: hij rijdt zelf terug, maar is zwaar gepantserd en heeft een machinegeweer tegen soldaten.'},
   mcv:{n:'MCV',cat:'veh',hp:1200,spd:1.36,cost:3000,sight:6,arm:'veh',req:['factory','radar'],d:'Zoals in Red Alert 2: rijdt naar een nieuwe plek en klapt daar uit tot een bouwwerf. Druk op D of klik nog eens op de geselecteerde MCV om hem uit te klappen. Zo bouw je een tweede basis, of een nieuwe als je bouwwerf is verwoest.'},
   tank:{n:'Grizzly-tank',cat:'veh',side:'allies',hp:360,spd:2.38,cost:700,sight:7,wpn:'gun',arm:'veh',req:['factory'],d:'Geallieerde tank. Snel en wendbaar, maar lichter gepantserd dan de Rhino.'},
   rhino:{n:'Rhino-tank',cat:'veh',side:'soviet',hp:480,spd:2.04,cost:900,sight:7,wpn:'rhinogun',arm:'veh',req:['factory'],d:'Sovjettank. Langzamer dan de Grizzly, maar met dikker pantser en een zwaarder kanon.'},
@@ -477,6 +477,7 @@ const WP={
   rifle:{rng:4,dmg:20,rof:0.57,kind:'bullet',vs:{inf:1,veh:.25,bld:.22}},
   rifled:{rng:5,dmg:15,rof:0.42,kind:'bullet',vs:{inf:1,veh:.25,bld:.22}},
   mg:{rng:5.5,dmg:13,rof:.32,kind:'bullet',vs:{inf:1,veh:.15,bld:.2}},
+  wmg:{rng:5,dmg:12,rof:.3,kind:'bullet',vs:{inf:1,veh:.1}},
   rpg:{rng:5.5,dmg:52,rof:2.2,kind:'rocket',spd:7,vs:{inf:.3,veh:1,bld:.65,air:.8}},
   aa:{rng:9,dmg:75,rof:1.1,kind:'rocket',spd:15,vs:{air:1}},
   jet:{rng:5,dmg:25,rof:.4,kind:'bullet',vs:{inf:1,veh:.3,bld:.2,air:.5,br:.5}},
@@ -1232,9 +1233,15 @@ function findOre(u,maxR,from){
 const dockBusy=(u,r)=>G.units.some(h=>h!==u&&h.type==='harv'&&h.rid===r.id&&h.hs==='unload'&&!h.dead);
 // net als in RA2: de dichtstbijzijnde raffinaderij, maar elke oogster die er eerder is (of al lost) telt als omweg, zodat ze over meerdere raffinaderijen verdelen
 function nearestRef(u){let best=null,bd=1e9;for(const b of G.blds)if(b.o===u.o&&b.type==='refinery'&&b.bt>=1){const d0=distPE(u.x,u.y,b);let d=d0;
-  for(const h of G.units){if(h===u||h.type!=='harv'||h.rid!==b.id)continue;if(h.hs==='unload'||h.hs==='queue')d+=6;else if(h.hs==='goRef'&&distPE(h.x,h.y,b)<=d0)d+=4.5}
+  for(const h of G.units){if(h===u||h.type!=='harv'||h.rid!==b.id)continue;if(h.hs==='unload'||h.hs==='queue')d+=6;else if(h.hs==='chr'||h.hs==='goRef'&&distPE(h.x,h.y,b)<=d0)d+=4.5}
   if(d<bd){bd=d;best=b}}return best}
+// de War Miner van de Sovjets schiet onder het werk op soldaten in de buurt
+function harvGun(u,dt){const W=WP.wmg;u.cd-=dt;u.scan-=dt;let t=u.gt?ents.get(u.gt):null;
+  if(!t||t.dead||t.hp<=0||!enemy(u.o,t.o)||Math.hypot(t.x-u.x,t.y-u.y)>W.rng){t=null;u.gt=0;if(u.scan<=0){u.scan=.4;t=nearestEnemy(u.x,u.y,u.o,W.rng,W);u.gt=t?t.id:0}}
+  if(t){const a=Math.atan2(t.y-u.y,t.x-u.x);u.tur=turn(u.tur,a,6*dt);if(u.cd<=0&&Math.abs(angDiff(u.tur,a))<.3){u.cd=W.rof;fire(u,t,'wmg')}}else u.tur=turn(u.tur,u.face,3*dt)}
+const sovH=o=>!!G.pl[o]&&G.pl[o].fac==='soviet';
 function updHarv(u,dt){
+  if(sovH(u.o))harvGun(u,dt);else u.tur=u.face;
   if(u.st==='move'){if(moveAlong(u,dt)){u.st='harv';u.hs=(u.load||0)>=HCAP?'ret':'seek'}return}
   u.st='harv';
   switch(u.hs){
@@ -1244,7 +1251,12 @@ function updHarv(u,dt){
     case'mine':{u.ht-=dt;
       if(u.ht<=0){u.ht=.35;u.field={x:u.ot%MAP+.5,y:((u.ot/MAP)|0)+.5};const m=gem[u.ot]?GEM_MUL:1,take=Math.min(30,ore[u.ot],HCAP-(u.load||0));ore[u.ot]-=take;oreDirty.add(u.ot);u.load=(u.load||0)+take;u.cargo+=take*m;if(m>1)u.gemLoad=true;
         if(u.load>=HCAP)u.hs='ret';else if(ore[u.ot]<=0){const n=findOre(u,4);if(n>=0){u.ot=n;setPath(u,n%MAP+.5,((n/MAP)|0)+.5);u.hs='go'}else u.hs=u.cargo>0?'ret':'seek'}}break}
-    case'ret':{const r=nearestRef(u);if(!r){u.hs='wait';u.ht=2;break}u.rid=r.id;const d=dock(r);setPath(u,d.x+.5,d.y+.5);u.hs='goRef';u.tries=0;break}
+    case'ret':{const r=nearestRef(u);if(!r){u.hs='wait';u.ht=2;break}u.rid=r.id;const d=dock(r);
+      // de Chrono-oogster van de Geallieerden springt vol terug naar de raffinaderij
+      if(!sovH(u.o)&&distPE(u.x,u.y,r)>4){u.path=null;u.hs='chr';u.ht=.8;fx({k:'chf',x:u.x,y:u.y,z:6,life:.8});sfx('beam',u.x,u.y);break}
+      setPath(u,d.x+.5,d.y+.5);u.hs='goRef';u.tries=0;break}
+    case'chr':{const r=ents.get(u.rid);if(!r||r.hp<=0){u.hs='ret';break}u.ht-=dt;if(u.ht>0)break;const d=dock(r),w=nearestWalkable(d.x,d.y,5);
+      if(w){u.x=w.x+.5;u.y=w.y+.5;u.lx=u.x;u.ly=u.y;fx({k:'chf',x:u.x,y:u.y,z:6,life:.8});sfx('beam',u.x,u.y)}setPath(u,d.x+.5,d.y+.5);u.hs='goRef';u.tries=0;break}
     case'goRef':{const r=ents.get(u.rid);if(!r||r.hp<=0){u.hs='ret';break}const done=moveAlong(u,dt);
       if(distPE(u.x,u.y,r)<.9){u.path=null;if(dockBusy(u,r)){u.hs='queue';u.ht=.5}else{u.hs='unload';u.ht=.3}}else if(done){u.tries=(u.tries||0)+1;if(u.tries>4)u.hs='ret';else{const d=dock(r);setPath(u,d.x+.5,d.y+.5)}}break}
     case'unload':{const r=ents.get(u.rid);if(!r||r.hp<=0){u.hs='ret';break}u.face=turn(u.face,Math.atan2(cyE(r)-u.y,cxE(r)-u.x),3*dt);u.ht-=dt;if(u.ht<=0){u.ht=.2;const g=Math.min(u.gemLoad?50*GEM_MUL:50,u.cargo);u.cargo-=g;const pg=g*(G.blds.some(b=>b.o===u.o&&b.type==='purifier'&&b.bt>=1&&!b.dead)?1.25:1);G.pl[u.o].credits+=pg;G.st[u.o].earned+=pg;if(u.cargo<=0){u.hs='seek';u.gemLoad=false;u.load=0}}break}
@@ -1365,6 +1377,7 @@ function damage(e,amt,src){
   if(e.k==='br'){if(e.down)return;e.hp-=amt;e.flash=.1;if(e.hp<=0)breakBridge(e,src);return}
   if(e.hp<=0||e.dead||e.frozen>G.t||e.st==='tele')return;
   const att=src&&src.id?ents.get(src.id):null;if(att&&att.rank)amt*=RANKD[att.rank];
+  if(e.type==='harv'&&!sovH(e.o))amt*=2;
   // straaljagers in de lucht zijn snel en dus lastig te raken
   if(e.k==='u'&&UT[e.type].jet&&uz(e)>20)amt*=.6;if(att&&att.boost)amt*=att.boost;if(e.rank)amt*=RANKT[e.rank];
   e.hp-=e.dep&&UT[e.type]&&UT[e.type].cat==='inf'?amt*.8:e.dep&&e.type==='stank'?amt*.5:amt;
@@ -2438,7 +2451,7 @@ function drawVeh(c,pr,u,tm,t){
     {const C=hullPts(pr,u.x+co*.36,u.y+si*.36,.3,Wd*.8,Hz+6,f),Cs=hullPts(pr,u.x+co*.36,u.y+si*.36,.3,Wd*.8,Hz,f);for(let i=0;i<4;i++){const j=(i+1)%4;poly(c,[Cs[i],Cs[j],C[j],C[i]],shade(M,.62))}poly(c,C,shade(M,1.15));
       line(c,pr(u.x+co*.5-si*-.22,u.y+si*.5+co*-.22,Hz+4.5),pr(u.x+co*.5-si*.22,u.y+si*.5+co*.22,Hz+4.5),'#8fd3ff',2)}
     poly(c,hullPts(pr,u.x-co*.14,u.y-si*.14,.58,Wd*.7,Hz+3,f),shade(M,.68));
-    if(sovH){const g0=pr(u.x+co*.3,u.y+si*.3,Hz+8),g1=pr(u.x+co*.62,u.y+si*.62,Hz+8);dot(c,g0,2.6,'#3b4046');line(c,g0,g1,'#25292d',1.8)}
+    if(sovH){const gx=u.x+co*.3,gy=u.y+si*.3,ct=Math.cos(u.tur),stt=Math.sin(u.tur),g0=pr(gx,gy,Hz+8),g1=pr(gx+ct*.34,gy+stt*.34,Hz+8);dot(c,g0,2.6,'#3b4046');line(c,g0,g1,'#25292d',1.8);if(u.flash>0)dot(c,pr(gx+ct*.4,gy+stt*.4,Hz+8),2.2,'#ffd76a')}
     else{const g=pr(u.x+co*.36,u.y+si*.36,Hz+7);c.globalCompositeOperation='lighter';c.fillStyle=`rgba(90,180,255,${.35+.2*Math.sin(t*4+u.id)})`;c.beginPath();c.ellipse(g[0],g[1],7,3.5,0,0,7);c.fill();c.globalCompositeOperation='source-over';dot(c,g,2,'#bfe8ff')}
     if(u.load>0){const k=u.load/HCAP;poly(c,hullPts(pr,u.x-co*.14,u.y-si*.14,.5*k+.05,Wd*.6,Hz+4,f),u.gemLoad?'#6fd6ff':'#e8bd3a')}
     line(c,pr(u.x-co*.45-si*Wd*.42,u.y-si*.45+co*Wd*.42,Hz-1),pr(u.x+co*.45-si*Wd*.42,u.y+si*.45+co*Wd*.42,Hz-1),tm.main,3);
