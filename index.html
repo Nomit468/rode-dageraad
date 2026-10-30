@@ -254,7 +254,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
           <dt>D</dt><dd>soldaten ingraven achter zandzakken, nog eens D om weer op te staan. Een Belegeringshelikopter landt ermee als kanon, een Nighthawk laat ermee zijn soldaten uitstappen</dd>
           <dt>A + klik op brug</dt><dd>een brug opblazen; een ingenieur herstelt hem weer</dd>
           <dt>Shift + klik</dt><dd>tussenstop: de eenheden rijden de punten na elkaar af</dd>
-          <dt>Ctrl/Cmd + klik</dt><dd>dwingen te schieten: op een doelwit, een eigen eenheid of gewoon op de grond</dd>
+          <dt>Ctrl/Cmd + klik</dt><dd>dwingen te schieten: op een doelwit, een eigen eenheid, een brug (opblazen) of gewoon op de grond</dd>
           <dt>Alt + klik</dt><dd>dwingen te rijden, ook dwars over vijandelijke soldaten heen</dd>
           <dt>G</dt><dd>bewaken: blijven staan, alles in de buurt aanvallen en daarna terugkeren</dd>
           <dt>X</dt><dd>uiteen: de selectie verspreidt zich, handig tegen artillerie en gifwolken</dd>
@@ -392,7 +392,7 @@ function setMapSize(sz,ring){
 const SPOT_N=['West','Oost','Noord','Zuid','Noordwest','Zuidoost','Noordoost','Zuidwest'];
 // buren langs de rand: Noord, Noordoost, Oost, Zuidoost, Zuid, Zuidwest, West, Noordwest
 const RING=[[2,6],[6,1],[1,5],[5,3],[3,7],[7,0],[0,4],[4,2]];
-const HCAP=600,BR_HP=2400;
+const HCAP=600,BR_HP=1200;
 
 // ---------- types
 const BT={
@@ -429,7 +429,7 @@ const UT={
   chrono:{n:'Chrono-legionair',cat:'inf',side:'allies',hp:150,spd:1.4,cost:1500,sight:8,wpn:'chrono',arm:'inf',req:['barracks','lab'],d:'Loopt niet maar springt door de tijd naar zijn doel. Zijn straal bevriest een vijand en wist hem daarna uit; zware doelen duren langer. Een bevroren doel kan niet vuren en niet geraakt worden.'},
   gi:{n:'GI',cat:'inf',side:'allies',hp:150,spd:1.4,cost:200,sight:6,wpn:'rifle',dep:'rifled',arm:'inf',req:['barracks'],d:'Goedkoop en snel getraind. Sterk tegen infanterie. Druk op D om hem in te graven achter zandzakken: hij schiet dan harder en verder en houdt meer uit, maar kan niet lopen.'},
   rocket:{n:'Raketsoldaat',cat:'inf',hp:125,spd:1.2,cost:400,sight:7,wpn:'rpg',arm:'inf',req:['barracks'],d:'Draagt een raketwerper. Sterk tegen tanks en gebouwen, en kan ook op luchtdoelen schieten.'},
-  rocketeer:{n:'Rocketeer',cat:'inf',side:'allies',air:true,alt:34,hp:150,spd:2.7,cost:600,sight:8,wpn:'jet',arm:'air',req:['barracks','radar'],d:'Vliegt met een raketrugzak over water, bossen en rotsen. Schiet op infanterie en luchtschepen. Alleen luchtafweer, raketsoldaten en andere rocketeers kunnen hem raken.'},
+  rocketeer:{n:'Rocketeer',cat:'inf',side:'allies',air:true,alt:34,hp:150,spd:2.7,cost:600,sight:8,wpn:'jet',arm:'air',req:['barracks','radar'],d:'Vliegt met een raketrugzak over water, bossen en rotsen. Schiet op infanterie en luchtschepen, en kan bruggen opblazen. Alleen luchtafweer, raketsoldaten en andere rocketeers kunnen hem raken.'},
   dog:{n:'Aanvalshond',cat:'inf',hp:120,spd:1.75,cost:200,sight:7,wpn:'bite',arm:'inf',req:['barracks'],d:'Snel en vals. Schakelt soldaten met één beet uit, maar kan niets tegen voertuigen of gebouwen.'},
   eng:{n:'Ingenieur',cat:'inf',hp:90,spd:1.2,cost:500,sight:4,arm:'inf',req:['barracks'],d:'Klik op een vijandelijk gebouw om het over te nemen, of op een beschadigd eigen gebouw om het helemaal te herstellen. De ingenieur gaat erin op.'},
   spy:{n:'Spion',cat:'inf',side:'allies',hp:120,spd:1.7,cost:1000,sight:7,arm:'inf',req:['barracks','radar'],d:'Alleen Geallieerden. Voor de vijand ziet hij eruit als een van hun eigen soldaten; alleen honden prikken erdoorheen. Klik op een vijandelijk gebouw om het te saboteren: stroom eraf (centrale), krediet stelen (raffinaderij), radarkaart wissen (radarpost), veteraan-soldaten of -voertuigen (kazerne of fabriek), of de omgeving verkennen (andere gebouwen).'},
@@ -478,7 +478,7 @@ const WP={
   mg:{rng:5.5,dmg:13,rof:.32,kind:'bullet',vs:{inf:1,veh:.15,bld:.2}},
   rpg:{rng:5.5,dmg:52,rof:2.2,kind:'rocket',spd:7,vs:{inf:.3,veh:1,bld:.65,air:.8}},
   aa:{rng:9,dmg:75,rof:1.1,kind:'rocket',spd:15,vs:{air:1}},
-  jet:{rng:5,dmg:25,rof:.4,kind:'bullet',vs:{inf:1,veh:.3,bld:.2,air:.5}},
+  jet:{rng:5,dmg:25,rof:.4,kind:'bullet',vs:{inf:1,veh:.3,bld:.2,air:.5,br:.5}},
   bombs:{rng:.7,dmg:250,rof:1.42,kind:'bomb',fall:.8,splash:1.6,vs:{inf:.8,veh:.9,bld:1.4}},
   crash:{dmg:320,kind:'bomb',fall:1.1,splash:1.8,vs:{inf:1,veh:.8,bld:1}},
   gun:{rng:5,dmg:65,rof:1.7,kind:'shell',spd:13,vs:{inf:.25,veh:1,bld:.8}},
@@ -911,7 +911,7 @@ const cxE=e=>e.k==='b'?e.x+e.w/2:e.k==='br'?(e.ax+e.bx)/2:e.x, cyE=e=>e.k==='b'?
 function distPE(x,y,e){if(e.k==='br')return Math.max(0,segDist(x,y,e.ax,e.ay,e.bx,e.by)-e.w);if(e.k==='b'){const dx=Math.max(e.x-x,0,x-(e.x+e.w)),dy=Math.max(e.y-y,0,y-(e.y+e.h));return Math.hypot(dx,dy)}return Math.hypot(e.x-x,e.y-y)}
 // een geland toestel is een gewoon gronddoel; een brug telt als gebouw
 const armor=e=>e.k!=='u'?'bld':UT[e.type].air&&uz(e)<6?'veh':UT[e.type].arm;
-const vsOf=(W,e)=>{const a=armor(e),v=W.vs[a];if(v!==undefined)return v;return a==='ship'?(W.vs.veh||0)*.8:0};
+const vsOf=(W,e)=>{if(e.k==='br'&&W.vs.br!==undefined)return W.vs.br;const a=armor(e),v=W.vs[a];if(v!==undefined)return v;return a==='ship'?(W.vs.veh||0)*.8:0};
 const dock=b=>({x:b.x+1,y:b.y+b.h});
 function countB(o){const c={};for(const b of G.blds)if(b.o===o&&b.bt>=1)c[b.type]=(c[b.type]||0)+1;return c}
 function reqMet(o,req){if(!req)return true;for(const r of req)if(!G.blds.some(b=>b.o===o&&b.type===r&&b.bt>=1))return false;return true}
@@ -3015,7 +3015,9 @@ function leftClick(sx,sy,ev){
   // RA2-commando's met een toets: Alt = dwingen te rijden, Ctrl/Cmd = dwingen te schieten, Shift op de grond = tussenstop
   if(su.length&&wx>=0&&wy>=0&&wx<MAP&&wy<MAP){
     if(ev.altKey){const mv=su.filter(u=>u.type!=='harv'||true);issue({t:'move',ids:idsOf(mv),x:r2(wx),y:r2(wy)});ordLines(mv,{x:wx,y:wy},'move');marker(wx,wy,'#7be08f');sfx('click');return}
-    if(ev.ctrlKey||ev.metaKey){const sh=su.filter(u=>UT[u.type].wpn&&!UT[u.type].jet);if(sh.length){
+    if(ev.ctrlKey||ev.metaKey){const br=!h?pickBridge(sx,sy,false):null,bh=br?su.filter(u=>canHit(u,br)):[];
+      if(bh.length){issue({t:'att',ids:idsOf(bh),tid:br.id});ordLines(bh,{tid:br.id},'att');marker(cxE(br),cyE(br),'#ff4b3a');sfx('click');return}
+      const sh=su.filter(u=>UT[u.type].wpn&&!UT[u.type].jet);if(sh.length){
       if(h&&!(h.k==='u'&&sel.includes(h.id))){issue({t:'att',ids:idsOf(sh),tid:h.id,f:1});ordLines(sh,{tid:h.id},'att');marker(cxE(h),cyE(h),'#ff4b3a')}
       else{issue({t:'fireat',ids:idsOf(sh),x:r2(wx),y:r2(wy)});ordLines(sh,{x:wx,y:wy},'att');marker(wx,wy,'#ff4b3a')}sfx('click');return}}
     if(ev.shiftKey&&!h){const mv=su.filter(u=>u.type!=='harv');if(mv.length){issue({t:'move',ids:idsOf(mv),x:r2(wx),y:r2(wy),q:1});marker(wx,wy,'#9fe6ff');sfx('click');return}}
