@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="description" content="Realtime strategiespel in de stijl van Red Alert 2. Speel alleen of met maximaal zeven vrienden.">
-<title>Rode Dageraad (testversie)</title>
+<title>Rode Dageraad</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;700;800&family=Barlow+Condensed:wght@500;600;700&display=swap">
@@ -65,6 +65,8 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 .cameo .cs{position:absolute;top:2px;right:4px;font-size:11px;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums;text-shadow:0 1px 2px #000}
 .cameo .pg{position:absolute;inset:0;background:conic-gradient(transparent calc(var(--p,0)*1turn),rgba(0,6,12,.68) 0);display:none}
 .cameo.on .pg{display:block}
+.op:disabled{opacity:.4;cursor:default}
+#teampanel{padding:6px 8px;display:grid;gap:5px}#teampanel .tp{display:flex;align-items:center;gap:4px;font-size:13px;min-width:0}#teampanel .tp b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#teampanel .tp i{width:9px;height:9px;flex:none}#teampanel button{height:24px;padding:0 4px;flex:none;letter-spacing:0;border:1px solid #3a5169;background:linear-gradient(180deg,#2a3b4d,#18232f);color:var(--amber);font:inherit;font-size:12px;font-weight:700;cursor:pointer}#teampanel button:disabled{opacity:.35;cursor:default}#teampanel .hd{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 .cameo.rpt::after{content:'∞';position:absolute;left:4px;bottom:16px;font-size:18px;font-weight:800;color:var(--amber);text-shadow:0 0 4px #000,0 1px 2px #000}
 .cameo .st{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:800;font-size:15px;letter-spacing:.08em;text-shadow:0 0 6px #000,0 1px 2px #000}
 .cameo.ready{border-color:var(--ok)}
@@ -249,10 +251,10 @@ body[data-fac="soviet"] #emblem .al{display:none}
           <dt>Twee vingers</dt><dd>op de touchpad schuiven om over de kaart te bewegen (een muiswiel kan ook; Shift + wiel schuift opzij)</dd>
           <dt>Rechtermuis</dt><dd>selectie opheffen, of slepen om de kaart te schuiven</dd>
           <dt>A + klik</dt><dd>aanvalsbeweging: onderweg alles aanvallen</dd>
-          <dt>D</dt><dd>soldaten ingraven achter zandzakken, nog eens D om weer op te staan. Een Belegeringshelikopter landt ermee als kanon, een Nighthawk laat ermee zijn soldaten uitstappen</dd>
+          <dt>D</dt><dd>soldaten ingraven achter zandzakken, nog eens D om weer op te staan. Een Belegeringshelikopter landt ermee als kanon, een Nighthawk laat ermee zijn soldaten uitstappen. Een MCV klapt ermee uit tot bouwwerf, een geselecteerde bouwwerf pakt ermee in tot MCV</dd>
           <dt>A + klik op brug</dt><dd>een brug opblazen; een ingenieur herstelt hem weer</dd>
           <dt>Shift + klik</dt><dd>tussenstop: de eenheden rijden de punten na elkaar af</dd>
-          <dt>Ctrl/Cmd + klik</dt><dd>dwingen te schieten: op een doelwit, een eigen eenheid of gewoon op de grond</dd>
+          <dt>Ctrl/Cmd + klik</dt><dd>dwingen te schieten: op een doelwit, een eigen eenheid, een brug (opblazen) of gewoon op de grond</dd>
           <dt>Alt + klik</dt><dd>dwingen te rijden, ook dwars over vijandelijke soldaten heen</dd>
           <dt>G</dt><dd>bewaken: blijven staan, alles in de buurt aanvallen en daarna terugkeren</dd>
           <dt>X</dt><dd>uiteen: de selectie verspreidt zich, handig tegen artillerie en gifwolken</dd>
@@ -328,8 +330,11 @@ body[data-fac="soviet"] #emblem .al{display:none}
       <button class="op" id="b-repair" aria-pressed="false" title="Repareren (R)">Repareer</button>
       <button class="op" id="b-sell" aria-pressed="false" title="Verkopen (V)">Verkoop</button>
       <button class="op" id="b-pause" aria-pressed="false" title="Pauze (P)">Pauze</button>
-      <button class="op half" id="b-snd" aria-pressed="false" title="Geluid en stemmen">Geluid</button>
-      <button class="op half" id="b-mus" aria-pressed="true" title="Muziek aan of uit (M)">Muziek</button>
+      <button class="op" id="b-snd" aria-pressed="false" title="Geluid en stemmen">Geluid</button>
+      <button class="op" id="b-mus" aria-pressed="true" title="Muziek aan of uit (M)">Muziek</button>
+      <button class="op" id="b-team" aria-pressed="false" title="Geld naar een teamgenoot sturen" disabled>Team</button>
+    </div>
+    <div class="plate" id="teampanel" hidden>
     </div>
     <button class="sp-btn" id="b-sp" aria-pressed="false" hidden><i id="sp-bar"></i><span id="sp-name"></span></button>
     <div class="buildwrap">
@@ -387,11 +392,11 @@ function setMapSize(sz,ring){
 const SPOT_N=['West','Oost','Noord','Zuid','Noordwest','Zuidoost','Noordoost','Zuidwest'];
 // buren langs de rand: Noord, Noordoost, Oost, Zuidoost, Zuid, Zuidwest, West, Noordwest
 const RING=[[2,6],[6,1],[1,5],[5,3],[3,7],[7,0],[0,4],[4,2]];
-const HCAP=600,BR_HP=2400;
+const HCAP=600,BR_HP=1200;
 
 // ---------- types
 const BT={
-  yard:{n:'Bouwwerf',w:3,h:3,hp:1600,pow:0,cost:3000,sight:7,ht:34,d:'Hart van je basis. Kwijt is kwijt.'},
+  yard:{n:'Bouwwerf',w:3,h:3,hp:1600,pow:0,cost:3000,sight:7,ht:34,d:'Hart van je basis: hier bouw je gebouwen. Druk op D om hem in te pakken tot een MCV, die je ergens anders weer uitklapt.'},
   power:{n:'Energiecentrale',ns:'Tesla-reactor',w:2,h:2,hp:750,pow:100,cost:800,sight:4,cat:'bld',req:[],ht:36,d:'Levert 100 stroom. Met te weinig stroom bouw je trager en vallen kanontorens en radar uit.'},
   refinery:{n:'Raffinaderij',w:3,h:3,hp:1000,pow:-40,cost:2000,sight:5,cat:'bld',req:['power'],ht:30,d:'Zet erts om in krediet. Komt met een gratis oogster.'},
   barracks:{n:'Kazerne',w:2,h:2,hp:800,pow:-20,cost:500,sight:5,cat:'bld',req:['power'],ht:30,d:'Traint soldaten en raketsoldaten. Elke extra kazerne maakt het trainen 20% sneller. Dubbelklik om hem primair te maken.'},
@@ -424,7 +429,7 @@ const UT={
   chrono:{n:'Chrono-legionair',cat:'inf',side:'allies',hp:150,spd:1.4,cost:1500,sight:8,wpn:'chrono',arm:'inf',req:['barracks','lab'],d:'Loopt niet maar springt door de tijd naar zijn doel. Zijn straal bevriest een vijand en wist hem daarna uit; zware doelen duren langer. Een bevroren doel kan niet vuren en niet geraakt worden.'},
   gi:{n:'GI',cat:'inf',side:'allies',hp:150,spd:1.4,cost:200,sight:6,wpn:'rifle',dep:'rifled',arm:'inf',req:['barracks'],d:'Goedkoop en snel getraind. Sterk tegen infanterie. Druk op D om hem in te graven achter zandzakken: hij schiet dan harder en verder en houdt meer uit, maar kan niet lopen.'},
   rocket:{n:'Raketsoldaat',cat:'inf',hp:125,spd:1.2,cost:400,sight:7,wpn:'rpg',arm:'inf',req:['barracks'],d:'Draagt een raketwerper. Sterk tegen tanks en gebouwen, en kan ook op luchtdoelen schieten.'},
-  rocketeer:{n:'Rocketeer',cat:'inf',side:'allies',air:true,alt:34,hp:150,spd:2.7,cost:600,sight:8,wpn:'jet',arm:'air',req:['barracks','radar'],d:'Vliegt met een raketrugzak over water, bossen en rotsen. Schiet op infanterie en luchtschepen. Alleen luchtafweer, raketsoldaten en andere rocketeers kunnen hem raken.'},
+  rocketeer:{n:'Rocketeer',cat:'inf',side:'allies',air:true,alt:34,hp:150,spd:2.7,cost:600,sight:8,wpn:'jet',arm:'air',req:['barracks','radar'],d:'Vliegt met een raketrugzak over water, bossen en rotsen. Schiet op infanterie en luchtschepen, en kan bruggen opblazen. Alleen luchtafweer, raketsoldaten en andere rocketeers kunnen hem raken.'},
   dog:{n:'Aanvalshond',cat:'inf',hp:120,spd:1.75,cost:200,sight:7,wpn:'bite',arm:'inf',req:['barracks'],d:'Snel en vals. Schakelt soldaten met één beet uit, maar kan niets tegen voertuigen of gebouwen.'},
   eng:{n:'Ingenieur',cat:'inf',hp:90,spd:1.2,cost:500,sight:4,arm:'inf',req:['barracks'],d:'Klik op een vijandelijk gebouw om het over te nemen, of op een beschadigd eigen gebouw om het helemaal te herstellen. De ingenieur gaat erin op.'},
   spy:{n:'Spion',cat:'inf',side:'allies',hp:120,spd:1.7,cost:1000,sight:7,arm:'inf',req:['barracks','radar'],d:'Alleen Geallieerden. Voor de vijand ziet hij eruit als een van hun eigen soldaten; alleen honden prikken erdoorheen. Klik op een vijandelijk gebouw om het te saboteren: stroom eraf (centrale), krediet stelen (raffinaderij), radarkaart wissen (radarpost), veteraan-soldaten of -voertuigen (kazerne of fabriek), of de omgeving verkennen (andere gebouwen).'},
@@ -433,6 +438,7 @@ const UT={
   seal:{n:'Navy SEAL',cat:'inf',side:'allies',amph:true,hp:150,spd:1.7,cost:1000,sight:8,wpn:'sealmg',arm:'inf',req:['barracks','lab'],d:'Alleen Geallieerden. Zwemt door water, maait soldaten neer met zijn machinegeweer en blaast gebouwen en schepen op met C4: klik erop. Doet niets tegen tanks.'},
   yuri:{n:'Yuri',cat:'inf',side:'soviet',hp:150,spd:1.5,cost:1200,sight:8,wpn:'mind',arm:'inf',req:['barracks','lab'],d:'Alleen Sovjets. Neemt met gedachtecontrole één vijandelijke eenheid over; kies hij een nieuwe, dan is de vorige weer vrij. Sterft Yuri, dan ook. Werkt niet op vliegtuigen en terreurdrones.'},
   harv:{n:'Oogster',cat:'veh',hp:1200,spd:1.36,cost:1400,sight:5,arm:'veh',req:['factory','refinery'],d:'Haalt erts op en brengt het naar de raffinaderij. Klik met een oogster op een veld om hem daar te laten werken. Blauwe edelstenen leveren drie keer zoveel op.'},
+  mcv:{n:'MCV',cat:'veh',hp:1200,spd:1.36,cost:3000,sight:6,arm:'veh',req:['factory','radar'],d:'Zoals in Red Alert 2: rijdt naar een nieuwe plek en klapt daar uit tot een bouwwerf. Druk op D of klik nog eens op de geselecteerde MCV om hem uit te klappen. Zo bouw je een tweede basis, of een nieuwe als je bouwwerf is verwoest.'},
   tank:{n:'Grizzly-tank',cat:'veh',side:'allies',hp:360,spd:2.38,cost:700,sight:7,wpn:'gun',arm:'veh',req:['factory'],d:'Geallieerde tank. Snel en wendbaar, maar lichter gepantserd dan de Rhino.'},
   rhino:{n:'Rhino-tank',cat:'veh',side:'soviet',hp:480,spd:2.04,cost:900,sight:7,wpn:'rhinogun',arm:'veh',req:['factory'],d:'Sovjettank. Langzamer dan de Grizzly, maar met dikker pantser en een zwaarder kanon.'},
   mirage:{n:'Mirage-tank',cat:'veh',side:'allies',hp:240,spd:2.38,cost:1000,sight:7,wpn:'mirage',arm:'veh',req:['factory','radar'],d:'Staat hij even stil, dan ziet de vijand alleen een boom. Vijanden vallen hem dan niet aan. Na elk schot is hij even zichtbaar.'},
@@ -473,7 +479,7 @@ const WP={
   mg:{rng:5.5,dmg:13,rof:.32,kind:'bullet',vs:{inf:1,veh:.15,bld:.2}},
   rpg:{rng:5.5,dmg:52,rof:2.2,kind:'rocket',spd:7,vs:{inf:.3,veh:1,bld:.65,air:.8}},
   aa:{rng:9,dmg:75,rof:1.1,kind:'rocket',spd:15,vs:{air:1}},
-  jet:{rng:5,dmg:25,rof:.4,kind:'bullet',vs:{inf:1,veh:.3,bld:.2,air:.5}},
+  jet:{rng:5,dmg:25,rof:.4,kind:'bullet',vs:{inf:1,veh:.3,bld:.2,air:.5,br:.5}},
   bombs:{rng:.7,dmg:250,rof:1.42,kind:'bomb',fall:.8,splash:1.6,vs:{inf:.8,veh:.9,bld:1.4}},
   crash:{dmg:320,kind:'bomb',fall:1.1,splash:1.8,vs:{inf:1,veh:.8,bld:1}},
   gun:{rng:5,dmg:65,rof:1.7,kind:'shell',spd:13,vs:{inf:.25,veh:1,bld:.8}},
@@ -526,7 +532,7 @@ const WP={
   grand:{rng:13,min:2,dmg:150,rof:2.12,kind:'shell',spd:20,vs:{inf:.7,veh:1,bld:1}},
 };
 const CATS=['bld','def','inf','veh','sea'];
-const CAT_TYPES={bld:['power','refinery','barracks','factory','radar','airfield','lab','spysat','nukepow','cloning','indplant','purifier','shipyard'],def:['wall','bunker','tower','prismt','coil','aa','gap','gcannon'],inf:['gi','conscript','rocket','dog','eng','tesltrp','rocketeer','spy','ivan','sniper','desolator','terror','chrono','cmdo','seal','yuri'],veh:['harv','tank','rhino','ifv','flak','drone','mirage','tesla','tdest','pzh','bers','stank','arty','demo','hawk','siege','prism','mammoth','harrier','eagle','kirov'],sea:['destroyer','aegis','dolphin','carrier','sub','seascorp','squid','dread','amph']};
+const CAT_TYPES={bld:['power','refinery','barracks','factory','radar','airfield','lab','spysat','nukepow','cloning','indplant','purifier','shipyard'],def:['wall','bunker','tower','prismt','coil','aa','gap','gcannon'],inf:['gi','conscript','rocket','dog','eng','tesltrp','rocketeer','spy','ivan','sniper','desolator','terror','chrono','cmdo','seal','yuri'],veh:['harv','mcv','tank','rhino','ifv','flak','drone','mirage','tesla','tdest','pzh','bers','stank','arty','demo','hawk','siege','prism','mammoth','harrier','eagle','kirov'],sea:['destroyer','aegis','dolphin','carrier','sub','seascorp','squid','dread','amph']};
 const RATE={bld:150,def:150,inf:90,veh:130,sea:130};
 const AI_MUL=[.65,1,1.35];
 const defOf=t=>BT[t]||UT[t];
@@ -893,6 +899,20 @@ function mkBld(o,type,x,y,instant){
   if(instant)onBuilt(b);
   return b;
 }
+// zoals in RA2: een MCV klapt uit tot een bouwwerf op de plek waar hij staat, en een bouwwerf pakt weer in tot een MCV
+function mcvFits(x,y){for(let yy=y;yy<y+3;yy++)for(let xx=x;xx<x+3;xx++){if(xx<0||yy<0||xx>=MAP||yy>=MAP)return false;const i=yy*MAP+xx;if(terr[i]!==GRASS||bmap[i]||!flatT(xx,yy))return false}return true}
+// eerst het vak met de MCV in het midden, anders een vak dat één tegel opschuift maar de MCV nog bevat
+function mcvSpot(u){const x=Math.round(u.x-1.5),y=Math.round(u.y-1.5),tx=u.x|0,ty=u.y|0;for(const dy of[0,-1,1])for(const dx of[0,-1,1]){const X=x+dx,Y=y+dy;if(tx<X||tx>X+2||ty<Y||ty>Y+2)continue;if(mcvFits(X,Y))return{x:X,y:Y}}return null}
+function mcvDeploy(u){if(u.dead||u.type!=='mcv')return;const s=mcvSpot(u);if(!s){sayTo(u.o,'Hier kan de bouwwerf niet uitklappen','nodeploy',2,false);return}
+  const r=u.hp/UT.mcv.hp,wasSel=u.o===LOCAL&&sel.includes(u.id);u.dead=true;u.hp=0;G.anyDead=true;
+  const b=mkBld(u.o,'yard',s.x,s.y,false);b.hp=Math.max(1,BT.yard.hp*r);
+  for(let i=0;i<4;i++)fx({k:'sm',x:s.x+Math.random()*3,y:s.y+Math.random()*3,z:2,s:.7,life:1.2,vz:6,c:'#9a8a6a'});
+  if(wasSel){sel=sel.filter(id=>id!==u.id);selB=b.id}sayTo(u.o,'Bouwwerf wordt uitgeklapt','deploy',1)}
+function packYard(b){if(!b||b.dead||b.type!=='yard'||b.bt<1)return;const r=b.hp/BT.yard.hp;
+  b.dead=true;b.hp=0;G.anyDead=true;for(let yy=b.y;yy<b.y+b.h;yy++)for(let xx=b.x;xx<b.x+b.w;xx++)bmap[yy*MAP+xx]=0;
+  const u=mkUnit(b.o,'mcv',b.x+1.5,b.y+1.5);u.hp=Math.max(1,UT.mcv.hp*r);
+  for(let i=0;i<4;i++)fx({k:'sm',x:b.x+Math.random()*3,y:b.y+Math.random()*3,z:4,s:.7,life:1.2,vz:8,c:'#9a8a6a'});
+  if(b.o===LOCAL&&selB===b.id){selB=0;sel=[u.id]}sayTo(b.o,'Bouwwerf ingepakt','pack',1)}
 function onBuilt(b){
   if(b.type==='refinery'){const d=dock(b);const w=nearestWalkable(d.x,d.y,6);if(w){const h=mkUnit(b.o,'harv',w.x+.5,w.y+.5);h.face=h.tur=Math.PI/2}}
 }
@@ -906,7 +926,7 @@ const cxE=e=>e.k==='b'?e.x+e.w/2:e.k==='br'?(e.ax+e.bx)/2:e.x, cyE=e=>e.k==='b'?
 function distPE(x,y,e){if(e.k==='br')return Math.max(0,segDist(x,y,e.ax,e.ay,e.bx,e.by)-e.w);if(e.k==='b'){const dx=Math.max(e.x-x,0,x-(e.x+e.w)),dy=Math.max(e.y-y,0,y-(e.y+e.h));return Math.hypot(dx,dy)}return Math.hypot(e.x-x,e.y-y)}
 // een geland toestel is een gewoon gronddoel; een brug telt als gebouw
 const armor=e=>e.k!=='u'?'bld':UT[e.type].air&&uz(e)<6?'veh':UT[e.type].arm;
-const vsOf=(W,e)=>{const a=armor(e),v=W.vs[a];if(v!==undefined)return v;return a==='ship'?(W.vs.veh||0)*.8:0};
+const vsOf=(W,e)=>{if(e.k==='br'&&W.vs.br!==undefined)return W.vs.br;const a=armor(e),v=W.vs[a];if(v!==undefined)return v;return a==='ship'?(W.vs.veh||0)*.8:0};
 const dock=b=>({x:b.x+1,y:b.y+b.h});
 function countB(o){const c={};for(const b of G.blds)if(b.o===o&&b.bt>=1)c[b.type]=(c[b.type]||0)+1;return c}
 function reqMet(o,req){if(!req)return true;for(const r of req)if(!G.blds.some(b=>b.o===o&&b.type===r&&b.bt>=1))return false;return true}
@@ -993,6 +1013,8 @@ function setPath(u,x,y){u.gx=x;u.gy=y;u.path=UT[u.type].air?[{x:clamp(x,.3,MAP-.
 function teleport(u,x,y){u.st='tele';u.tid=0;u.resume=null;u.path=null;u.dx=clamp(x,.5,MAP-.5);u.dy=clamp(y,.5,MAP-.5);u.tt=G.t+.4+Math.hypot(u.dx-u.x,u.dy-u.y)*.08;fx({k:'chf',x:u.x,y:u.y,z:6,life:.6})}
 // eenheden die niet zelf achter vijanden aan gaan: ze schieten alleen op wat binnen hun bereik komt
 const NOCHASE=new Set(['mirage','prism','arty','pzh']);
+// blijft deze eenheid staan? Voor spelers alle NOCHASE-soorten; de computer laat alleen zijn Mirage als boom staan
+const holdsPos=u=>NOCHASE.has(u.type)&&(!isAI(u.o)||u.type==='mirage');
 function orderMove(u,x,y,am){u.gspd=0;u.home=null;if(u.type==='chrono'){teleport(u,x,y);u.am=!!am;return}u.land=u.unl=false;if(u.dep){u.dep=false;fxl({k:'ds',x:u.x,y:u.y,z:2,life:.6})}u.rt=0;u.st='move';u.am=!!am;u.tid=0;u.resume=null;u.auto=false;u.dx=x;u.dy=y;setPath(u,x,y)}
 // plekken rond een doel voor een groep, in dezelfde volgorde als de eenheden
 function groupSlots(us,tx,ty){const out=[],cx=tx|0,cy=ty|0,sl=[];for(let r=0;r<10&&sl.length<us.length;r++){const ring=[];for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;const x=cx+dx,y=cy+dy;if(walkable(x,y))ring.push({x:x+.5,y:y+.5,d:Math.hypot(dx,dy)})}ring.sort((a,b)=>a.d-b.d);sl.push(...ring)}
@@ -1102,17 +1124,17 @@ function updUnit0(u,dt){
     if(u.st==='idle'&&!t&&gd>1.5&&u.scan<=0){orderMove(u,u.guard.x,u.guard.y,true)}}
   if((u.st==='idle'||(u.st==='move'&&u.am))&&u.scan<=0&&!(u.type==='yuri'&&u.ctrl&&(()=>{const m=ents.get(u.ctrl);return m&&!m.dead&&m.mc&&m.mc.by===u.id})())){
     u.scan=.35+Math.random()*.2;
-    const r=u.dep?W.rng:u.guard?Math.max(T.sight,W.rng+2):u.st==='idle'?((NOCHASE.has(u.type)||G.t<(u.leashT||0))&&!isAI(u.o)?W.rng:W.rng+(isAI(u.o)?3:1.2)):T.sight;
+    const r=u.dep?W.rng:u.guard?Math.max(T.sight,W.rng+2):u.st==='idle'?(holdsPos(u)||(G.t<(u.leashT||0)&&!isAI(u.o))?W.rng:W.rng+(isAI(u.o)?3:1.2)):T.sight;
     let e=nearestEnemy(u.x,u.y,u.o,r,W);
     if(T.aa){const A=WP[T.aa],e2=nearestEnemy(u.x,u.y,u.o,Math.max(r,A.rng),A);if(e2&&(!e||Math.hypot(e2.x-u.x,e2.y-u.y)<distPE(u.x,u.y,e)))e=e2}
     if(e){if(u.st==='move')u.resume={x:u.dx,y:u.dy};else if(!u.home)u.home={x:u.x,y:u.y};u.st='attack';u.tid=e.id;u.auto=true;t=e;u.path=null;u.repath=0;wk=wkOf(u,t);W=WP[wk]}
   }
   if(u.st==='attack'&&t){
     const d=distPE(u.x,u.y,t),a=Math.atan2(cyE(t)-u.y,cxE(t)-u.x);
-    if(u.auto&&d>Math.max(T.sight+2.5,NOCHASE.has(u.type)?W.rng:0)){u.tid=0;if(u.resume){const r=u.resume;orderMove(u,r.x,r.y,true)}else{u.st='idle';u.path=null}return}
+    if(u.auto&&d>Math.max(T.sight+2.5,holdsPos(u)?W.rng:0)){u.tid=0;if(u.resume){const r=u.resume;orderMove(u,r.x,r.y,true)}else{u.st='idle';u.path=null}return}
     const c4=W.c4&&(t.k!=='u'||UT[t.type].sea);
     // een tank die een soldaat dichtbij heeft, rijdt erop af en schiet onderweg
-    if(CRUSH.has(u.type)&&crushable(t)&&d<W.rng+1&&!(u.auto&&!u.guard&&!u.am&&!isAI(u.o)&&(NOCHASE.has(u.type)||(u.home&&Math.hypot(u.x-u.home.x,u.y-u.home.y)>3)))){u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.4;setPath(u,t.x,t.y)}moveAlong(u,dt);u.tur=turn(u.tur,a,5*dt);
+    if(CRUSH.has(u.type)&&crushable(t)&&d<W.rng+1&&!(u.auto&&!u.guard&&!u.am&&(holdsPos(u)||(!isAI(u.o)&&u.home&&Math.hypot(u.x-u.home.x,u.y-u.home.y)>3)))){u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.4;setPath(u,t.x,t.y)}moveAlong(u,dt);u.tur=turn(u.tur,a,5*dt);
       if(!t.dead&&u.cd<=0&&Math.abs(angDiff(u.tur,a))<.25){fire(u,t,wk);u.cd=W.rof*(.9+Math.random()*.2)}return}
     if(d<=(c4?.8:W.rng)&&(!W.min||d>=W.min)){
       u.path=null;
@@ -1122,8 +1144,8 @@ function updUnit0(u,dt){
       if(u.cd<=0&&(W.kind==='bomb'||Math.abs(angDiff(u.tur,a))<.25)){fire(u,t,wk);u.cd=W.rof*(.9+Math.random()*.2)}
     }else{
       if(u.dep){u.tid=0;u.st='idle';u.path=null;return}
+      if(u.auto&&!u.guard&&!u.am&&holdsPos(u)){u.tid=0;u.st='idle';u.path=null;u.home=null;return}
       if(u.auto&&!u.guard&&!u.am&&!isAI(u.o)){
-        if(NOCHASE.has(u.type)){u.tid=0;u.st='idle';u.path=null;u.home=null;return}
         if(u.home&&Math.hypot(u.x-u.home.x,u.y-u.home.y)>3){const h=u.home;u.tid=0;orderMove(u,h.x,h.y,false);u.leashT=G.t+5;return}}
       if(u.type==='chrono'){const dx=u.x-cxE(t),dy=u.y-cyE(t),l=Math.hypot(dx,dy)||1;const keep=u.tid;teleport(u,cxE(t)+dx/l*(W.rng-1.2),cyE(t)+dy/l*(W.rng-1.2));u.tid=keep;return}
       u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.9+Math.random()*.4;setPath(u,cxE(t),cyE(t))}
@@ -1235,7 +1257,7 @@ function updHarv(u,dt){
 }
 function separate(dt){
   const us=G.units,n=us.length,k=Math.min(1,dt*12);
-  const rad=u=>UT[u.type].sea?(u.type==='carrier'||u.type==='dread'?.75:.55):u.type==='harv'?.45:u.type==='mammoth'?.52:u.type==='kirov'?1.1:u.type==='rocketeer'?.3:u.type==='drone'?.24:UT[u.type].heli?.55:UT[u.type].cat==='inf'?.2:.38;
+  const rad=u=>UT[u.type].sea?(u.type==='carrier'||u.type==='dread'?.75:.55):u.type==='harv'?.45:u.type==='mcv'?.58:u.type==='mammoth'?.52:u.type==='kirov'?1.1:u.type==='rocketeer'?.3:u.type==='drone'?.24:UT[u.type].heli?.55:UT[u.type].cat==='inf'?.2:.38;
   const grp=u=>UT[u.type].air?(uz(u)<6?3:1):UT[u.type].sea?2:0;
   for(let i=0;i<n;i++){const a=us[i];if(a.dead)continue;const ra=rad(a),aa=grp(a);if(aa===3)continue;
     for(let j=i+1;j<n;j++){const b=us[j];if(b.dead||grp(b)!==aa)continue;let dx=b.x-a.x;if(dx>1.1||dx<-1.1)continue;let dy=b.y-a.y;if(dy>1.1||dy<-1.1)continue;
@@ -1534,6 +1556,11 @@ function aiBase(o){return G.blds.find(b=>b.o===o&&b.type==='yard')||G.blds.find(
 function toCenter(b){const cx=b.x+b.w/2,cy=b.y+b.h/2,dx=MAP/2-cx,dy=MAP/2-cy,l=Math.hypot(dx,dy)||1;return{cx,cy,ux:dx/l,uy:dy/l}}
 // 0 op Rivierdal en Winterfront, 1 op de Grote vlakte
 const bigK=()=>clamp((MAP-220)/70,0,1);
+function aiMcv(o,u){
+  if(u.st!=='idle')return;
+  if(mcvSpot(u)){mcvDeploy(u);return}
+  for(let r=2;r<12;r++)for(let k=0;k<16;k++){const a=k/16*Math.PI*2,x=(u.x+Math.cos(a)*r|0)+.5,y=(u.y+Math.sin(a)*r|0)+.5;if(x<2||y<2||x>MAP-2||y>MAP-2||!walkable(x|0,y|0)||!mcvSpot({x,y}))continue;applyCmd(o,{t:'move',ids:[u.id],x,y});return}
+}
 function aiRally(o){const b=aiBase(o);if(!b)return{x:MAP/2,y:MAP/2};const c=toCenter(b),r=5.5+bigK()*7;return{x:c.cx+c.ux*r,y:c.cy+c.uy*r}}
 function aiSpot(o,type){
   const T=BT[type],base=aiBase(o);if(!base)return null;
@@ -1552,9 +1579,12 @@ function aiSpot(o,type){
   return best;
 }
 function aiTick(o,dt){
-  const P=G.pl[o],A=G.ai[o];if(!A||!G.blds.some(b=>b.o===o))return;
+  const P=G.pl[o],A=G.ai[o];if(!A)return;
+  // een MCV van de computer klapt zo snel mogelijk uit, en anders rijdt hij eerst naar een vrije plek
+  if(!G.blds.some(b=>b.o===o)){if((A.think-=dt)<=0){A.think=.6;for(const u of G.units)if(u.o===o&&u.type==='mcv'&&!u.dead)aiMcv(o,u)}return}
   P.credits+=dt*[1,4,11][G.diff];
   A.waveT-=dt;A.think-=dt;if(A.think>0)return;A.think=.6;
+  for(const u of G.units)if(u.o===o&&u.type==='mcv'&&!u.dead)aiMcv(o,u);
   const cnt=countB(o),sov=P.fac==='soviet';
   for(const cat of['bld','def']){const q=P.q[cat];if(q[0]&&q[0].ready){const s=aiSpot(o,q[0].type);if(s)mkBld(o,q[0].type,s.x,s.y);else P.credits+=BT[q[0].type].cost*.8;q.shift()}}
   const pw=power(o);
@@ -1566,6 +1596,8 @@ function aiTick(o,dt){
   if(!P.q.bld.length){const t=next('bld');if(t)P.q.bld.push({type:t,spent:0})}
   if(!P.q.def.length&&G.t>[150,90,50][G.diff]){const t=next('def');if(t)P.q.def.push({type:t,spent:0})}
   const mine=G.units.filter(u=>u.o===o);
+  // bouwwerf kwijt? Dan een nieuwe MCV uit de fabriek, net als in RA2
+  if(!cnt.yard&&cnt.factory&&reqMet(o,UT.mcv.req)&&!mine.some(u=>u.type==='mcv')&&!P.q.veh.some(i=>i.type==='mcv'))P.q.veh.unshift({type:'mcv',spent:0});
   const harvs=mine.filter(u=>u.type==='harv').length,wantH=Math.min(4,(cnt.refinery||0)*2);
   if(cnt.factory&&harvs<wantH&&!P.q.veh.some(i=>i.type==='harv'))P.q.veh.unshift({type:'harv',spent:0});
   const reserve=P.q.bld.length?500:0;
@@ -1594,7 +1626,7 @@ function aiTick(o,dt){
   for(const u of mine)if(UT[u.type].jet&&u.st==='idle'&&u.ammo>=UT[u.type].ammo&&!u.want){let best=null,bd=1e9;
     for(const b of G.blds){if(!enemy(o,b.o)||b.dead||BT[b.type].wall)continue;const d=Math.hypot(b.x-u.x,b.y-u.y)+(b.type==='aa'?25:0)-(b.type==='power'||b.type==='refinery'?6:0);if(d<bd){bd=d;best=b}}
     if(best)orderAttack([u],best)}
-  const army=mine.filter(u=>u.type!=='harv'&&u.type!=='eng'&&!UT[u.type].jet);
+  const army=mine.filter(u=>u.type!=='harv'&&u.type!=='mcv'&&u.type!=='eng'&&!UT[u.type].jet);
   const home=army.filter(u=>!u.mission);
   for(const u of home)if(u.type==='gi'&&u.st==='idle'&&!u.dep&&Math.random()<.3)u.dep=true;
   if(A.waveT<=0&&home.length>=A.waveSize){
@@ -1728,6 +1760,12 @@ function musStep(t,n){const st=n%16,bar=(n>>4)%24,sec=bar<8?0:bar<16?1:bar<20?2:
 function musTick(){if(!S.ac)return;musInit();if(!MUS.out)return;const c=S.ac,want=started&&S.on&&MUS.on&&!(G.over);MUS.out.gain.setTargetAtTime(want?.14:0,c.currentTime,.25);
   if(!want){MUS.next=0;return}const sp=60/MBPM/4;if(MUS.next<c.currentTime)MUS.next=c.currentTime+.06;
   while(MUS.next<c.currentTime+.16){try{musStep(MUS.next,MUS.n)}catch(e){}MUS.next+=sp;MUS.n++}}
+// ---------- team: geld naar een teamgenoot sturen
+const teammates=()=>{if(!G.pl)return[];const tm=teamOf(LOCAL),out=[];for(let o=0;o<PMAX;o++){const p=G.pl[o];if(o!==LOCAL&&p&&(p.kind==='human'||p.kind==='ai')&&!p.out&&teamOf(o)===tm)out.push(o)}return out};
+function renderTeamPanel(){const box=$('teampanel');if(box.hidden)return;const P=G.pl[LOCAL],mates=teammates();box.textContent='';const hd=document.createElement('div');hd.className='hd';hd.textContent='Geld sturen naar';box.appendChild(hd);
+  if(!mates.length){const d=document.createElement('div');d.className='tp';d.textContent='Je hebt geen teamgenoten in dit spel.';box.appendChild(d);return}
+  for(const o of mates){const row=document.createElement('div');row.className='tp';const i=document.createElement('i');i.style.background=TEAM[o].main;const b=document.createElement('b');b.textContent=playerName(o);row.append(i,b);
+    for(const a of[500,1000,2500]){const bt=document.createElement('button');bt.textContent='$'+a;bt.disabled=P.credits<a;bt.addEventListener('click',()=>{issue({t:'give',to:o,amt:a});sfx('click')});row.appendChild(bt)}box.appendChild(row)}}
 function toggleMus(){MUS.on=!MUS.on;$('b-mus').setAttribute('aria-pressed',String(MUS.on));
   // uit is meteen stil, ook de noten die al klaarstonden
   if(!MUS.on&&MUS.out&&S.ac){const g=MUS.out.gain,t=S.ac.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(0,t)}try{localStorage.setItem('rd-mus',MUS.on?'1':'0')}catch(e){}}
@@ -1777,7 +1815,7 @@ const EVA_EN={promo:'Unit promoted',board:'Unit loaded',noland:'Cannot land ther
   sat:'Spy satellite online',gar:'Building garrisoned',engfix:'Building repaired',tech:'Tech building captured',techl:'Tech building lost',oil:'Oil derrick captured',oill:'Oil derrick lost',
   cap:'Building captured',capd:'Our building has been captured',drone:'Terror drone detected',blost:'Building lost',lost:'Unit lost',base:'Our base is under attack',kdown:'Kirov down',
   brug:'Bridge destroyed',brugok:'Bridge repaired',unl:'Unloading',money:'Insufficient funds',ready:'Construction complete',unit:'Unit ready',wave:'Enemy forces approaching',
-  gem:'Gems discovered',mind:'Unit acquired',mindl:'Unit lost',prim:'Primary building selected',paraon:'Paratroopers en route',sold:'Building sold',kirov:'Kirov airship detected',power:'Low power',droneoff:'Terror drone removed',crate:'Money crate',
+  gem:'Gems discovered',give:'Credits received',mind:'Unit acquired',mindl:'Unit lost',prim:'Primary building selected',paraon:'Paratroopers en route',sold:'Building sold',kirov:'Kirov airship detected',power:'Low power',droneoff:'Terror drone removed',crate:'Money crate',
   para:'Paratroopers ready',welcome:'Welcome back, commander'};
 const said={};
 function say(text,key,cool,voice=true,alert=false){key=key||text;cool=cool??3;if(G.t-(said[key]??-999)<cool)return false;said[key]=G.t;addMsg(text,alert);if(voice&&started)speak(EVA_EN[key]);return true}
@@ -1796,6 +1834,7 @@ const ACK={
   prism:{s:['Prism ready.','Crystal charged.'],m:['Moving.','Repositioning.'],a:['Light them up!','Beam away.'],p:1.05},
   mirage:{s:['Mirage ready.','Now you see me.'],m:['Moving.','Relocating.'],a:['Surprise!','Open fire.']},
   harv:{s:['Harvester ready.','Ore miner here.'],m:['Moving.','Heading out.'],a:['Collecting ore.']},
+  mcv:{s:['Construction vehicle ready.','M C V reporting.'],m:['Relocating.','Moving out.'],a:['Deploying.']},
   air:{s:['Pilot standing by.','Ready for takeoff.'],m:['Flying.','Heading there.'],a:['Attack run!','Going in!']},
   kirov:{s:['Kirov reporting.','Airship ready.'],m:['Setting course.','Moving slowly.'],a:['Bombs away.','Target in sight.'],p:.5,r:.82},
   sea:{s:['Ship ready.','Captain here.'],m:['Setting sail.','Full ahead.'],a:['Fire at will!','Engaging.']},
@@ -2242,7 +2281,7 @@ function windows(c,pr,x,y,w,h,z,hg,n,low,t,sd){
 function beacon(c,p,t,ph){const on=((t*1.1+ph)%1.6)<.25;dot(c,p,1.6,on?'#ff4433':'#5a1a14');if(on){c.globalCompositeOperation='lighter';flash(c,p,7);c.globalCompositeOperation='source-over'}}
 function flash(c,p,r){const g=c.createRadialGradient(p[0],p[1],0,p[0],p[1],r);g.addColorStop(0,'rgba(255,255,220,1)');g.addColorStop(.4,'rgba(255,200,80,.8)');g.addColorStop(1,'rgba(255,120,0,0)');c.fillStyle=g;c.beginPath();c.arc(p[0],p[1],r,0,7);c.fill()}
 function hullPts(pr,cx,cy,len,wid,z,f){const co=Math.cos(f),si=Math.sin(f),hl=len/2,hw=wid/2;return[[hl,hw],[hl,-hw],[-hl,-hw],[-hl,hw]].map(([a,b])=>pr(cx+a*co-b*si,cy+a*si+b*co,z))}
-const VDIM={mirage:[.82,.56,6,6.4],tank:[.76,.52,6,6.2],rhino:[.9,.64,6.5,7.6],ifv:[.86,.5,6,0],flak:[.86,.54,5,0],heavy:[.95,.68,7,8],arty:[.86,.5,6,0],harv:[1.05,.76,9,0],tesla:[.8,.56,6,0],prism:[.82,.56,6,0],mammoth:[1.25,.9,8,10.5],tdest:[.86,.62,5,0],demo:[.95,.56,7,0],pzh:[1,.62,6.5,8],stank:[.95,.6,4.5,0],bers:[.6,.22,4,0]};
+const VDIM={mirage:[.82,.56,6,6.4],tank:[.76,.52,6,6.2],rhino:[.9,.64,6.5,7.6],ifv:[.86,.5,6,0],flak:[.86,.54,5,0],heavy:[.95,.68,7,8],arty:[.86,.5,6,0],harv:[1.05,.76,9,0],mcv:[1.3,.84,8,0],tesla:[.8,.56,6,0],prism:[.82,.56,6,0],mammoth:[1.25,.9,8,10.5],tdest:[.86,.62,5,0],demo:[.95,.56,7,0],pzh:[1,.62,6.5,8],stank:[.95,.6,4.5,0],bers:[.6,.22,4,0]};
 // voertuigen zijn van staal in de kleur van hun kant; de teamkleur zit alleen in strepen en ringen
 const vehMetal=u=>{const sov=G.pl&&G.pl[u.o]&&G.pl[u.o].fac==='soviet';return u.type==='harv'?(sov?'#8d6a42':'#a7b0b8'):sov?'#7a7360':'#7b8792'};
 function drawVeh(c,pr,u,tm,t){
@@ -2343,6 +2382,15 @@ function drawVeh(c,pr,u,tm,t){
     const loaded=!(u.cd>WP.arty.rof*.35);
     if(loaded){const r0=pr(u.x-tc*.26,u.y-ts*.26,Hz+5),r1=pr(u.x+tc*.24,u.y+ts*.24,Hz+15);line(c,r0,r1,'#d9dde0',3.6);line(c,r0,[r0[0]+(r1[0]-r0[0])*.25,r0[1]+(r1[1]-r0[1])*.25],tm.main,3.6);dot(c,r1,2.1,'#d03a2a')}
     if(u.flash>0)flash(c,b2,10);
+  }else if(u.type==='mcv'){
+    // MCV: cabine voorin, achterop de ingeklapte bouwwerf met een gele kraanarm en waarschuwingsstrepen
+    const E=(a,b2,z)=>pr(u.x+co*a-si*b2,u.y+si*a+co*b2,z),box3=(cx,len,wd,z0,z1,k)=>{const col=M;const C=hullPts(pr,u.x+co*cx,u.y+si*cx,len,wd,z1,f),Cs=hullPts(pr,u.x+co*cx,u.y+si*cx,len,wd,z0,f);for(let i=0;i<4;i++){const j=(i+1)%4;poly(c,[Cs[i],Cs[j],C[j],C[i]],shade(col,.62*k))}poly(c,C,shade(col,1.12*k));c.strokeStyle='rgba(0,0,0,.45)';c.lineWidth=.7;c.beginPath();C.forEach((p,i)=>i?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();c.stroke();return C};
+    box3(.47,.2,Wd*.8,Hz,Hz+7,1);line(c,E(.57,-Wd*.32,Hz+5),E(.57,Wd*.32,Hz+5),'#8fd3ff',2);
+    const C=box3(-.1,.66,Wd*.9,Hz,Hz+10,.92);
+    for(let i=0;i<4;i++){const j=(i+1)%4,p=C[i],q=C[j];for(let k=0;k<6;k+=2){const a0=k/6,a1=(k+1)/6;line(c,[p[0]+(q[0]-p[0])*a0,p[1]+(q[1]-p[1])*a0],[p[0]+(q[0]-p[0])*a1,p[1]+(q[1]-p[1])*a1],'#e0b020',1.6)}}
+    for(const sd of[-1,1])line(c,E(-.42,sd*Wd*.46,Hz+5),E(.22,sd*Wd*.46,Hz+5),tm.main,2.4);
+    const k0=E(-.36,0,Hz+11),k1=E(.3,0,Hz+12.5);line(c,k0,k1,'#3a3218',4.2);line(c,k0,k1,'#e0b020',2.6);dot(c,k0,2.4,'#3a3f45');line(c,k1,E(.3,0,Hz+9),'#25292d',.9);dot(c,E(.3,0,Hz+9),1.2,'#c9c9c9');
+    {const d=E(-.3,Wd*.28,Hz+13);line(c,E(-.3,Wd*.28,Hz+10),d,'#4a4f55',1.2);c.fillStyle='#d0d6dc';c.beginPath();c.ellipse(d[0],d[1],3,1.6,-.4,0,7);c.fill();if((t*2|0)%2)dot(c,E(-.46,-Wd*.3,Hz+11),1.3,'#ffb030')}
   }else{
     // oogster: Sovjet-mijnwagen hoekig met een mitrailleur, geallieerde chronomijner rond met een blauwe gloed
     const sovH=G.pl&&G.pl[u.o]&&G.pl[u.o].fac==='soviet';
@@ -2558,7 +2606,8 @@ function drawNight(t){const d=nightI(t);if(d<=.01)return;ctx.save();ctx.setTrans
   for(const b of G.blds){if(b.dead||b.bt<1||BT[b.type].wall||!visibleE(b))continue;const[sx,sy]=w2s(b.x+b.w/2,b.y+b.h/2,BT[b.type].ht*.5);if(sx<-80||sx>VW+80||sy<-80||sy>VH+80)continue;
     const off=b.o!==NEU&&G.pl[b.o]&&G.pl[b.o].low;if(!off)glow(sx,sy,28+(b.w+b.h)*10,'255,200,120',.22*d)}
   for(const p of PROPS){if(p.k!=='lamp')continue;const[sx,sy]=w2s(p.x,p.y,0);if(sx<-60||sx>VW+60||sy<-60||sy>VH+60)continue;glow(sx,sy,46,'255,225,150',.32*d)}
-  for(const u of G.units){const T=UT[u.type];if(u.dead||T.cat!=='veh'||T.air||!visibleE(u))continue;const[sx,sy]=w2s(u.x,u.y,0);if(sx<-90||sx>VW+90||sy<-90||sy>VH+90)continue;
+  // koplampen; een Mirage die zich als boom verstopt, heeft ze natuurlijk uit
+  for(const u of G.units){const T=UT[u.type];if(u.dead||T.cat!=='veh'||T.air||(u.type==='mirage'&&u.disg)||!visibleE(u))continue;const[sx,sy]=w2s(u.x,u.y,0);if(sx<-90||sx>VW+90||sy<-90||sy>VH+90)continue;
     const L=w2s(u.x+Math.cos(u.face)*2.4,u.y+Math.sin(u.face)*2.4,0),g=ctx.createLinearGradient(sx,sy,L[0],L[1]);g.addColorStop(0,`rgba(255,240,190,${.3*d})`);g.addColorStop(1,'rgba(255,240,190,0)');
     const nx=-(L[1]-sy),ny=L[0]-sx,nl=Math.hypot(nx,ny)||1;ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(sx+nx/nl*4,sy+ny/nl*4);ctx.lineTo(L[0]+nx/nl*22,L[1]+ny/nl*22);ctx.lineTo(L[0]-nx/nl*22,L[1]-ny/nl*22);ctx.lineTo(sx-nx/nl*4,sy-ny/nl*4);ctx.closePath();ctx.fill()}
   ctx.restore()}
@@ -2914,7 +2963,8 @@ function drawGhostBld(t){if(!mouse.inside)return;ctx.globalAlpha=.5;const b={x:m
 // ---------- minimap
 const mm=$('mm'),mc=mm.getContext('2d');let MMW=212,MMH=106,mmShroud=null,mmT=0;
 function mmGeo(){const sc=Math.min(MMW/(MAP*TW),MMH/(MAP*TH));return{sc,ox:(MMW-MAP*TW*sc)/2,oy:(MMH-MAP*TH*sc)/2}}
-function radarOn(){return!!G.pl&&G.blds.some(b=>b.o===LOCAL&&b.type==='radar'&&b.bt>=1)&&!G.pl[LOCAL].low}
+// de radar werkt als jij of een teamgenoot een werkende radarpost heeft
+function radarOn(){if(!G.pl)return false;const tm=teamOf(LOCAL);return G.blds.some(b=>b.type==='radar'&&b.bt>=1&&!b.dead&&b.o<PMAX&&teamOf(b.o)===tm&&G.pl[b.o]&&!G.pl[b.o].low&&!G.pl[b.o].out)}
 function mmDraw(){
   const on=radarOn();$('mm-off').hidden=on;if(!on)return;
   const{sc,ox,oy}=mmGeo(),w=MAP*TW*sc,h=MAP*TH*sc;
@@ -2979,7 +3029,7 @@ function marker(x,y,c){fxl({k:'mk',x,y,z:0,c,life:.5})}
 function pickBridge(sx,sy,down){const[wx,wy]=s2w(sx,sy+3);for(const br of G.bridges||[]){if(br.down!==down||!visibleE(br))continue;if(segDist(wx,wy,br.ax,br.ay,br.bx,br.by)<br.w+.25)return br}return null}
 // Alles wat een speler beveelt loopt via issue(): bij de gastheer meteen, bij een gast als bericht naar de gastheer
 function issue(c){if(isGuest())netToHost({t:'cmd',c});else applyCmd(LOCAL,c);
-  if(Array.isArray(c.ids)&&c.ids.length&&/^(move|att|eng|spy|board|gar|harv|ref|dep)$/.test(c.t))ack(ents.get(c.ids[0]),c.t==='att'||c.am||c.t==='spy'||c.t==='eng'?'a':'m')}
+  if(Array.isArray(c.ids)&&c.ids.length&&/^(move|att|eng|spy|board|gar|harv|ref|dep|mcv)$/.test(c.t))ack(ents.get(c.ids[0]),c.t==='att'||c.am||c.t==='spy'||c.t==='eng'?'a':'m')}
 const idsOf=us=>us.map(u=>u.id);
 // bevelslijnen: alleen in je eigen scherm, van je eenheden naar waar ze heen gaan
 const ORD=new Map();
@@ -3000,7 +3050,9 @@ function leftClick(sx,sy,ev){
   // RA2-commando's met een toets: Alt = dwingen te rijden, Ctrl/Cmd = dwingen te schieten, Shift op de grond = tussenstop
   if(su.length&&wx>=0&&wy>=0&&wx<MAP&&wy<MAP){
     if(ev.altKey){const mv=su.filter(u=>u.type!=='harv'||true);issue({t:'move',ids:idsOf(mv),x:r2(wx),y:r2(wy)});ordLines(mv,{x:wx,y:wy},'move');marker(wx,wy,'#7be08f');sfx('click');return}
-    if(ev.ctrlKey||ev.metaKey){const sh=su.filter(u=>UT[u.type].wpn&&!UT[u.type].jet);if(sh.length){
+    if(ev.ctrlKey||ev.metaKey){const br=!h?pickBridge(sx,sy,false):null,bh=br?su.filter(u=>canHit(u,br)):[];
+      if(bh.length){issue({t:'att',ids:idsOf(bh),tid:br.id});ordLines(bh,{tid:br.id},'att');marker(cxE(br),cyE(br),'#ff4b3a');sfx('click');return}
+      const sh=su.filter(u=>UT[u.type].wpn&&!UT[u.type].jet);if(sh.length){
       if(h&&!(h.k==='u'&&sel.includes(h.id))){issue({t:'att',ids:idsOf(sh),tid:h.id,f:1});ordLines(sh,{tid:h.id},'att');marker(cxE(h),cyE(h),'#ff4b3a')}
       else{issue({t:'fireat',ids:idsOf(sh),x:r2(wx),y:r2(wy)});ordLines(sh,{x:wx,y:wy},'att');marker(wx,wy,'#ff4b3a')}sfx('click');return}}
     if(ev.shiftKey&&!h){const mv=su.filter(u=>u.type!=='harv');if(mv.length){issue({t:'move',ids:idsOf(mv),x:r2(wx),y:r2(wy),q:1});marker(wx,wy,'#9fe6ff');sfx('click');return}}
@@ -3014,6 +3066,7 @@ function leftClick(sx,sy,ev){
     if(h.k==='b'&&h.type==='refinery'&&su.length&&su.every(u=>u.type==='harv')){issue({t:'ref',ids:idsOf(su),tid:h.id});ordLines(su,{tid:h.id},'harv');marker(cxE(h),cyE(h),'#7be08f');return}
     if(h.k==='u'){
       const now=performance.now();
+      if(h.type==='mcv'&&sel.length===1&&sel[0]===h.id&&!ev.shiftKey&&now-mouse.lastClick>=320){issue({t:'mcv',ids:[h.id]});sfx('click');mouse.lastClick=now;mouse.lastId=h.id;return}
       if(now-mouse.lastClick<320&&mouse.lastId===h.id){sel=G.units.filter(u=>u.o===LOCAL&&u.type===h.type&&!u.dead&&(()=>{const[a,b]=w2s(u.x,u.y);return a>0&&b>0&&a<VW&&b<VH})()).map(u=>u.id)}
       else if(ev.shiftKey){const i=sel.indexOf(h.id);if(i>=0)sel.splice(i,1);else sel.push(h.id)}
       else sel=[h.id];
@@ -3069,6 +3122,8 @@ function applyCmd(o,c){
       const t=bld(c.tid);if(t&&!BT[t.type].civil&&!BT[t.type].wall&&(t.o===o||t.o===NEU||enemy(o,t.o)))orderEng(own().filter(u=>u.type==='eng'),t);break}
     case'ref':{const t=bld(c.tid);if(t&&t.o===o&&t.type==='refinery')for(const u of own())if(u.type==='harv'){u.st='harv';u.rid=t.id;const d=dock(t);setPath(u,d.x+.5,d.y+.5);u.hs='goRef';u.tries=0}break}
     case'harv':{const ti=c.tile|0;if(ti>=0&&ti<N&&ore[ti]>0)for(const u of own())if(u.type==='harv'){u.st='harv';u.ot=ti;setPath(u,ti%MAP+.5,((ti/MAP)|0)+.5);u.hs='go'}break}
+    case'mcv':for(const u of own())if(u.type==='mcv')mcvDeploy(u);break;
+    case'pack':{const b=bld(c.id);if(b&&b.o===o)packYard(b);break}
     case'dep':{const us=own().filter(u=>UT[u.type].dep),on=us.some(u=>!u.dep);for(const u of us){if(on&&UT[u.type].heli&&!walkable(u.x|0,u.y|0)){sayTo(o,'Hier kan hij niet landen','noland',2,false);continue}u.dep=on;u.path=null;if(on){u.st='idle';u.tid=0;u.am=false;u.resume=null;fx({k:'ds',x:u.x,y:u.y,z:2,life:.6})}}break}
     case'gar':{const t=bld(c.tid);if(t&&BT[t.type].civil&&(t.o===NEU||t.o===o))for(const u of own())if(canGar(u)){if(u.dep)u.dep=false;u.st='gar';u.tid=t.id;u.path=null;u.repath=0;u.am=false;u.resume=null}break}
     case'board':{const t=ents.get(c.tid);if(!t||t.k!=='u'||t.o!==o||t.dead)break;const us=own().filter(u=>UT[u.type].cat==='inf'&&!UT[u.type].air);
@@ -3088,6 +3143,8 @@ function applyCmd(o,c){
     case'para':{const P=G.pl[o];if(P.para===0&&num(c.x)&&num(c.y)&&c.x>=0&&c.y>=0&&c.x<MAP&&c.y<MAP)paraDrop(o,c.x,c.y);break}
     // primair gebouw: daar komt de productie van dat soort vandaan, zoals in RA2
     case'prim':{const b=bld(c.id);if(b&&b.o===o&&PRIM.has(b.type)&&b.bt>=1){for(const x of G.blds)if(x.o===o&&x.type===b.type)x.primary=false;b.primary=true;sayTo(o,'Primair gebouw ingesteld','prim',.5)}break}
+    case'give':{const to=c.to|0,P=G.pl[o],Q=G.pl[to];if(!P||!Q||to===o||to<0||to>=PMAX||Q.out||P.out||!(Q.kind==='human'||Q.kind==='ai')||teamOf(to)!==teamOf(o))break;
+      const a=Math.min(Math.max(0,c.amt|0),5000,Math.floor(P.credits));if(a<=0)break;P.credits-=a;Q.credits+=a;sayTo(to,playerName(o)+' stuurt je $'+a,'give',0);sayTo(o,'$'+a+' gestuurd naar '+playerName(to),'gave',0,false);break}
     case'repeat':{if(UT[c.type]){const P=G.pl[o];P.repeat=P.repeat||{};P.repeat[c.type]=!!c.on}break}
     case'rally':{const b=bld(c.id);if(b&&b.o===o&&num(c.x)&&num(c.y))b.rally={x:clamp(c.x,0,MAP),y:clamp(c.y,0,MAP)};break}
   }
@@ -3217,7 +3274,7 @@ window.addEventListener('keydown',e=>{
   }
   if(e.ctrlKey||e.metaKey||e.altKey)return;
   if(k==='a'){if(selUnits().length)setMode({k:'am'})}
-  else if(k==='d'){const iv=selUnits().filter(u=>(u.type==='ifv'&&u.pass)||((u.type==='hawk'||u.type==='amph')&&u.load>0));for(const u of iv)issue({t:'unload',id:u.id});const su=selUnits().filter(u=>UT[u.type].dep);if(iv.length&&!su.length){sfx('click')}else if(su.length){issue({t:'dep',ids:idsOf(su)});sfx('click')}else{const b=selB&&ents.get(selB);if(b&&b.o===LOCAL&&garN(b)>0){issue({t:'evac',id:b.id});sfx('click')}}}
+  else if(k==='d'){const iv=selUnits().filter(u=>(u.type==='ifv'&&u.pass)||((u.type==='hawk'||u.type==='amph')&&u.load>0));for(const u of iv)issue({t:'unload',id:u.id});const su=selUnits().filter(u=>UT[u.type].dep),mc=selUnits().filter(u=>u.type==='mcv');if(mc.length){issue({t:'mcv',ids:idsOf(mc)});sfx('click')}if(iv.length&&!su.length){sfx('click')}else if(su.length){issue({t:'dep',ids:idsOf(su)});sfx('click')}else if(!mc.length){const b=selB&&ents.get(selB);if(b&&b.o===LOCAL&&b.type==='yard'&&b.bt>=1){issue({t:'pack',id:b.id});sfx('click')}else if(b&&b.o===LOCAL&&garN(b)>0){issue({t:'evac',id:b.id});sfx('click')}}}
   else if(k==='t'){
     // zoals in RA2: T kiest de zelfde soort in beeld, twee keer snel T op de hele kaart
     const ty=new Set(selUnits().filter(u=>u.o===LOCAL).map(u=>u.type));if(!ty.size)return;
@@ -3269,7 +3326,7 @@ function drawCameo(cvs,type){
     BDRAW[type](c,pr,{x:0,y:0,w:T.w,h:T.h,tur:Math.PI*.3,flash:0,o:0,sv:!!(G.pl&&G.pl[LOCAL]&&G.pl[LOCAL].fac==='soviet')},TEAM[0],1,1.2,false);c.restore();
   }else{
     // soldaten van dichtbij, voertuigen groot in beeld
-    const T=UT[type],inf=T.cat==='inf',big=type==='mammoth'||type==='harv'||type==='arty',s=T.sea?(type==='carrier'||type==='dread'?.62:.8):type==='kirov'?.5:type==='eagle'||type==='harrier'?1.25:T.heli?.95:type==='drone'?1.6:type==='rocketeer'?1.5:inf?1.6:big?1.0:1.15;
+    const T=UT[type],inf=T.cat==='inf',big=type==='mammoth'||type==='harv'||type==='mcv'||type==='arty',s=T.sea?(type==='carrier'||type==='dread'?.62:.8):type==='kirov'?.5:type==='eagle'||type==='harrier'?1.25:T.heli?.95:type==='drone'?1.6:type==='rocketeer'?1.5:inf?1.6:big?1.0:1.15;
     c.save();c.translate(W/2+(inf?-3:0),air?H*.6+T.alt*s*US:H*(inf?.9:.7));c.scale(s,s);
     if(!air){c.fillStyle=T.sea?'rgba(10,30,50,.3)':'rgba(0,0,0,.24)';c.beginPath();c.ellipse(2,1.5,inf?8:T.sea?44:26,inf?3:T.sea?15:10,0,0,7);c.fill()}
     drawUnit(c,pr,{x:0,y:0,type,o:0,face:.35,tur:.35,moving:false,flash:0,cargo:type==='harv'?400:0,load:type==='harv'?400:0,id:1},0);c.restore();
@@ -3297,6 +3354,7 @@ function buildUI(){
   $('b-pause').addEventListener('click',togglePause);
   $('b-sp').addEventListener('click',()=>{audioInit();if(G.pl[LOCAL].para===0)setMode(mode&&mode.k==='para'?null:{k:'para'})});
   $('b-mus').setAttribute('aria-pressed',String(MUS.on));$('b-mus').addEventListener('click',toggleMus);
+  $('b-team').addEventListener('click',()=>{const p=$('teampanel');p.hidden=!p.hidden;$('b-team').setAttribute('aria-pressed',String(!p.hidden));renderTeamPanel()});
   $('b-snd').addEventListener('click',()=>{S.on=!S.on;$('b-snd').setAttribute('aria-pressed',String(S.on));try{if(!S.on)speechSynthesis.cancel()}catch(e){}});
 }
 function showTip(el,type){
@@ -3329,13 +3387,14 @@ function cameoCancel(type,cat){
   if(mode&&mode.k==='place'&&mode.type===type)setMode(null);
   issue({t:'cancel',type,cat});sfx('click');addMsg('Geannuleerd');
 }
-let uiAcc=0,dispC=0;
+let uiAcc=0,dispC=0,teamAcc=0;
 function uiTick(dt){
   if(!G.pl)return;
   {const f=G.pl[LOCAL]&&G.pl[LOCAL].fac==='soviet'?'soviet':'allies';if(document.body.dataset.fac!==f)document.body.dataset.fac=f}
   const P=G.pl[LOCAL];dispC+=(P.credits-dispC)*Math.min(1,dt*10);if(Math.abs(P.credits-dispC)<1)dispC=P.credits;
   $('credits').textContent='$ '+Math.floor(dispC);
   uiAcc+=dt;if(uiAcc<.1)return;uiAcc=0;
+  {const has=started&&teammates().length>0;$('b-team').disabled=!has;if(!has&&!$('teampanel').hidden){$('teampanel').hidden=true;$('b-team').setAttribute('aria-pressed','false')}teamAcc=(teamAcc||0)+1;if(teamAcc%5===0)renderTeamPanel()}
   const pw=power(LOCAL),scale=Math.max(pw.prod,pw.use,100)*1.15;
   $('pw-fill').style.height=`calc(${pw.prod/scale*100}% - 4px)`;$('pw-fill').style.background=pw.use>pw.prod?'var(--bad)':pw.use>pw.prod*.85?'var(--warn)':'var(--ok)';
   $('pw-use').style.bottom=`${pw.use/scale*100}%`;$('pw-num').textContent=`${pw.use} / ${pw.prod}`;
@@ -3411,7 +3470,7 @@ function tick(dt){
 function checkEnd(){
   if(G.over)return;
   for(let o=0;o<PMAX;o++){
-    const P=G.pl[o];if(!active(o)||P.out||G.blds.some(b=>b.o===o&&!BT[b.type].tech))continue;
+    const P=G.pl[o];if(!active(o)||P.out||G.blds.some(b=>b.o===o&&!BT[b.type].tech)||G.units.some(u=>u.o===o&&u.type==='mcv'&&!u.dead))continue;
     P.out=true;for(const u of G.units)if(u.o===o&&!u.dead)kill(u,null);
     const nm=P.name||(P.kind==='ai'?'Computer '+TEAM[o].n:TEAM[o].n);
     for(let k=0;k<PMAX;k++)if(k!==o)sayTo(k,nm+' is uitgeschakeld','out'+o,0,false);
@@ -3453,7 +3512,7 @@ function chatOpen(){if(!started)return;$('chatbar').hidden=false;$('chatto').tex
 function chatClose(){$('chatbar').hidden=true;$('chatin').blur()}
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-test9-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-test10-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',weather:'var',seed:1,online:false,slots:[],pending:[]};
