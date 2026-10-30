@@ -2571,7 +2571,8 @@ function drawNight(t){const d=nightI(t);if(d<=.01)return;ctx.save();ctx.setTrans
   for(const b of G.blds){if(b.dead||b.bt<1||BT[b.type].wall||!visibleE(b))continue;const[sx,sy]=w2s(b.x+b.w/2,b.y+b.h/2,BT[b.type].ht*.5);if(sx<-80||sx>VW+80||sy<-80||sy>VH+80)continue;
     const off=b.o!==NEU&&G.pl[b.o]&&G.pl[b.o].low;if(!off)glow(sx,sy,28+(b.w+b.h)*10,'255,200,120',.22*d)}
   for(const p of PROPS){if(p.k!=='lamp')continue;const[sx,sy]=w2s(p.x,p.y,0);if(sx<-60||sx>VW+60||sy<-60||sy>VH+60)continue;glow(sx,sy,46,'255,225,150',.32*d)}
-  for(const u of G.units){const T=UT[u.type];if(u.dead||T.cat!=='veh'||T.air||!visibleE(u))continue;const[sx,sy]=w2s(u.x,u.y,0);if(sx<-90||sx>VW+90||sy<-90||sy>VH+90)continue;
+  // koplampen; een Mirage die zich als boom verstopt, heeft ze natuurlijk uit
+  for(const u of G.units){const T=UT[u.type];if(u.dead||T.cat!=='veh'||T.air||(u.type==='mirage'&&u.disg)||!visibleE(u))continue;const[sx,sy]=w2s(u.x,u.y,0);if(sx<-90||sx>VW+90||sy<-90||sy>VH+90)continue;
     const L=w2s(u.x+Math.cos(u.face)*2.4,u.y+Math.sin(u.face)*2.4,0),g=ctx.createLinearGradient(sx,sy,L[0],L[1]);g.addColorStop(0,`rgba(255,240,190,${.3*d})`);g.addColorStop(1,'rgba(255,240,190,0)');
     const nx=-(L[1]-sy),ny=L[0]-sx,nl=Math.hypot(nx,ny)||1;ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(sx+nx/nl*4,sy+ny/nl*4);ctx.lineTo(L[0]+nx/nl*22,L[1]+ny/nl*22);ctx.lineTo(L[0]-nx/nl*22,L[1]-ny/nl*22);ctx.lineTo(sx-nx/nl*4,sy-ny/nl*4);ctx.closePath();ctx.fill()}
   ctx.restore()}
