@@ -1074,9 +1074,9 @@ function moveAlong(u,dt){
 }
 function nearestEnemy(x,y,o,r,W){
   let best=null,bs=1e9;jungleUpdate();const sm=isAI(o)&&G.ai[o]&&!G.ai[o].old;
-  for(const e of G.units){if(!enemy(o,e.o)||e.hp<=0||jungleHid(e,o)||(e.type==='spy'&&W.kind!=='melee')||e.disg||e.st==='tele'||(W.kind==='latch'&&e.drone)||(W.kind==='melee'&&e.type==='drone')||(W.kind==='ivan'&&G.bombs.some(b=>b.id===e.id)))continue;const eff=W.vs[armor(e)]||0;if(eff===0)continue;const d=Math.hypot(e.x-x,e.y-y);if(d>r||(W.min&&d<W.min))continue;const s=d+(eff<.3?4:0)-(UT[e.type].wpn?.5:0)-(sm?eff*1.5+(1-e.hp/UT[e.type].hp)*1.5:0);if(s<bs){bs=s;best=e}}
+  for(const e of G.units){if(!enemy(o,e.o)||e.hp<=0||jungleHid(e,o)||(e.type==='spy'&&W.kind!=='melee')||e.disg||e.st==='tele'||(W.kind==='latch'&&e.drone)||(W.kind==='melee'&&e.type==='drone')||(W.kind==='ivan'&&G.bombs.some(b=>b.id===e.id)))continue;const eff=W.vs[armor(e)]||0;if(eff===0)continue;const d=Math.hypot(e.x-x,e.y-y);if(d>r||(W.min&&d<W.min)||(W.kind==='bomb'&&e.moving&&d>1.5))continue;const s=d+(eff<.3?4:0)-(UT[e.type].wpn?.5:0)-(sm?eff*1.5+(1-e.hp/UT[e.type].hp)*1.5:0);if(s<bs){bs=s;best=e}}
   if(!W.vs.bld)return best;
-  for(const e of G.blds){if(!enemy(o,e.o)||e.hp<=0||BT[e.type].wall||(W.kind==='ivan'&&G.bombs.some(b=>b.id===e.id)))continue;const d=distPE(x,y,e);if(d>r||(W.min&&d<W.min))continue;const s=d+2.5-(BT[e.type].wpn?1.5:0);if(s<bs){bs=s;best=e}}
+  for(const e of G.blds){if(!enemy(o,e.o)||e.hp<=0||BT[e.type].wall||(W.kind==='ivan'&&G.bombs.some(b=>b.id===e.id)))continue;const d=distPE(x,y,e);if(d>r||(W.min&&d<W.min))continue;const s=d+(W.kind==='bomb'?-1:2.5)-(BT[e.type].wpn?1.5:0);if(s<bs){bs=s;best=e}}
   return best;
 }
 
@@ -1113,6 +1113,8 @@ function updUnit0(u,dt){
   let t=u.tid?ents.get(u.tid):null;if(t&&(t.hp<=0||t.dead))t=null;
   if(t){wk=wkOf(u,t);W=WP[wk]}
   if(u.st==='attack'&&!t){u.tid=0;if(u.resume){const r=u.resume;orderMove(u,r.x,r.y,true)}else{u.st='idle';u.path=null}}
+  // een Kirov laat onderweg ook bommen vallen op vijanden waar hij overheen vliegt
+  if(W.kind==='bomb'&&u.cd<=0&&(u.dropT=(u.dropT||0)-dt)<=0){u.dropT=.25;if(!(u.st==='attack'&&t&&distPE(u.x,u.y,t)<=W.rng)){const e=nearestEnemy(u.x,u.y,u.o,1,W);if(e){fire(u,e,wk);u.cd=W.rof*(.9+Math.random()*.2)}}}
   // grondvuur (Ctrl/Cmd+klik op de grond): naar binnen bereik en dan op die plek schieten
   if(u.st==='fireat'){const d=Math.hypot(u.gx-u.x,u.gy-u.y),a=Math.atan2(u.gy-u.y,u.gx-u.x);
     if(d>W.rng){u.repath-=dt;if(!u.path||u.repath<=0){u.repath=1;setPath(u,u.gx,u.gy)}moveAlong(u,dt);if(T.cat==='inf')u.tur=u.face;else u.tur=turn(u.tur,a,4*dt);return}
@@ -1130,7 +1132,9 @@ function updUnit0(u,dt){
     if(e){if(u.st==='move')u.resume={x:u.dx,y:u.dy};else if(!u.home)u.home={x:u.x,y:u.y};u.st='attack';u.tid=e.id;u.auto=true;t=e;u.path=null;u.repath=0;wk=wkOf(u,t);W=WP[wk]}
   }
   if(u.st==='attack'&&t){
-    const d=distPE(u.x,u.y,t),a=Math.atan2(cyE(t)-u.y,cxE(t)-u.x);
+    const bomb=W.kind==='bomb'&&t.k==='u',lp=bomb?leadPos(t,W.fall):null,d=bomb?Math.hypot(lp[0]-u.x,lp[1]-u.y):distPE(u.x,u.y,t),a=Math.atan2(cyE(t)-u.y,cxE(t)-u.x);
+    // een Kirov die zelf een doel koos, laat een wegrijdende eenheid gaan en vliegt door
+    if(bomb&&u.auto&&t.moving&&d>2.5){u.tid=0;if(u.resume){const r=u.resume;orderMove(u,r.x,r.y,true)}else{u.st='idle';u.path=null}return}
     if(u.auto&&d>Math.max(T.sight+2.5,holdsPos(u)?W.rng:0)){u.tid=0;if(u.resume){const r=u.resume;orderMove(u,r.x,r.y,true)}else{u.st='idle';u.path=null}return}
     const c4=W.c4&&(t.k!=='u'||UT[t.type].sea);
     // een tank die een soldaat dichtbij heeft, rijdt erop af en schiet onderweg
@@ -1148,7 +1152,7 @@ function updUnit0(u,dt){
       if(u.auto&&!u.guard&&!u.am&&!isAI(u.o)){
         if(u.home&&Math.hypot(u.x-u.home.x,u.y-u.home.y)>3){const h=u.home;u.tid=0;orderMove(u,h.x,h.y,false);u.leashT=G.t+5;return}}
       if(u.type==='chrono'){const dx=u.x-cxE(t),dy=u.y-cyE(t),l=Math.hypot(dx,dy)||1;const keep=u.tid;teleport(u,cxE(t)+dx/l*(W.rng-1.2),cyE(t)+dy/l*(W.rng-1.2));u.tid=keep;return}
-      u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.9+Math.random()*.4;setPath(u,cxE(t),cyE(t))}
+      u.repath-=dt;if(!u.path||u.repath<=0){u.repath=bomb?.4:.9+Math.random()*.4;if(bomb){const q=leadPos(t,Math.min(3,d/T.spd));setPath(u,q[0],q[1])}else setPath(u,cxE(t),cyE(t))}
       moveAlong(u,dt);
       if(T.cat==='inf')u.tur=u.face;else u.tur=turn(u.tur,a,4*dt);
     }
@@ -1286,6 +1290,8 @@ function separate(dt){
 function shift(u,dx,dy){const nx=u.x+dx,ny=u.y+dy;if(walkable(nx|0,u.y|0))u.x=nx;if(walkable(u.x|0,ny|0))u.y=ny}
 
 // ---------- combat
+// waar een rijdend doel over s seconden is, zodat een Kirov zijn bommen voor hem uit laat vallen
+function leadPos(t,s){if(t.k!=='u'||!t.moving)return[cxE(t),cyE(t)];const v=t.v??UT[t.type].spd*RANKS[t.rank||0];return[clamp(t.x+Math.cos(t.face)*v*s,.5,MAP-.5),clamp(t.y+Math.sin(t.face)*v*s,.5,MAP-.5)]}
 function fire(s,t,wk){
   const W=WP[wk],isB=s.k==='b';
   const sx=isB?s.x+s.w/2:s.x,sy=isB?s.y+s.h/2:s.y,tx=cxE(t),ty=cyE(t),a=Math.atan2(ty-sy,tx-sx);
@@ -1293,7 +1299,7 @@ function fire(s,t,wk){
   const mz=air?Math.max(6,uz(s)+(inf?8:-4)):isB?BT[s.type].ht-4:inf?9:s.type==='tesla'?22:s.type==='prism'?17:11,off=isB?.45:inf?.3:air||s.type==='tesla'||s.type==='prism'?0:.55;
   const mx=sx+Math.cos(a)*off,my=sy+Math.sin(a)*off,hz=t.k==='b'?12:t.k==='br'||t.k==='g'?3:UT[t.type].air?Math.max(6,uz(t)):6,src={id:s.id,o:s.o};
   s.flash=.07;if(G.pl[s.o]&&G.pl[s.o].nat==='vietnam')s.jrev=G.t+2;
-  if(W.kind==='bomb'){G.proj.push({x:sx,y:sy,x0:sx,y0:sy,z:mz,z0:mz,tx:tx+(Math.random()-.5)*.5,ty:ty+(Math.random()-.5)*.5,tid:t.id,o:s.o,wk,ft:0,dist:1,dl:0,trail:0,aid:s.id});sfx('arty',sx,sy);return}
+  if(W.kind==='bomb'){const[lx,ly]=leadPos(t,W.fall);G.proj.push({x:sx,y:sy,x0:sx,y0:sy,z:mz,z0:mz,tx:lx+(Math.random()-.5)*.5,ty:ly+(Math.random()-.5)*.5,tid:t.id,o:s.o,wk,ft:0,dist:1,dl:0,trail:0,aid:s.id});sfx('arty',sx,sy);return}
   if(W.kind==='suicide'){kill(s,{o:s.o,id:s.id});return}
   if(s.type==='mirage')s.calm=-1.5;
   if(W.kind==='mind'){if(t.k!=='u'||UT[t.type].air||t.type==='drone'||t.mc)return;
