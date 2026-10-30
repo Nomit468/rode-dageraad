@@ -65,6 +65,8 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 .cameo .cs{position:absolute;top:2px;right:4px;font-size:11px;font-weight:700;color:var(--amber);font-variant-numeric:tabular-nums;text-shadow:0 1px 2px #000}
 .cameo .pg{position:absolute;inset:0;background:conic-gradient(transparent calc(var(--p,0)*1turn),rgba(0,6,12,.68) 0);display:none}
 .cameo.on .pg{display:block}
+.op:disabled{opacity:.4;cursor:default}
+#teampanel{padding:6px 8px;display:grid;gap:5px}#teampanel .tp{display:flex;align-items:center;gap:4px;font-size:13px;min-width:0}#teampanel .tp b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#teampanel .tp i{width:9px;height:9px;flex:none}#teampanel button{height:24px;padding:0 4px;flex:none;letter-spacing:0;border:1px solid #3a5169;background:linear-gradient(180deg,#2a3b4d,#18232f);color:var(--amber);font:inherit;font-size:12px;font-weight:700;cursor:pointer}#teampanel button:disabled{opacity:.35;cursor:default}#teampanel .hd{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 .cameo.rpt::after{content:'∞';position:absolute;left:4px;bottom:16px;font-size:18px;font-weight:800;color:var(--amber);text-shadow:0 0 4px #000,0 1px 2px #000}
 .cameo .st{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--f-display);font-weight:800;font-size:15px;letter-spacing:.08em;text-shadow:0 0 6px #000,0 1px 2px #000}
 .cameo.ready{border-color:var(--ok)}
@@ -328,8 +330,11 @@ body[data-fac="soviet"] #emblem .al{display:none}
       <button class="op" id="b-repair" aria-pressed="false" title="Repareren (R)">Repareer</button>
       <button class="op" id="b-sell" aria-pressed="false" title="Verkopen (V)">Verkoop</button>
       <button class="op" id="b-pause" aria-pressed="false" title="Pauze (P)">Pauze</button>
-      <button class="op half" id="b-snd" aria-pressed="false" title="Geluid en stemmen">Geluid</button>
-      <button class="op half" id="b-mus" aria-pressed="true" title="Muziek aan of uit (M)">Muziek</button>
+      <button class="op" id="b-snd" aria-pressed="false" title="Geluid en stemmen">Geluid</button>
+      <button class="op" id="b-mus" aria-pressed="true" title="Muziek aan of uit (M)">Muziek</button>
+      <button class="op" id="b-team" aria-pressed="false" title="Geld naar een teamgenoot sturen" disabled>Team</button>
+    </div>
+    <div class="plate" id="teampanel" hidden>
     </div>
     <button class="sp-btn" id="b-sp" aria-pressed="false" hidden><i id="sp-bar"></i><span id="sp-name"></span></button>
     <div class="buildwrap">
@@ -1730,6 +1735,12 @@ function musStep(t,n){const st=n%16,bar=(n>>4)%24,sec=bar<8?0:bar<16?1:bar<20?2:
 function musTick(){if(!S.ac)return;musInit();if(!MUS.out)return;const c=S.ac,want=started&&S.on&&MUS.on&&!(G.over);MUS.out.gain.setTargetAtTime(want?.14:0,c.currentTime,.25);
   if(!want){MUS.next=0;return}const sp=60/MBPM/4;if(MUS.next<c.currentTime)MUS.next=c.currentTime+.06;
   while(MUS.next<c.currentTime+.16){try{musStep(MUS.next,MUS.n)}catch(e){}MUS.next+=sp;MUS.n++}}
+// ---------- team: geld naar een teamgenoot sturen
+const teammates=()=>{if(!G.pl)return[];const tm=teamOf(LOCAL),out=[];for(let o=0;o<PMAX;o++){const p=G.pl[o];if(o!==LOCAL&&p&&(p.kind==='human'||p.kind==='ai')&&!p.out&&teamOf(o)===tm)out.push(o)}return out};
+function renderTeamPanel(){const box=$('teampanel');if(box.hidden)return;const P=G.pl[LOCAL],mates=teammates();box.textContent='';const hd=document.createElement('div');hd.className='hd';hd.textContent='Geld sturen naar';box.appendChild(hd);
+  if(!mates.length){const d=document.createElement('div');d.className='tp';d.textContent='Je hebt geen teamgenoten in dit spel.';box.appendChild(d);return}
+  for(const o of mates){const row=document.createElement('div');row.className='tp';const i=document.createElement('i');i.style.background=TEAM[o].main;const b=document.createElement('b');b.textContent=playerName(o);row.append(i,b);
+    for(const a of[500,1000,2500]){const bt=document.createElement('button');bt.textContent='$'+a;bt.disabled=P.credits<a;bt.addEventListener('click',()=>{issue({t:'give',to:o,amt:a});sfx('click')});row.appendChild(bt)}box.appendChild(row)}}
 function toggleMus(){MUS.on=!MUS.on;$('b-mus').setAttribute('aria-pressed',String(MUS.on));
   // uit is meteen stil, ook de noten die al klaarstonden
   if(!MUS.on&&MUS.out&&S.ac){const g=MUS.out.gain,t=S.ac.currentTime;g.cancelScheduledValues(t);g.setValueAtTime(0,t)}try{localStorage.setItem('rd-mus',MUS.on?'1':'0')}catch(e){}}
@@ -1779,7 +1790,7 @@ const EVA_EN={promo:'Unit promoted',board:'Unit loaded',noland:'Cannot land ther
   sat:'Spy satellite online',gar:'Building garrisoned',engfix:'Building repaired',tech:'Tech building captured',techl:'Tech building lost',oil:'Oil derrick captured',oill:'Oil derrick lost',
   cap:'Building captured',capd:'Our building has been captured',drone:'Terror drone detected',blost:'Building lost',lost:'Unit lost',base:'Our base is under attack',kdown:'Kirov down',
   brug:'Bridge destroyed',brugok:'Bridge repaired',unl:'Unloading',money:'Insufficient funds',ready:'Construction complete',unit:'Unit ready',wave:'Enemy forces approaching',
-  gem:'Gems discovered',mind:'Unit acquired',mindl:'Unit lost',prim:'Primary building selected',paraon:'Paratroopers en route',sold:'Building sold',kirov:'Kirov airship detected',power:'Low power',droneoff:'Terror drone removed',crate:'Money crate',
+  gem:'Gems discovered',give:'Credits received',mind:'Unit acquired',mindl:'Unit lost',prim:'Primary building selected',paraon:'Paratroopers en route',sold:'Building sold',kirov:'Kirov airship detected',power:'Low power',droneoff:'Terror drone removed',crate:'Money crate',
   para:'Paratroopers ready',welcome:'Welcome back, commander'};
 const said={};
 function say(text,key,cool,voice=true,alert=false){key=key||text;cool=cool??3;if(G.t-(said[key]??-999)<cool)return false;said[key]=G.t;addMsg(text,alert);if(voice&&started)speak(EVA_EN[key]);return true}
@@ -2916,7 +2927,8 @@ function drawGhostBld(t){if(!mouse.inside)return;ctx.globalAlpha=.5;const b={x:m
 // ---------- minimap
 const mm=$('mm'),mc=mm.getContext('2d');let MMW=212,MMH=106,mmShroud=null,mmT=0;
 function mmGeo(){const sc=Math.min(MMW/(MAP*TW),MMH/(MAP*TH));return{sc,ox:(MMW-MAP*TW*sc)/2,oy:(MMH-MAP*TH*sc)/2}}
-function radarOn(){return!!G.pl&&G.blds.some(b=>b.o===LOCAL&&b.type==='radar'&&b.bt>=1)&&!G.pl[LOCAL].low}
+// de radar werkt als jij of een teamgenoot een werkende radarpost heeft
+function radarOn(){if(!G.pl)return false;const tm=teamOf(LOCAL);return G.blds.some(b=>b.type==='radar'&&b.bt>=1&&!b.dead&&b.o<PMAX&&teamOf(b.o)===tm&&G.pl[b.o]&&!G.pl[b.o].low&&!G.pl[b.o].out)}
 function mmDraw(){
   const on=radarOn();$('mm-off').hidden=on;if(!on)return;
   const{sc,ox,oy}=mmGeo(),w=MAP*TW*sc,h=MAP*TH*sc;
@@ -3090,6 +3102,8 @@ function applyCmd(o,c){
     case'para':{const P=G.pl[o];if(P.para===0&&num(c.x)&&num(c.y)&&c.x>=0&&c.y>=0&&c.x<MAP&&c.y<MAP)paraDrop(o,c.x,c.y);break}
     // primair gebouw: daar komt de productie van dat soort vandaan, zoals in RA2
     case'prim':{const b=bld(c.id);if(b&&b.o===o&&PRIM.has(b.type)&&b.bt>=1){for(const x of G.blds)if(x.o===o&&x.type===b.type)x.primary=false;b.primary=true;sayTo(o,'Primair gebouw ingesteld','prim',.5)}break}
+    case'give':{const to=c.to|0,P=G.pl[o],Q=G.pl[to];if(!P||!Q||to===o||to<0||to>=PMAX||Q.out||P.out||!(Q.kind==='human'||Q.kind==='ai')||teamOf(to)!==teamOf(o))break;
+      const a=Math.min(Math.max(0,c.amt|0),5000,Math.floor(P.credits));if(a<=0)break;P.credits-=a;Q.credits+=a;sayTo(to,playerName(o)+' stuurt je $'+a,'give',0);sayTo(o,'$'+a+' gestuurd naar '+playerName(to),'gave',0,false);break}
     case'repeat':{if(UT[c.type]){const P=G.pl[o];P.repeat=P.repeat||{};P.repeat[c.type]=!!c.on}break}
     case'rally':{const b=bld(c.id);if(b&&b.o===o&&num(c.x)&&num(c.y))b.rally={x:clamp(c.x,0,MAP),y:clamp(c.y,0,MAP)};break}
   }
@@ -3299,6 +3313,7 @@ function buildUI(){
   $('b-pause').addEventListener('click',togglePause);
   $('b-sp').addEventListener('click',()=>{audioInit();if(G.pl[LOCAL].para===0)setMode(mode&&mode.k==='para'?null:{k:'para'})});
   $('b-mus').setAttribute('aria-pressed',String(MUS.on));$('b-mus').addEventListener('click',toggleMus);
+  $('b-team').addEventListener('click',()=>{const p=$('teampanel');p.hidden=!p.hidden;$('b-team').setAttribute('aria-pressed',String(!p.hidden));renderTeamPanel()});
   $('b-snd').addEventListener('click',()=>{S.on=!S.on;$('b-snd').setAttribute('aria-pressed',String(S.on));try{if(!S.on)speechSynthesis.cancel()}catch(e){}});
 }
 function showTip(el,type){
@@ -3331,13 +3346,14 @@ function cameoCancel(type,cat){
   if(mode&&mode.k==='place'&&mode.type===type)setMode(null);
   issue({t:'cancel',type,cat});sfx('click');addMsg('Geannuleerd');
 }
-let uiAcc=0,dispC=0;
+let uiAcc=0,dispC=0,teamAcc=0;
 function uiTick(dt){
   if(!G.pl)return;
   {const f=G.pl[LOCAL]&&G.pl[LOCAL].fac==='soviet'?'soviet':'allies';if(document.body.dataset.fac!==f)document.body.dataset.fac=f}
   const P=G.pl[LOCAL];dispC+=(P.credits-dispC)*Math.min(1,dt*10);if(Math.abs(P.credits-dispC)<1)dispC=P.credits;
   $('credits').textContent='$ '+Math.floor(dispC);
   uiAcc+=dt;if(uiAcc<.1)return;uiAcc=0;
+  {const has=started&&teammates().length>0;$('b-team').disabled=!has;if(!has&&!$('teampanel').hidden){$('teampanel').hidden=true;$('b-team').setAttribute('aria-pressed','false')}teamAcc=(teamAcc||0)+1;if(teamAcc%5===0)renderTeamPanel()}
   const pw=power(LOCAL),scale=Math.max(pw.prod,pw.use,100)*1.15;
   $('pw-fill').style.height=`calc(${pw.prod/scale*100}% - 4px)`;$('pw-fill').style.background=pw.use>pw.prod?'var(--bad)':pw.use>pw.prod*.85?'var(--warn)':'var(--ok)';
   $('pw-use').style.bottom=`${pw.use/scale*100}%`;$('pw-num').textContent=`${pw.use} / ${pw.prod}`;
