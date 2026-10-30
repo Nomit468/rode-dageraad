@@ -954,6 +954,7 @@ function newGame(s,cfg,populate=true){
     if(!active(o))continue;
     const st=START[o];mkBld(o,'yard',st.x,st.y,true);
     // op grote kaarten duurt de reis naar de vijand lang; daarom vertrekt de eerste golf daar eerder
+    // G.ai[o].old=true geeft de computer van vóór 2026-10-30, handig om in proefpotjes oud tegen nieuw te laten spelen
     if(isAI(o))G.ai[o]={think:2+o*.3,waveT:[230,160,105][cfg.diff]*(1-.4*bigK())+o*12,waveSize:[4,5,6][cfg.diff],waves:0,alert:null};
     const cx=st.x+1.5,cy=st.y+1.5,dx=MAP/2-cx,dy=MAP/2-cy,l=Math.hypot(dx,dy),bx=cx+dx/l*4.5,by=cy+dy/l*4.5;
     (G.pl[o].fac==='soviet'?['conscript','conscript','conscript','conscript','rhino','rhino']:['gi','gi','gi','tank','tank']).forEach((t,i)=>{const w=nearestWalkable(Math.floor(bx+(i%3)-1),Math.floor(by+Math.floor(i/3)),5);if(w){const u=mkUnit(o,t,w.x+.5,w.y+.5);u.face=u.tur=Math.atan2(dy,dx)}});
@@ -1073,8 +1074,8 @@ function moveAlong(u,dt){
   return false;
 }
 function nearestEnemy(x,y,o,r,W){
-  let best=null,bs=1e9;jungleUpdate();
-  for(const e of G.units){if(!enemy(o,e.o)||e.hp<=0||jungleHid(e,o)||(e.type==='spy'&&W.kind!=='melee')||e.disg||e.st==='tele'||(W.kind==='latch'&&e.drone)||(W.kind==='melee'&&e.type==='drone')||(W.kind==='ivan'&&G.bombs.some(b=>b.id===e.id)))continue;const eff=W.vs[armor(e)]||0;if(eff===0)continue;const d=Math.hypot(e.x-x,e.y-y);if(d>r||(W.min&&d<W.min))continue;const s=d+(eff<.3?4:0)-(UT[e.type].wpn?.5:0);if(s<bs){bs=s;best=e}}
+  let best=null,bs=1e9;jungleUpdate();const sm=isAI(o)&&G.ai[o]&&!G.ai[o].old;
+  for(const e of G.units){if(!enemy(o,e.o)||e.hp<=0||jungleHid(e,o)||(e.type==='spy'&&W.kind!=='melee')||e.disg||e.st==='tele'||(W.kind==='latch'&&e.drone)||(W.kind==='melee'&&e.type==='drone')||(W.kind==='ivan'&&G.bombs.some(b=>b.id===e.id)))continue;const eff=W.vs[armor(e)]||0;if(eff===0)continue;const d=Math.hypot(e.x-x,e.y-y);if(d>r||(W.min&&d<W.min))continue;const s=d+(eff<.3?4:0)-(UT[e.type].wpn?.5:0)-(sm?eff*1.5+(1-e.hp/UT[e.type].hp)*1.5:0);if(s<bs){bs=s;best=e}}
   if(!W.vs.bld)return best;
   for(const e of G.blds){if(!enemy(o,e.o)||e.hp<=0||BT[e.type].wall||(W.kind==='ivan'&&G.bombs.some(b=>b.id===e.id)))continue;const d=distPE(x,y,e);if(d>r||(W.min&&d<W.min))continue;const s=d+2.5-(BT[e.type].wpn?1.5:0);if(s<bs){bs=s;best=e}}
   return best;
@@ -1558,13 +1559,17 @@ function toCenter(b){const cx=b.x+b.w/2,cy=b.y+b.h/2,dx=MAP/2-cx,dy=MAP/2-cy,l=M
 const bigK=()=>clamp((MAP-220)/70,0,1);
 function aiMcv(o,u){
   if(u.st!=='idle')return;
-  if(mcvSpot(u)){mcvDeploy(u);return}
+  const A=G.ai[o],ex=A&&A.exp&&!A.exp.none&&!A.exp.yard&&G.blds.some(b=>b.o===o&&b.type==='yard'&&!b.dead)?A.exp:null;
+  if(ex&&Math.hypot(u.x-ex.x,u.y-ex.y)>4){if((u.expTry=(u.expTry||0)+1)<6){applyCmd(o,{t:'move',ids:[u.id],x:ex.x,y:ex.y});return}}
+  if(mcvSpot(u)){mcvDeploy(u);if(ex&&u.dead){const y=G.blds.find(b=>b.o===o&&b.type==='yard'&&!b.dead&&Math.hypot(b.x+1.5-u.x,b.y+1.5-u.y)<3);if(y){ex.yard=y.id;ex.ref=1;ex.def=2;G.pl[o].q.bld.unshift({type:'refinery',spent:0})}}return}
   for(let r=2;r<12;r++)for(let k=0;k<16;k++){const a=k/16*Math.PI*2,x=(u.x+Math.cos(a)*r|0)+.5,y=(u.y+Math.sin(a)*r|0)+.5;if(x<2||y<2||x>MAP-2||y>MAP-2||!walkable(x|0,y|0)||!mcvSpot({x,y}))continue;applyCmd(o,{t:'move',ids:[u.id],x,y});return}
 }
 function aiRally(o){const b=aiBase(o);if(!b)return{x:MAP/2,y:MAP/2};const c=toCenter(b),r=5.5+bigK()*7;return{x:c.cx+c.ux*r,y:c.cy+c.uy*r}}
 function aiSpot(o,type){
-  const T=BT[type],base=aiBase(o);if(!base)return null;
-  const c=toCenter(base),cx=base.x+1,cy=base.y+1,isDef=T.cat==='def';let best=null,bs=1e9;
+  const T=BT[type],A=G.ai[o],isDef=T.cat==='def';let base=aiBase(o);if(!base)return null;
+  const ey=A&&A.exp&&A.exp.yard?ents.get(A.exp.yard):null,atExp=!!ey&&!ey.dead&&(type==='refinery'?A.exp.ref>0:isDef&&A.exp.def>0&&!T.wall);
+  if(atExp){base=ey;if(type==='refinery')A.exp.ref--;else A.exp.def--}
+  const c=toCenter(base),cx=base.x+1,cy=base.y+1;let best=null,bs=1e9;
   for(let r=isDef?3:2;r<(isDef?11:14);r++){
     for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
       if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;const x=cx+dx,y=cy+dy;
@@ -1590,21 +1595,28 @@ function aiTick(o,dt){
   const pw=power(o);
   const next=cat=>{
     if(cat==='bld'&&pw.use+50>pw.prod&&(cnt.power||0)<9&&(cnt.power||0)>0)return'power';
+    // meer geld: de tweede raffinaderij komt meteen na de fabriek in plaats van pas na het techcentrum
+    if(cat==='bld'&&!A.old&&cnt.factory&&(cnt.refinery||0)<2&&!G.blds.some(b=>b.o===o&&b.type==='refinery'&&b.bt<1))return'refinery';
     const tally={};for(const t of AI_ORDER){tally[t]=(tally[t]||0)+1;if(BT[t].cat!==cat||!sideOk(o,BT[t]))continue;if(t==='shipyard'){if(A.water===undefined)A.water=!!aiSpot(o,'shipyard');if(!A.water)continue}if((cnt[t]||0)+(G.blds.some(b=>b.o===o&&b.type===t&&b.bt<1)?1:0)<tally[t]&&reqMet(o,BT[t].req))return t}
     return null;
   };
   if(!P.q.bld.length){const t=next('bld');if(t)P.q.bld.push({type:t,spent:0})}
   if(!P.q.def.length&&G.t>[150,90,50][G.diff]){const t=next('def');if(t)P.q.def.push({type:t,spent:0})}
   const mine=G.units.filter(u=>u.o===o);
+  // wat heeft de vijand? Gemeten in geld, zodat tien honden niet zwaarder wegen dan drie tanks
+  if(!A.old){let i=0,v=0,a=0;for(const u of G.units){if(u.dead||u.o>=PMAX||!enemy(o,u.o))continue;const T=UT[u.type];if(T.air)a+=T.cost;else if(T.cat==='inf')i+=T.cost;else if(!T.sea&&u.type!=='harv'&&u.type!=='mcv')v+=T.cost}const sum=i+v+a||1;A.mix={inf:i/sum,veh:v/sum,air:a>2500?a/sum:0}}
+  if(!A.old&&A.mix&&A.mix.air>.25&&!P.q.def.length&&(cnt.aa||0)<2&&sideOk(o,BT.aa)&&reqMet(o,BT.aa.req))P.q.def.push({type:'aa',spent:0});
+  // uitbreiden: met een tweede MCV naar een rijk ertsveld dat dichter bij huis ligt dan bij de vijand
+  if(!A.old&&G.diff>0&&!A.exp&&G.t>[0,600,420][G.diff]&&cnt.factory&&cnt.yard===1&&P.credits>4000&&reqMet(o,UT.mcv.req)&&!mine.some(u=>u.type==='mcv')){const sp=aiExpSpot(o);A.exp=sp?{x:sp.x,y:sp.y,yard:0,ref:0,def:0}:{none:true};if(sp)P.q.veh.unshift({type:'mcv',spent:0})}
   // bouwwerf kwijt? Dan een nieuwe MCV uit de fabriek, net als in RA2
   if(!cnt.yard&&cnt.factory&&reqMet(o,UT.mcv.req)&&!mine.some(u=>u.type==='mcv')&&!P.q.veh.some(i=>i.type==='mcv'))P.q.veh.unshift({type:'mcv',spent:0});
-  const harvs=mine.filter(u=>u.type==='harv').length,wantH=Math.min(4,(cnt.refinery||0)*2);
+  const harvs=mine.filter(u=>u.type==='harv').length,wantH=Math.min(A.old?4:6,(cnt.refinery||0)*2);
   if(cnt.factory&&harvs<wantH&&!P.q.veh.some(i=>i.type==='harv'))P.q.veh.unshift({type:'harv',spent:0});
   const reserve=P.q.bld.length?500:0;
   if(cnt.barracks&&P.q.inf.length<2&&P.credits>300+reserve){
     const hasC=mine.some(u=>u.type==='cmdo')||P.q.inf.some(i=>i.type==='cmdo');
     const r=Math.random(),spec={uk:cnt.radar&&'sniper',iraq:cnt.radar&&'desolator',cuba:'terror'}[P.nat];
-    const base=sov?'conscript':'gi';P.q.inf.push({type:sov&&cnt.radar&&r<.07?'ivan':!sov&&cnt.lab&&r<.08?'chrono':cnt.lab&&!hasC&&P.credits>1500&&sideOk(o,UT.cmdo)?'cmdo':spec&&r<.3?spec:sov&&cnt.radar&&r<.42?'tesltrp':!sov&&cnt.radar&&r<.4?'rocketeer':r<.6?base:r<.85?'rocket':'dog',spent:0})}
+    const base=sov?'conscript':'gi',mx=!A.old&&A.mix,cnr=mx&&r<.45?(mx.veh>.5||mx.air>.25?'rocket':mx.inf>.6?base:null):null;P.q.inf.push({type:cnr||(sov&&cnt.radar&&r<.07?'ivan':!sov&&cnt.lab&&r<.08?'chrono':cnt.lab&&!hasC&&P.credits>1500&&sideOk(o,UT.cmdo)?'cmdo':spec&&r<.3?spec:sov&&cnt.radar&&r<.42?'tesltrp':!sov&&cnt.radar&&r<.4?'rocketeer':r<.6?base:r<.85?'rocket':'dog'),spent:0})}
   if(cnt.factory&&P.q.veh.length<2&&P.credits>800+reserve){
     const opts=['tank','tank','rhino','rhino','ifv','flak'];if(cnt.radar)opts.push('mirage');if(cnt.radar)opts.push('arty','tesla','tesla','rhino');if(cnt.lab)opts.push('prism','prism','mammoth','mammoth');
     const nk=mine.filter(u=>u.type==='kirov').length;
@@ -1612,7 +1624,8 @@ function aiTick(o,dt){
     if(sov)opts.push('drone');if(cnt.radar)opts.push('siege');
     if(cnt.airfield&&jetCount(o)+P.q.veh.filter(i=>UT[i.type].jet).length<padCount(o))opts.push('harrier','harrier','eagle','eagle');
     if(P.nat==='germany')opts.push('tdest','tdest');if(P.nat==='netherlands'&&cnt.radar)opts.push('pzh','pzh');if(P.nat==='italy')opts.push('bers','bers');if(P.nat==='sweden')opts.push('stank','stank','stank');if(cnt.radar&&P.nat==='libya')opts.push('demo');
-    const ok=opts.filter(t=>sideOk(o,UT[t]));
+    if(!A.old&&A.mix){const mx=A.mix;if(mx.air>.25)opts.push(...(sov?['flak','flak']:['ifv','ifv']));if(mx.inf>.5)opts.push(...(sov?['flak','tesla','tesla']:['mirage','ifv','prism']));if(mx.veh>.5)opts.push(...(sov?['rhino','rhino','tesla']:['tank','tank','mirage']))}
+    const ok=opts.filter(t=>sideOk(o,UT[t])&&(A.old||reqMet(o,UT[t].req)));
     if(sov&&cnt.radar&&!nk&&G.t>[420,300,220][G.diff]&&!P.q.veh.some(i=>i.type==='kirov'))P.q.veh.push({type:'kirov',spent:0});
     else if(ok.length)P.q.veh.push({type:ok[Math.random()*ok.length|0],spent:0})}
   if(cnt.shipyard&&P.q.sea.length<1&&P.credits>900&&mine.filter(u=>UT[u.type].sea).length<6){const op=(sov?['sub','sub','dread']:['destroyer','destroyer','carrier']).filter(t=>reqMet(o,UT[t].req));if(op.length)P.q.sea.push({type:op[Math.random()*op.length|0],spent:0})}
@@ -1647,10 +1660,34 @@ function aiTick(o,dt){
   if(A.wave&&G.t-A.wave.t>15){const live=A.wave.ids.map(id=>ents.get(id)).filter(u=>u&&!u.dead&&u.hp>0);const hp=live.reduce((a,u)=>a+u.hp,0);
     if(!live.length)A.wave=null;else if(hp<A.wave.hp0*.35&&!A.wave.back){A.wave.back=true;const r=aiRally(o);for(const u of live){u.mission=false}orderGroup(live,r.x,r.y,false)}}
   if(A.alert&&G.t-A.alert.t<6){const resp=home.filter(u=>u.st==='idle');if(resp.length)orderGroup(resp,A.alert.x,A.alert.y,true);A.alert=null}
+  if(A.old)return;
+  // basis onder vuur terwijl het leger weg is? Dan komt de golf terug
+  const b0=aiBase(o);if(b0&&A.wave&&!A.wave.back){const cx=b0.x+b0.w/2,cy=b0.y+b0.h/2;let th=0;for(const u of G.units)if(!u.dead&&u.o<PMAX&&enemy(o,u.o)&&UT[u.type].wpn&&Math.hypot(u.x-cx,u.y-cy)<16)th+=UT[u.type].cost;
+    const hm=home.reduce((a,u)=>a+UT[u.type].cost,0);if(th>1500&&th>hm*1.3){const live=A.wave.ids.map(id=>ents.get(id)).filter(u=>u&&!u.dead&&u.hp>0);A.wave.back=true;for(const u of live)u.mission=false;orderGroup(live,cx,cy,true)}}
+  // beschadigde gebouwen repareren als er geld over is en de basis rustig is; bij geldgebrek gaat het leger voor
+  const calm=!A.threat||G.t-A.threat.t>15;for(const b of G.blds){if(b.o!==o||b.dead||b.bt<1)continue;if(b.rep&&P.credits<800)b.rep=false;else if(!b.rep&&calm&&P.credits>2000&&b.hp<BT[b.type].hp*.6)b.rep=true}
 }
+// het rijkste ertsveld waar een tweede basis kan staan: niet bij de eigen basis, en ruim weg van de vijand
+function aiExpSpot(o){
+  const b0=aiBase(o);if(!b0)return null;const hx=b0.x+1.5,hy=b0.y+1.5,foes=G.blds.filter(b=>enemy(o,b.o)&&!b.dead&&b.o<PMAX);let best=null,bs=-1e9;
+  for(let y=4;y<MAP-4;y+=4)for(let x=4;x<MAP-4;x+=4){if(!ore[y*MAP+x])continue;const dh=Math.hypot(x-hx,y-hy);if(dh<20)continue;
+    let de=1e9;for(const b of foes)de=Math.min(de,Math.hypot(b.x-x,b.y-y));if(de<22||de<dh*.9)continue;
+    if(G.blds.some(b=>b.o===o&&b.type==='refinery'&&Math.hypot(b.x-x,b.y-y)<12))continue;
+    let sum=0;for(let yy=y-5;yy<=y+5;yy++)for(let xx=x-5;xx<=x+5;xx++)sum+=ore[yy*MAP+xx]||0;
+    const sc=sum-dh*40;if(sum>4000&&sc>bs){bs=sc;best={x,y}}}
+  if(!best)return null;
+  // niet midden op het erts uitklappen: een paar tegels richting huis
+  const l=Math.hypot(hx-best.x,hy-best.y)||1;return{x:best.x+(hx-best.x)/l*5,y:best.y+(hy-best.y)/l*5};
+}
+// slimmer aanvallen: liever een raffinaderij, centrale of fabriek dan de eerste toren, en weg van zware verdediging
+const AI_VAL={refinery:14,nukepow:13,power:10,factory:10,yard:9,radar:7,lab:7,barracks:6,airfield:6,purifier:6,cloning:5,indplant:5,shipyard:4};
 function enemyTarget(o,from){
   let best=null,bd=1e9;
-  for(const b of G.blds)if(enemy(o,b.o)){const d=Math.hypot(b.x-from.x,b.y-from.y)-(BT[b.type].wpn?3:0);if(d<bd){bd=d;best={x:b.x+b.w/2,y:b.y+b.h/2,o:b.o}}}
+  if(G.ai[o]&&!G.ai[o].old){const defs=G.blds.filter(b=>enemy(o,b.o)&&!b.dead&&BT[b.type].wpn);
+    for(const b of G.blds){if(!enemy(o,b.o)||b.dead||BT[b.type].wall)continue;let s=Math.hypot(b.x-from.x,b.y-from.y)-(AI_VAL[b.type]||0)*.8+(BT[b.type].wpn?4:0);
+      for(const q of defs)if(q!==b&&q.o===b.o&&Math.hypot(q.x-b.x,q.y-b.y)<8)s+=3;
+      if(s<bd){bd=s;best={x:b.x+b.w/2,y:b.y+b.h/2,o:b.o}}}}
+  else for(const b of G.blds)if(enemy(o,b.o)){const d=Math.hypot(b.x-from.x,b.y-from.y)-(BT[b.type].wpn?3:0);if(d<bd){bd=d;best={x:b.x+b.w/2,y:b.y+b.h/2,o:b.o}}}
   if(!best)for(const u of G.units)if(enemy(o,u.o)){const d=Math.hypot(u.x-from.x,u.y-from.y);if(d<bd){bd=d;best={x:u.x,y:u.y,o:u.o}}}
   return best;
 }
@@ -3512,7 +3549,7 @@ function chatOpen(){if(!started)return;$('chatbar').hidden=false;$('chatto').tex
 function chatClose(){$('chatbar').hidden=true;$('chatin').blur()}
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-test10-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-test11-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',weather:'var',seed:1,online:false,slots:[],pending:[]};
