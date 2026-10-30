@@ -1406,9 +1406,13 @@ function kill(e,src){
 }
 
 // ---------- bruggen
+// loopt de route van deze eenheid ergens over een kapotte brug?
+function overDown(u){let x=u.x,y=u.y;for(const w of u.path){const n=Math.ceil(Math.hypot(w.x-x,w.y-y)/.25);for(let i=1;i<=n;i++)if(terr[((y+(w.y-y)*i/n)|0)*MAP+((x+(w.x-x)*i/n)|0)]===BRDOWN)return true;x=w.x;y=w.y}return false}
 function breakBridge(br,src){
   if(br.down)return;br.down=true;br.hp=0;for(const i of br.tiles)terr[i]=BRDOWN;
   for(const u of G.units)if(!u.dead&&!UT[u.type].air&&!UT[u.type].sea&&terr[(u.y|0)*MAP+(u.x|0)]===BRDOWN)kill(u,src&&src.o>=0?src:null);
+  // wie al een route over de brug had, rekent die opnieuw uit, anders rijdt hij gewoon door over het water
+  for(const u of G.units)if(!u.dead&&u.path&&!UT[u.type].air&&!pwOf(u.type)&&overDown(u)){u.path=findPath(u.x,u.y,u.gx,u.gy);u.stuckN=0}
   for(let k=0;k<6;k++){const f=(k+.5)/6;fx({k:'ex',x:br.ax+(br.bx-br.ax)*f,y:br.ay+(br.by-br.ay)*f,z:4,s:1.1,life:.9,dl:k*.09,snd:k%2===0})}
   const x=cxE(br),y=cyE(br);debris(x,y,12);sfx('big',x,y);
   for(let o=0;o<PMAX;o++)if(active(o))sayTo(o,'Brug vernietigd','brug',3,true,false,[x,y]);
