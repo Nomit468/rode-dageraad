@@ -276,6 +276,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
           <button class="mini" id="copy">Kopieer uitnodiging</button>
         </div>
         <div class="status" id="lobby-status" role="status"></div>
+        <div id="pending"></div>
         <div class="fl">Spelvorm</div>
         <div class="seg" id="mode-seg">
           <button data-m="ffa">Ieder voor zich</button><button data-m="2v2">Twee teams</button><button data-m="coop">Samen tegen de computer</button>
@@ -292,7 +293,6 @@ body[data-fac="soviet"] #emblem .al{display:none}
         <div class="pvrow"><canvas id="map-pv" aria-label="Voorbeeld van de kaart met de startplekken"></canvas><button class="mini" id="map-new" type="button">Andere kaart</button></div>
         <div class="fl">Spelers</div>
         <div id="slots"></div>
-        <div id="pending"></div>
         <button class="go" id="start-btn">Start</button>
         <button class="link" id="leave-btn">Terug naar menu</button>
       </div>
@@ -3608,7 +3608,7 @@ function hostData(conn,d){
     if(started){conn.send({t:'denied',why:'Dit spel is al begonnen.'});setTimeout(()=>conn.close(),400);return}
     if(!L.slots.some(s=>s.kind==='open')){conn.send({t:'denied',why:'Het spel is vol.'});setTimeout(()=>conn.close(),400);return}
     if(L.pending.length>=6){conn.send({t:'denied',why:'Er wachten al te veel mensen.'});setTimeout(()=>conn.close(),400);return}
-    L.pending.push({conn,name,token,nat:String(d.nat||'')});conn.send({t:'wait'});sfx('click');renderLobby();return;
+    L.pending.push({conn,name,token,nat:String(d.nat||'')});conn.send({t:'wait'});sfx('click');renderLobby();$('pending').scrollIntoView({block:'nearest',behavior:'smooth'});return;
   }
   const slot=conn.slot;if(!(slot>0)||!L.slots[slot]||L.slots[slot].conn!==conn)return;
   if(d.t==='nat'&&!started&&NATIONS.hasOwnProperty(d.nat)){L.slots[slot].nat=d.nat;broadcastLobby();renderLobby()}
