@@ -481,6 +481,8 @@ const UT={
   hawk:{n:'Nighthawk',cat:'veh',side:'allies',air:true,heli:true,cap:5,alt:40,hp:210,spd:3.1,cost:1000,sight:9,wpn:'hawkmg',arm:'air',req:['factory','radar'],d:'Transporthelikopter met een boordschutter. Selecteer soldaten en klik op de Nighthawk: hij landt en neemt er vijf mee, over water en bergen heen. D laat ze weer uitstappen.'},
   siege:{n:'Belegeringshelikopter',cat:'veh',side:'soviet',air:true,heli:true,alt:40,hp:380,spd:2.7,cost:1100,sight:9,wpn:'chopmg',dep:'siegegun',arm:'air',req:['factory','radar'],d:'Sovjethelikopter met een mitrailleur tegen soldaten. Druk op D: hij landt en wordt een zwaar kanon met groot bereik, maar is dan een makkelijk doel. Nog eens D om weer op te stijgen.'},
   drone:{n:'Terreurdrone',cat:'veh',side:'soviet',hp:120,spd:3.4,cost:500,sight:6,wpn:'drone',arm:'inf',req:['factory'],d:'Snelle robotspin. Springt in een vijandelijk voertuig en sloopt het van binnenuit. Rijd met een aangevallen voertuig naar je wapenfabriek of naar een IFV met ingenieur om hem eruit te halen. Bijt ook soldaten, maar die schieten hem makkelijk kapot.'},
+  kdrone:{n:'Kamikazedrone',cat:'veh',air:true,alt:14,hp:60,spd:5,cost:300,sight:7,wpn:'kami',arm:'air',req:['factory'],d:'Klein, snel vliegend toestel dat zich op een doel stort en ontploft. Twee halen een tank neer; tegen soldaten en gebouwen doet hij minder. Alleen luchtafweer, de Flak-track, de IFV, raketsoldaten en rocketeers kunnen hem raken, en meestal is één treffer genoeg.'},
+  rdrone:{n:'Verkenningsdrone',cat:'veh',air:true,alt:72,hp:120,spd:4,cost:500,sight:14,arm:'air',req:['factory','radar'],d:'Zweeft hoog boven de kaart en kijkt twee keer zo ver als een tank. Heeft geen wapen. Stuur hem vooruit om de vijandelijke basis te bekijken voordat je aanvalt. Luchtafweer haalt hem in twee treffers neer.'},
 };
 const WP={
   rifle:{rng:4,dmg:20,rof:0.57,kind:'bullet',vs:{inf:1,veh:.25,bld:.22}},
@@ -530,6 +532,7 @@ const WP={
   rad:{rng:6,dmg:125,rof:2.83,kind:'rad',vs:{inf:1,veh:.3,bld:.1}},
   suicide:{rng:.7,dmg:300,kind:'suicide',splash:1.3,rof:1,vs:{inf:1,veh:.8,bld:.9}},
   demo:{rng:.9,dmg:900,kind:'suicide',splash:2.6,rof:1,vs:{inf:1,veh:1,bld:1}},
+  kami:{rng:.6,dmg:180,kind:'suicide',splash:.7,rof:1,vs:{inf:.6,veh:1,bld:.5}},
   tdgun:{rng:5,dmg:150,rof:1.98,kind:'shell',spd:15,vs:{inf:.15,veh:1.3,bld:.5}},
   eaglemsl:{rng:6,dmg:200,rof:.4,kind:'rocket',spd:16,vs:{inf:.45,veh:1.2,bld:.95,ship:.9}},
   harmsl:{rng:6,dmg:150,rof:.45,kind:'rocket',spd:15,vs:{inf:.45,veh:1.1,bld:.9,ship:.9}},
@@ -542,7 +545,7 @@ const WP={
   grand:{rng:13,min:2,dmg:150,rof:2.12,kind:'shell',spd:20,vs:{inf:.7,veh:1,bld:1}},
 };
 const CATS=['bld','def','inf','veh','sea'];
-const CAT_TYPES={bld:['power','refinery','barracks','factory','radar','airfield','lab','spysat','nukepow','cloning','indplant','purifier','shipyard'],def:['wall','bunker','tower','prismt','coil','aa','gap','gcannon'],inf:['gi','conscript','rocket','dog','eng','tesltrp','rocketeer','spy','ivan','sniper','desolator','terror','chrono','cmdo','seal','yuri'],veh:['harv','mcv','tank','rhino','ifv','flak','drone','mirage','tesla','tdest','pzh','bers','stank','arty','demo','hawk','siege','prism','mammoth','harrier','eagle','kirov'],sea:['destroyer','aegis','dolphin','carrier','sub','seascorp','squid','dread','amph']};
+const CAT_TYPES={bld:['power','refinery','barracks','factory','radar','airfield','lab','spysat','nukepow','cloning','indplant','purifier','shipyard'],def:['wall','bunker','tower','prismt','coil','aa','gap','gcannon'],inf:['gi','conscript','rocket','dog','eng','tesltrp','rocketeer','spy','ivan','sniper','desolator','terror','chrono','cmdo','seal','yuri'],veh:['harv','mcv','tank','rhino','ifv','flak','drone','kdrone','rdrone','mirage','tesla','tdest','pzh','bers','stank','arty','demo','hawk','siege','prism','mammoth','harrier','eagle','kirov'],sea:['destroyer','aegis','dolphin','carrier','sub','seascorp','squid','dread','amph']};
 const RATE={bld:150,def:150,inf:90,veh:130,sea:130};
 const AI_MUL=[.65,1,1.35];
 const defOf=t=>BT[t]||UT[t];
@@ -1122,6 +1125,8 @@ function updUnit0(u,dt){
     u.repath-=dt;if(!u.path||u.repath<=0){u.repath=1;setPath(u,cxE(t),cyE(t))}moveAlong(u,dt);if(UT[u.type].cat==='inf')u.tur=u.face;return}
   let wk=wkOf(u),W=WP[wk];u.cd=Math.max(0,u.cd-dt);u.scan-=dt;
   let t=u.tid?ents.get(u.tid):null;if(t&&(t.hp<=0||t.dead))t=null;
+  // de kamikazedrone duikt omlaag naarmate hij zijn doel nadert
+  if(u.type==='kdrone'){const z0=u.z??T.alt,want=u.st==='attack'&&t?clamp(distPE(u.x,u.y,t)*5,2,T.alt):T.alt;u.z=z0+clamp(want-z0,-30*dt,20*dt)}
   if(t){wk=wkOf(u,t);W=WP[wk]}
   if(u.st==='attack'&&!t){u.tid=0;if(u.resume){const r=u.resume;orderMove(u,r.x,r.y,true)}else{u.st='idle';u.path=null}}
   // een Kirov laat onderweg ook bommen vallen op vijanden waar hij overheen vliegt
@@ -1283,7 +1288,7 @@ function updHarv(u,dt){
 }
 function separate(dt){
   const us=G.units,n=us.length,k=Math.min(1,dt*12);
-  const rad=u=>UT[u.type].sea?(u.type==='carrier'||u.type==='dread'?.75:.55):u.type==='harv'?.45:u.type==='mcv'?.58:u.type==='mammoth'?.52:u.type==='kirov'?1.1:u.type==='rocketeer'?.3:u.type==='drone'?.24:UT[u.type].heli?.55:UT[u.type].cat==='inf'?.2:.38;
+  const rad=u=>UT[u.type].sea?(u.type==='carrier'||u.type==='dread'?.75:.55):u.type==='harv'?.45:u.type==='mcv'?.58:u.type==='mammoth'?.52:u.type==='kirov'?1.1:u.type==='rocketeer'?.3:u.type==='drone'?.24:u.type==='kdrone'?.18:u.type==='rdrone'?.3:UT[u.type].heli?.55:UT[u.type].cat==='inf'?.2:.38;
   const grp=u=>UT[u.type].air?(uz(u)<6?3:1):UT[u.type].sea?2:0;
   for(let i=0;i<n;i++){const a=us[i];if(a.dead)continue;const ra=rad(a),aa=grp(a);if(aa===3)continue;
     for(let j=i+1;j<n;j++){const b=us[j];if(b.dead||grp(b)!==aa)continue;let dx=b.x-a.x;if(dx>1.1||dx<-1.1)continue;let dy=b.y-a.y;if(dy>1.1||dy<-1.1)continue;
@@ -1311,7 +1316,8 @@ function fire(s,t,wk){
   const mx=sx+Math.cos(a)*off,my=sy+Math.sin(a)*off,hz=t.k==='b'?12:t.k==='br'||t.k==='g'?3:UT[t.type].air?Math.max(6,uz(t)):6,src={id:s.id,o:s.o};
   s.flash=.07;if(G.pl[s.o]&&G.pl[s.o].nat==='vietnam')s.jrev=G.t+2;
   if(W.kind==='bomb'){const[lx,ly]=leadPos(t,W.fall);G.proj.push({x:sx,y:sy,x0:sx,y0:sy,z:mz,z0:mz,tx:lx+(Math.random()-.5)*.5,ty:ly+(Math.random()-.5)*.5,tid:t.id,o:s.o,wk,ft:0,dist:1,dl:0,trail:0,aid:s.id});sfx('arty',sx,sy);return}
-  if(W.kind==='suicide'){kill(s,{o:s.o,id:s.id});return}
+  // de kamikazedrone stort zich precies op zijn doel, zodat de volle klap daar valt
+  if(W.kind==='suicide'){if(s.type==='kdrone'){s.x=tx;s.y=ty;s.z=1}kill(s,{o:s.o,id:s.id});return}
   if(s.type==='mirage')s.calm=-1.5;
   if(W.kind==='mind'){if(t.k!=='u'||UT[t.type].air||t.type==='drone'||t.mc)return;
     const old=s.ctrl&&ents.get(s.ctrl);if(old&&old.mc&&old.mc.by===s.id)mcRelease(old);
@@ -1406,7 +1412,7 @@ function kill(e,src){
   if(e.ctrl){const m=ents.get(e.ctrl);if(m&&m.mc&&m.mc.by===e.id)mcRelease(m)}
   e.hp=0;e.dead=true;G.anyDead=true;const x=cxE(e),y=cyE(e);
   if(e.k==='u'){
-    const wk=UT[e.type].wpn,boomer=wk&&WP[wk].kind==='suicide';
+    const wk=UT[e.type].wpn,boomer=wk&&WP[wk].kind==='suicide'&&!(UT[e.type].air&&!(src&&src.id===e.id));
     if(e.pax&&e.pax.length)G.st[e.o].lost+=e.pax.length;
     if(boomer){const W=WP[wk],big=e.type==='demo';boom(x,y,big?2.6:1.2);if(big)for(let i=0;i<4;i++)fx({k:'ex',x:x+(Math.random()-.5)*3,y:y+(Math.random()-.5)*3,z:6,s:1.6,life:.9,dl:i*.1});scorch(x,y,big?1.8:.8);debris(x,y,big?14:5);sfx('big',x,y);splashAt(x,y,W,e.o,{id:e.id,o:e.o},true)}
     else if(UT[e.type].air&&uz(e)>6){const z=uz(e);
@@ -1656,7 +1662,8 @@ function aiTick(o,dt){
     if(sov)opts.push('drone');if(cnt.radar)opts.push('siege');
     if(cnt.airfield&&jetCount(o)+P.q.veh.filter(i=>UT[i.type].jet).length<padCount(o))opts.push('harrier','harrier','eagle','eagle');
     if(P.nat==='germany')opts.push('tdest','tdest');if(P.nat==='netherlands'&&cnt.radar)opts.push('pzh','pzh');if(P.nat==='italy')opts.push('bers','bers');if(P.nat==='sweden')opts.push('stank','stank','stank');if(cnt.radar&&P.nat==='libya')opts.push('demo');
-    if(!A.old&&A.mix){const mx=A.mix;if(mx.air>.25)opts.push(...(sov?['flak','flak']:['ifv','ifv']));if(mx.inf>.5)opts.push(...(sov?['flak','tesla','tesla']:['mirage','ifv','prism']));if(mx.veh>.5)opts.push(...(sov?['rhino','rhino','tesla']:['tank','tank','mirage']))}
+    if(!A.old)opts.push('kdrone');
+    if(!A.old&&A.mix){const mx=A.mix;if(mx.air>.25)opts.push(...(sov?['flak','flak']:['ifv','ifv']));if(mx.inf>.5)opts.push(...(sov?['flak','tesla','tesla']:['mirage','ifv','prism']));if(mx.veh>.5)opts.push(...(sov?['rhino','rhino','tesla']:['tank','tank','mirage']),'kdrone','kdrone')}
     const ok=opts.filter(t=>sideOk(o,UT[t])&&(A.old||reqMet(o,UT[t].req)));
     if(sov&&cnt.radar&&!nk&&G.t>[420,300,220][G.diff]&&!P.q.veh.some(i=>i.type==='kirov'))P.q.veh.push({type:'kirov',spent:0});
     else if(ok.length)P.q.veh.push({type:ok[Math.random()*ok.length|0],spent:0})}
@@ -2613,6 +2620,23 @@ function drawHeli(c,pr,u,tm,t){
   for(let k=0;k<2;k++){const a=sp+k*Math.PI/2,ca=Math.cos(a)*22,sa=Math.sin(a)*11;c.beginPath();c.moveTo(r[0]-ca,r[1]-sa);c.lineTo(r[0]+ca,r[1]+sa);c.stroke()}
   dot(c,r,1.8,'#2a2d30');
 }
+// kamikazedrone: klein kruis met vier rotors en een springlading eronder; verkenningsdrone: grijze zeskoptor met camerabol en knipperlichten
+function drawUav(c,pr,u,tm,t){
+  const k=u.type==='kdrone',z0=uz(u),z=z0+Math.sin(t*(k?5:1.6)+u.id)*(k?1:2.2),f=u.face,co=Math.cos(f),si=Math.sin(f),[gx_,gy_]=pr(u.x,u.y,0);
+  const sh=Math.max(.35,1-z0/110);c.fillStyle=`rgba(0,0,0,${.28*sh})`;c.beginPath();c.ellipse(gx_+z0*.12,gy_+1,(k?7:12)*sh,(k?3:5)*sh,0,0,7);c.fill();
+  const E=(a,b,dz=0)=>pr(u.x+a*co-b*si,u.y+a*si+b*co,z+dz),n=k?4:6,R=k?.2:.3,body=k?'#3d4237':'#8a9098',ctr=E(0,0);
+  const tips=[];for(let i=0;i<n;i++){const a=(i+.5)/n*6.283;tips.push(E(Math.cos(a)*R,Math.sin(a)*R))}
+  for(const p of tips)line(c,ctr,p,shade(body,.7),k?1.6:2);
+  if(k){const w=E(.02,0,-3);line(c,ctr,w,'#2a2d30',2);dot(c,w,2.2,'#6b4a2a');dot(c,[w[0],w[1]-.6],.9,'#c9a46a')}
+  else{const cam=E(.08,0,-3.5);line(c,ctr,cam,'#2a2d30',1.4);dot(c,cam,2.6,'#1b1e22');dot(c,[cam[0]+.8,cam[1]-.6],.9,'#7fd2ff')}
+  c.fillStyle=shade(body,1.1);c.beginPath();c.ellipse(ctr[0],ctr[1],k?4.2:6.5,k?2.6:4,0,0,7);c.fill();
+  c.fillStyle=tm.main;c.beginPath();c.ellipse(ctr[0],ctr[1]-1,k?2.4:3.6,k?1.4:2.1,0,0,7);c.fill();
+  // draaiende rotors als doorzichtige schijven
+  for(let i=0;i<tips.length;i++){const p=tips[i];c.fillStyle='rgba(40,44,48,.35)';c.beginPath();c.ellipse(p[0],p[1]-1,k?4:5.5,k?1.7:2.3,0,0,7);c.fill();
+    const a=t*40+i*1.7;line(c,[p[0]-Math.cos(a)*(k?4:5.5),p[1]-1-Math.sin(a)*(k?1.7:2.3)],[p[0]+Math.cos(a)*(k?4:5.5),p[1]-1+Math.sin(a)*(k?1.7:2.3)],'rgba(20,22,25,.55)',.8)}
+  if(!k&&(t*1.5+u.id)%1<.15){dot(c,tips[0],1.6,'#ff4d3a');dot(c,tips[3],1.6,'#55ff7a')}
+  if(k&&u.st==='attack')dot(c,E(.12,0,1),1.2,(t*8|0)%2?'#ff3b2f':'#7a1410');
+}
 function drawDrone(c,pr,u,tm,t){
   const[sx,sy]=pr(u.x,u.y,0),co=Math.cos(u.face),si=Math.sin(u.face),ph=u.moving?t*22+u.id:0;
   c.fillStyle='rgba(0,0,0,.3)';c.beginPath();c.ellipse(sx+1,sy+1,7,3,0,0,7);c.fill();
@@ -2722,7 +2746,7 @@ function drawUnit(c,pr,u,t){const[gx_,gy_]=pr(u.x,u.y,0);
     const T=UT[u.type];if(T.cat==='veh'&&!T.air&&u.rkT!==undefined&&t-u.rkT<.3){const k=(1-(t-u.rkT)/.3)**2,[bx,by]=pr(u.x+Math.cos(u.tur),u.y+Math.sin(u.tur),0),l=Math.hypot(bx-gx_,by-gy_)||1;c.translate(-(bx-gx_)/l*k*1.4,-(by-gy_)/l*k*1.4-k*.5)}
     drawUnit0(c,pr,u,t);c.restore();c.globalAlpha=1}
   if(u.erase>0){c.globalCompositeOperation='lighter';c.fillStyle=`rgba(110,190,255,${Math.min(.7,u.erase*.8)})`;c.beginPath();c.ellipse(gx_,gy_-10*US,12*US,15*US,0,0,7);c.fill();c.globalCompositeOperation='source-over'}}
-function drawUnit0(c,pr,u,t){if(u.type==='spy'){if(enemy(LOCAL,u.o))drawInf(c,pr,{...u,type:'gi'},TEAM[LOCAL]||TEAM[0],t);else drawInf(c,pr,u,TEAM[u.o],t);return}const tm=TEAM[u.o];if(u.type==='dolphin'||u.type==='squid'){drawCreature(c,pr,u,tm,t);return}if(UT[u.type].sea){drawShip(c,pr,u,tm,t);return}if(u.type==='eagle'||u.type==='harrier')drawEagle(c,pr,u,tm,t);else if(UT[u.type].heli)drawHeli(c,pr,u,tm,t);else if(u.type==='drone')drawDrone(c,pr,u,tm,t);else if(u.type==='kirov')drawKirov(c,pr,u,tm,t);else if(u.type==='rocketeer')drawRocketeer(c,pr,u,tm,t);else if(u.type==='dog')drawDog(c,pr,u,tm,t);else if(u.type==='amph')drawAmph(c,pr,u,tm,t);else if(u.type==='bers')drawBike(c,pr,u,tm,t);else if(UT[u.type].cat==='inf')drawInf(c,pr,u,tm,t);else drawVeh(c,pr,u,tm,t)}
+function drawUnit0(c,pr,u,t){if(u.type==='spy'){if(enemy(LOCAL,u.o))drawInf(c,pr,{...u,type:'gi'},TEAM[LOCAL]||TEAM[0],t);else drawInf(c,pr,u,TEAM[u.o],t);return}const tm=TEAM[u.o];if(u.type==='dolphin'||u.type==='squid'){drawCreature(c,pr,u,tm,t);return}if(UT[u.type].sea){drawShip(c,pr,u,tm,t);return}if(u.type==='eagle'||u.type==='harrier')drawEagle(c,pr,u,tm,t);else if(UT[u.type].heli)drawHeli(c,pr,u,tm,t);else if(u.type==='drone')drawDrone(c,pr,u,tm,t);else if(u.type==='kdrone'||u.type==='rdrone')drawUav(c,pr,u,tm,t);else if(u.type==='kirov')drawKirov(c,pr,u,tm,t);else if(u.type==='rocketeer')drawRocketeer(c,pr,u,tm,t);else if(u.type==='dog')drawDog(c,pr,u,tm,t);else if(u.type==='amph')drawAmph(c,pr,u,tm,t);else if(u.type==='bers')drawBike(c,pr,u,tm,t);else if(UT[u.type].cat==='inf')drawInf(c,pr,u,tm,t);else drawVeh(c,pr,u,tm,t)}
 // dolfijn springt boven het water uit; de reuzeninktvis is een paars lijf met zwiepende tentakels
 function drawCreature(c,pr,u,tm,t){const f=u.face,co=Math.cos(f),si=Math.sin(f),[gx,gy]=pr(u.x,u.y,0);
   c.strokeStyle='rgba(220,240,255,.35)';c.lineWidth=1;const r=(t*1.2+u.id)%1;c.beginPath();c.ellipse(gx,gy,8+r*8,(8+r*8)*.45,0,0,7);c.stroke();
@@ -3401,7 +3425,7 @@ function drawCameo(cvs,type){
     BDRAW[type](c,pr,{x:0,y:0,w:T.w,h:T.h,tur:Math.PI*.3,flash:0,o:0,sv:!!(G.pl&&G.pl[LOCAL]&&G.pl[LOCAL].fac==='soviet')},TEAM[0],1,1.2,false);c.restore();
   }else{
     // soldaten van dichtbij, voertuigen groot in beeld
-    const T=UT[type],inf=T.cat==='inf',big=type==='mammoth'||type==='harv'||type==='mcv'||type==='arty',s=T.sea?(type==='carrier'||type==='dread'?.62:.8):type==='kirov'?.5:type==='eagle'||type==='harrier'?1.25:T.heli?.95:type==='drone'?1.6:type==='rocketeer'?1.5:inf?1.6:big?1.0:1.15;
+    const T=UT[type],inf=T.cat==='inf',big=type==='mammoth'||type==='harv'||type==='mcv'||type==='arty',s=T.sea?(type==='carrier'||type==='dread'?.62:.8):type==='kirov'?.5:type==='eagle'||type==='harrier'?1.25:T.heli?.95:type==='drone'?1.6:type==='kdrone'?1.9:type==='rdrone'?1.2:type==='rocketeer'?1.5:inf?1.6:big?1.0:1.15;
     c.save();c.translate(W/2+(inf?-3:0),air?H*.6+T.alt*s*US:H*(inf?.9:.7));c.scale(s,s);
     if(!air){c.fillStyle=T.sea?'rgba(10,30,50,.3)':'rgba(0,0,0,.24)';c.beginPath();c.ellipse(2,1.5,inf?8:T.sea?44:26,inf?3:T.sea?15:10,0,0,7);c.fill()}
     drawUnit(c,pr,{x:0,y:0,type,o:0,face:.35,tur:.35,moving:false,flash:0,cargo:type==='harv'?400:0,load:type==='harv'?400:0,id:1},0);c.restore();
@@ -3587,7 +3611,7 @@ function chatOpen(){if(!started)return;$('chatbar').hidden=false;$('chatto').tex
 function chatClose(){$('chatbar').hidden=true;$('chatin').blur()}
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-v15-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-v16-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',weather:'clear',seed:1,online:false,slots:[],pending:[]};
