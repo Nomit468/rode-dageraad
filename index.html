@@ -3092,6 +3092,10 @@ function pick(sx,sy,all){
   let best=null,bd=1e9;
   for(const u of G.units){if(u.dead||!visibleE(u)||(!all&&hidMirage(u)))continue;const inf=UT[u.type].cat==='inf',k=infS(u),[ux,uy]=w2s(u.x,u.y,(uz(u)+(inf?8*k:6))*US),d=Math.hypot(ux-sx,uy-sy);if(d<(u.type==='kirov'?44:inf?9.5*k:18)*US&&d<bd){bd=d;best=u}}
   if(best)return best;
+  return pickBld(sx,sy);
+}
+// alleen gebouwen: repareren en verkopen moeten ook lukken als er eenheden voor of naast het gebouw staan
+function pickBld(sx,sy){
   for(let i=G.blds.length-1;i>=0;i--){const b=G.blds[i];if(b.dead||!visibleE(b))continue;const ht=BT[b.type].ht;for(const f of[0,.35,.7,1]){const[wx,wy]=s2w(sx,sy+ht*f);if(wx>=b.x&&wx<b.x+b.w&&wy>=b.y&&wy<b.y+b.h)return b}}
   return null;
 }
@@ -3107,13 +3111,13 @@ const ORD=new Map();
 const LINE_C={move:'#6fe08f',am:'#ffa040',att:'#ff4b3a',harv:'#f2c230',eng:'#5fb0ff'};
 function ordLines(us,tgt,kind){const now=performance.now();for(const u of us)ORD.set(u.id,{...tgt,c:LINE_C[kind],t:now})}
 function leftClick(sx,sy,ev){
-  audioInit();const[wx,wy]=s2w(sx,sy);const h=pick(sx,sy,mode&&mode.k==='am');const su=selUnits();
+  audioInit();const[wx,wy]=s2w(sx,sy);const h=mode&&(mode.k==='repair'||mode.k==='sell')?pickBld(sx,sy):pick(sx,sy,mode&&mode.k==='am');const su=selUnits();
   const mine=e=>!!e&&e.o===LOCAL,foe=e=>!!e&&enemy(LOCAL,e.o)&&visibleE(e);
   if(mode){
     if(mode.k==='place'){placeBld();return}
     if(mode.k==='para'){if(wx>=0&&wy>=0&&wx<MAP&&wy<MAP&&expl[(wy|0)*MAP+(wx|0)]){issue({t:'para',x:r2(wx),y:r2(wy)});marker(wx,wy,'#7be08f');sfx('click');setMode(null)}else say('Kies een plek die je al hebt verkend','paraf',1.5,false);return}
     if(mode.k==='sell'){if(h&&h.k==='b'&&mine(h)){if(h.type==='yard')say('De bouwwerf verkoop je niet','noyard',2,false);else{issue({t:'sell',id:h.id});sfx('click')}}return}
-    if(mode.k==='repair'){if(h&&h.k==='b'&&mine(h)&&h.hp<BT[h.type].hp){issue({t:'rep',id:h.id});h.rep=!h.rep;sfx('click')}return}
+    if(mode.k==='repair'){if(h&&h.k==='b'&&mine(h)&&h.hp<BT[h.type].hp){issue({t:'rep',id:h.id});if(isGuest())h.rep=!h.rep;sfx('click')}return}
     if(mode.k==='am'){mode=null;const br=!h?pickBridge(sx,sy,false):null,bh=br?su.filter(u=>canHit(u,br)):[];
       if(bh.length){issue({t:'att',ids:idsOf(bh),tid:br.id});ordLines(bh,{tid:br.id},'att');marker(cxE(br),cyE(br),'#ff4b3a');sfx('click');return}
       if(foe(h)){issue({t:'att',ids:idsOf(su),tid:h.id});ordLines(su.filter(u=>canHit(u,h)),{tid:h.id},'att');marker(cxE(h),cyE(h),'#ff4b3a')}else{const mv=su.filter(u=>u.type!=='harv');issue({t:'move',ids:idsOf(mv),x:r2(wx),y:r2(wy),am:1});ordLines(mv,{x:wx,y:wy},'am');marker(wx,wy,'#ff9a3a')}return}
