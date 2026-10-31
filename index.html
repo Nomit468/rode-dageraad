@@ -93,10 +93,10 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 #msgs{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;z-index:3}
 .msg{font-family:var(--f-display);font-weight:700;font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:#bfe0ff;background:rgba(4,10,18,.72);border:1px solid rgba(63,140,255,.45);padding:4px 12px;transition:opacity .6s}
 .msg.alert{color:#ffd0c8;border-color:rgba(224,64,47,.6)}
-#chatlog{position:absolute;left:10px;bottom:calc(84px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:3px;pointer-events:none;z-index:3;max-width:min(520px,70%)}
+#chatlog{position:absolute;left:10px;bottom:calc(59px + var(--lgh,25px) + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:3px;pointer-events:none;z-index:3;max-width:min(520px,70%)}
 .cm{font-size:14px;color:#e6eef6;background:rgba(4,10,18,.78);padding:3px 9px;border-left:3px solid var(--c,#3f8cff);transition:opacity .8s}
 .cm b{color:var(--c)}.cm i{font-style:normal;color:#9fb3c7;margin-right:5px}
-#chatbar{position:absolute;left:10px;bottom:calc(44px + env(safe-area-inset-bottom,0px));z-index:4;display:flex;align-items:center;gap:8px;width:min(520px,70%);background:rgba(4,10,18,.92);border:1px solid #4d6884;padding:4px 8px}
+#chatbar{position:absolute;left:10px;bottom:calc(19px + var(--lgh,25px) + env(safe-area-inset-bottom,0px));z-index:4;display:flex;align-items:center;gap:8px;width:min(520px,70%);background:rgba(4,10,18,.92);border:1px solid #4d6884;padding:4px 8px}
 #chatto{background:none;border:1px solid #4d6884;color:var(--amber);font:inherit;font-weight:700;font-size:13px;padding:2px 8px;cursor:pointer;white-space:nowrap}
 #chatin{flex:1;min-width:0;background:transparent;border:0;color:#fff;font:inherit;font-size:14px;outline:none}
 .msg.fade{opacity:0}
@@ -231,7 +231,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
     <div id="msgs" aria-live="polite"></div>
     <div id="chatlog" aria-live="polite"></div>
     <div id="chatbar" hidden><button type="button" id="chatto" title="Tab wisselt tussen iedereen en je team">Iedereen</button><input id="chatin" maxlength="120" autocomplete="off" aria-label="Chatbericht" placeholder="Bericht, Enter verstuurt, Tab: iedereen of team, Esc sluit"></div>
-    <div id="legend"><kbd>Klik</kbd> selecteren en bevelen · <kbd>Sleep</kbd> kader · <kbd>2 vingers</kbd> schuiven · <kbd>A</kbd> aanval onderweg · <kbd>D</kbd> ingraven, uitstappen · <kbd>S</kbd> stop · <kbd>H</kbd> basis · <kbd>T</kbd> zelfde soort · <kbd>G</kbd> bewaken · <kbd>X</kbd> uiteen · <kbd>Shift+1–9</kbd> groep · <kbd>P</kbd> pauze</div>
+    <div id="legend"><kbd>Klik</kbd> selecteren en bevelen · <kbd>Sleep</kbd> kader · <kbd>2 vingers</kbd> schuiven · <kbd>A</kbd> aanval onderweg · <kbd>D</kbd> ingraven, uitstappen · <kbd>S</kbd> stop · <kbd>H</kbd> basis · <kbd>T</kbd> zelfde soort · <kbd>G</kbd> bewaken · <kbd>X</kbd> uiteen · <kbd>Shift+1–9</kbd> groep · <kbd>Enter</kbd> chat · <kbd>Rechtsklik</kbd> bouwknop annuleren · <kbd>P</kbd> pauze</div>
     <div id="pausebar" hidden>GEPAUZEERD</div>
     <div id="roster" hidden aria-label="Spelers"></div>
 
@@ -272,6 +272,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
           <dt>B</dt><dd>baken zetten op de plek van de muis, voor je teamgenoten</dd>
           <dt>Dubbelklik op gebouw</dt><dd>een kazerne, wapenfabriek of scheepswerf primair maken: daar komt de productie uit</dd>
           <dt>Tab</dt><dd>naar het volgende tabblad van de bouwbalk (Shift + Tab terug)</dd>
+          <dt>Rechtsklik op knop in bouwbalk</dt><dd>bouwen annuleren: één van die soort uit de wachtrij, je krijgt het geld terug dat er al in zat (op de touchpad: tik met twee vingers)</dd>
           <dt>Ctrl/Cmd + klik op eenheid in bouwbalk</dt><dd>die eenheid steeds opnieuw laten bouwen (∞); nog eens om te stoppen</dd>
           <dt>Rechtsklik op radar</dt><dd>de geselecteerde eenheden daarheen sturen</dd>
           <dt>T</dt><dd>alle eenheden van dezelfde soort als je selectie in beeld kiezen, twee keer snel T voor de hele kaart. Dubbelklikken op een eenheid kiest ook de zelfde soort in beeld</dd>
@@ -3069,6 +3070,8 @@ mm.addEventListener('pointermove',e=>{if(e.buttons&1&&radarOn())mmJump(e)});
 function clampCam(){cam.x=clamp(cam.x,-120,MAP*TW-VW+120);cam.y=clamp(cam.y,-120,MAP*TH-VH+120)}
 function centerOn(x,y){cam.x=(x-y)*HW+OX-VW/2;cam.y=(x+y)*HH-VH/2;clampCam()}
 function resize(){DPR=Math.min(2,window.devicePixelRatio||1);const r=$('view').getBoundingClientRect();const cx=cam.x+VW/2,cy=cam.y+VH/2;VW=Math.max(1,r.width);VH=Math.max(1,r.height);cv.width=Math.round(VW*DPR);cv.height=Math.round(VH*DPR);cv.style.width=VW+'px';cv.style.height=VH+'px';cam.x=cx-VW/2;cam.y=cy-VH/2;clampCam();
+  // de chat schuift mee omhoog als de hulpregel onderin over twee regels loopt
+  document.documentElement.style.setProperty('--lgh',Math.max(25,$('legend').offsetHeight)+'px');
   const m=mm.getBoundingClientRect();if(m.width){MMW=m.width;MMH=m.height;mm.width=Math.round(MMW*DPR);mm.height=Math.round(MMH*DPR);mmBase=null;mmShroud=null}}
 try{new ResizeObserver(resize).observe($('view'))}catch(e){window.addEventListener('resize',resize)}
 
