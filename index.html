@@ -161,6 +161,14 @@ button:focus-visible{outline:2px solid var(--amber);outline-offset:1px}
 #roster .ro.me{box-shadow:inset 0 0 0 1px rgba(255,255,255,.3)}
 #roster .ro.out{opacity:.45;text-decoration:line-through}
 @media (max-width:520px){.seg{grid-template-columns:1fr}.seg4{grid-template-columns:1fr 1fr}.menu-btns{grid-template-columns:1fr}.join-row{grid-template-columns:1fr}}
+.onl-none{font-size:13px;color:var(--dim);padding:2px 0}
+#online{display:grid;gap:4px;margin:0 0 14px}
+.onl{display:flex;align-items:center;gap:8px;padding:6px 10px;background:#0b1219;border:1px solid #26384a;font-size:15px}
+.onl i{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 6px var(--ok);flex:none}
+.onl b{font-weight:700;white-space:nowrap}
+.onl span{flex:1;min-width:0;color:var(--dim);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.onl.open{border-color:#5a7a2c;background:#1d2a12}
+.onl .mini{height:26px}
 .keys{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:0 0 18px;font-size:14px;color:#b7c7d6}
 .keys dt{font-weight:700;color:#fff;white-space:nowrap}
 .keys dd{margin:0}
@@ -244,6 +252,8 @@ body[data-fac="soviet"] #emblem .al{display:none}
           <button class="go2" id="join-btn">Meedoen</button>
         </div>
         <div class="err" id="menu-err" hidden></div>
+        <div class="fl">Nu online</div>
+        <div id="online" aria-live="polite"><div class="onl-none">Even kijken wie er is…</div></div>
         <div class="note" id="touch-note" hidden>Dit spel is gemaakt voor een laptop of computer met muis. Op een telefoon of tablet werken slepen en rechtsklikken niet goed.</div>
         <dl class="keys">
           <dt>Linkermuis</dt><dd>selecteren, verplaatsen en aanvallen</dd>
@@ -3834,6 +3844,50 @@ function drawMapPreview(){const cv=$('map-pv');if(!cv||!terr||terr.length!==N)re
 function previewMap(k){const l=LOCAL;LOCAL=0;newGame(seed,{diff:1,mode:'ffa',map:k,slots:PREVIEW_SLOTS});LOCAL=l;resize()}
 
 // ---------- start
+// ---------- wie is er online: de eerste die de pagina opent, claimt een vaste naam bij de verbindingsdienst en houdt de lijst bij;
+// de anderen melden zich bij hem. Gaat hij weg, dan probeert iedereen na een paar seconden zelf die naam te pakken
+const PRES={peer:null,beacon:false,conns:new Map(),host:null,me:Math.random().toString(36).slice(2,10),list:null,sent:'',gen:0,pubT:0},PRES_ID=PEER_PREFIX+'online';
+const PRES_ST=['menu','alleen','open','wacht','solo','online'];
+function presState(){let st='menu',code='',free=0,n=0;
+  if(started){st=isGuest()||L.online?'online':'solo';n=G.pl?G.pl.filter(p=>p&&p.kind==='human').length:1}
+  else if(!$('lobby-card').hidden){if(isGuest())st='wacht';else if(L.online&&L.code){st='open';code=L.code;free=L.slots.filter(s=>s.kind==='open').length;n=L.slots.filter(s=>s.kind==='human').length}else st='alleen'}
+  return{id:PRES.me,nm:cleanName($('nm').value),st,code,free,n}}
+function presClean(d){if(!d||typeof d!=='object')return null;const code=String(d.code||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,6);
+  return{id:String(d.id||'').slice(0,12),nm:cleanName(d.nm),st:PRES_ST.includes(d.st)?d.st:'menu',code:code.length===6?code:'',free:clamp(d.free|0,0,7),n:clamp(d.n|0,0,8)}}
+function presKill(){PRES.gen++;PRES.beacon=false;PRES.conns.clear();PRES.host=null;try{PRES.peer&&PRES.peer.destroy()}catch(e){}PRES.peer=null}
+function presLater(){const g=++PRES.gen;setTimeout(()=>{if(g===PRES.gen)presTry()},1500+Math.random()*3000)}
+function presTry(){if(typeof window.Peer!=='function')return;presKill();const g=PRES.gen;let p;try{p=new window.Peer(PRES_ID,{debug:0})}catch(e){return}PRES.peer=p;
+  p.on('open',()=>{if(g!==PRES.gen)return;PRES.beacon=true;presPublish()});
+  p.on('connection',c=>{c.on('data',d=>{if(d&&d.t==='me'){const v=presClean(d.s);if(v){PRES.conns.set(c,v);presPublish()}}});const gone=()=>{if(PRES.conns.delete(c))presPublish()};c.on('close',gone);c.on('error',gone)});
+  p.on('disconnected',()=>{if(g===PRES.gen)try{p.reconnect()}catch(e){presLater()}});
+  p.on('error',e=>{if(g!==PRES.gen)return;if(e.type==='unavailable-id')presJoin();else if(!PRES.beacon)presLater()})}
+function presJoin(){presKill();const g=PRES.gen;let p;try{p=new window.Peer({debug:0})}catch(e){return}PRES.peer=p;
+  p.on('open',()=>{if(g!==PRES.gen)return;const c=p.connect(PRES_ID,{reliable:true});PRES.host=c;
+    c.on('open',()=>{PRES.sent='';presSend()});
+    c.on('data',d=>{if(d&&d.t==='list'&&Array.isArray(d.p)){PRES.list=d.p.slice(0,40).map(presClean).filter(Boolean);renderOnline()}});
+    const gone=()=>{if(g===PRES.gen){PRES.list=null;renderOnline();presLater()}};c.on('close',gone);c.on('error',gone)});
+  p.on('error',()=>{if(g===PRES.gen)presLater()})}
+// de lijstbewaarder stuurt hooguit twee keer per seconde een nieuwe lijst rond
+function presPublish(){if(!PRES.beacon)return;if(PRES.pubT)return;PRES.pubT=setTimeout(()=>{PRES.pubT=0;if(!PRES.beacon)return;
+  const all=[presState(),...PRES.conns.values()].slice(0,40);PRES.list=all;renderOnline();
+  for(const c of PRES.conns.keys())if(c.open)try{c.send({t:'list',p:all})}catch(e){}},500)}
+function presSend(){const st=presState(),k=JSON.stringify(st);if(k===PRES.sent)return;PRES.sent=k;
+  if(PRES.beacon)presPublish();else if(PRES.host&&PRES.host.open)try{PRES.host.send({t:'me',s:st})}catch(e){}}
+const PRES_TXT={menu:'in het menu',alleen:'zet een spel tegen de computer klaar',wacht:'in een wachtruimte',solo:'speelt tegen de computer'};
+function renderOnline(){const box=$('online');if(!box||$('menu-card').hidden)return;
+  // alleen opnieuw opbouwen als er iets veranderd is, anders verspringt de knop Meedoen onder de muis
+  const rk=JSON.stringify(PRES.list)+(typeof window.Peer);if(rk===PRES.rk)return;PRES.rk=rk;box.textContent='';
+  if(!PRES.list){const d=document.createElement('div');d.className='onl-none';d.textContent=typeof window.Peer==='function'?'Even kijken wie er is…':'De verbindingsdienst kon niet laden.';box.appendChild(d);return}
+  const others=PRES.list.filter(x=>x.id!==PRES.me),named=others.filter(x=>x.nm),anon=others.length-named.length;
+  named.sort((a,b)=>(b.st==='open'&&b.free>0)-(a.st==='open'&&a.free>0)||a.nm.localeCompare(b.nm));
+  for(const x of named){const r=document.createElement('div'),open=x.st==='open'&&x.free>0&&x.code;r.className='onl'+(open?' open':'');
+    const i=document.createElement('i'),b=document.createElement('b'),t=document.createElement('span');b.textContent=x.nm;
+    t.textContent=x.st==='open'?(x.free?'wacht op spelers · nog '+x.free+(x.free===1?' plek':' plekken')+' vrij':'wachtruimte is vol'):x.st==='online'?'speelt online'+(x.n>1?' met '+x.n+' spelers':''):PRES_TXT[x.st];
+    r.append(i,b,t);
+    if(open){const m=document.createElement('button');m.className='mini ok';m.type='button';m.textContent='Meedoen';m.addEventListener('click',()=>{$('code-in').value=x.code;$('join-btn').click()});r.appendChild(m)}
+    box.appendChild(r)}
+  if(!others.length||anon){const d=document.createElement('div');d.className='onl-none';d.textContent=!others.length?'Er is nu niemand anders online.':(named.length?'En ':'')+(anon===1?'iemand zonder naam':anon+' mensen zonder naam')+' in het menu.';box.appendChild(d)}}
+function presStart(){presTry();setInterval(()=>{presSend();renderOnline()},2000)}
 function boot(){
   resize();buildUI();
   newGame(seed,{diff:1,mode:'ffa',map:'river',slots:PREVIEW_SLOTS});
@@ -3866,6 +3920,7 @@ function boot(){
   $('chatin').addEventListener('keydown',e=>{e.stopPropagation();if(e.key==='Enter'){chatSend($('chatin').value,CHAT.team);chatClose()}else if(e.key==='Escape')chatClose();else if(e.key==='Tab'){e.preventDefault();CHAT.team=!CHAT.team;$('chatto').textContent=CHAT.team?'Team':'Iedereen'}});
   $('chatto').addEventListener('click',()=>{CHAT.team=!CHAT.team;$('chatto').textContent=CHAT.team?'Team':'Iedereen';$('chatin').focus()});
   uiTick(1);mmDraw();requestAnimationFrame(t=>{last=t;frame(t)});
+  presStart();
 }
 boot();
 })();
