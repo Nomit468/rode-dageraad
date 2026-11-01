@@ -443,7 +443,7 @@ const UT={
   chrono:{n:'Chrono-legionair',cat:'inf',side:'allies',hp:150,spd:1.4,cost:1500,sight:8,wpn:'chrono',arm:'inf',req:['barracks','lab'],d:'Loopt niet maar springt door de tijd naar zijn doel. Zijn straal bevriest een vijand en wist hem daarna uit; zware doelen duren langer. Een bevroren doel kan niet vuren en niet geraakt worden.'},
   gi:{n:'GI',cat:'inf',side:'allies',hp:150,spd:1.4,cost:200,sight:6,wpn:'rifle',dep:'rifled',arm:'inf',req:['barracks'],d:'Goedkoop en snel getraind. Sterk tegen infanterie. Druk op D om hem in te graven achter zandzakken: hij schiet dan harder en verder en houdt meer uit, maar kan niet lopen.'},
   rocket:{n:'Raketsoldaat',cat:'inf',hp:125,spd:1.2,cost:400,sight:7,wpn:'rpg',arm:'inf',req:['barracks'],d:'Draagt een raketwerper. Sterk tegen tanks en gebouwen, en kan ook op luchtdoelen schieten.'},
-  rocketeer:{n:'Rocketeer',cat:'inf',side:'allies',air:true,alt:34,hp:150,spd:2.7,cost:600,sight:8,wpn:'jet',arm:'air',req:['barracks','radar'],d:'Vliegt met een raketrugzak over water, bossen en rotsen. Schiet op infanterie en luchtschepen, en kan bruggen opblazen. Alleen luchtafweer, raketsoldaten en andere rocketeers kunnen hem raken.'},
+  rocketeer:{n:'Rocketeer',cat:'inf',side:'allies',air:true,alt:34,hp:150,spd:2.7,cost:600,sight:8,wpn:'jet',arm:'air',req:['barracks','radar'],d:'Vliegt met een raketrugzak over water, bossen en rotsen. Schiet op infanterie en luchtschepen, en kan bruggen opblazen. Luchtafweer, de Flak-track, de IFV, raketsoldaten en andere rocketeers halen hem snel neer; GI's en Conscripts raken hem ook, maar doen weinig.'},
   dog:{n:'Aanvalshond',cat:'inf',hp:120,spd:1.75,cost:200,sight:7,wpn:'bite',arm:'inf',req:['barracks'],d:'Snel en vals. Schakelt soldaten met één beet uit, maar kan niets tegen voertuigen of gebouwen.'},
   eng:{n:'Ingenieur',cat:'inf',hp:90,spd:1.2,cost:500,sight:4,arm:'inf',req:['barracks'],d:'Klik op een vijandelijk gebouw om het over te nemen, of op een beschadigd eigen gebouw om het helemaal te herstellen. De ingenieur gaat erin op.'},
   spy:{n:'Spion',cat:'inf',side:'allies',hp:120,spd:1.7,cost:1000,sight:7,arm:'inf',req:['barracks','radar'],d:'Alleen Geallieerden. Voor de vijand ziet hij eruit als een van hun eigen soldaten; alleen honden prikken erdoorheen. Klik op een vijandelijk gebouw om het te saboteren: stroom eraf (centrale), krediet stelen (raffinaderij), radarkaart wissen (radarpost), veteraan-soldaten of -voertuigen (kazerne of fabriek), of de omgeving verkennen (andere gebouwen).'},
@@ -490,13 +490,13 @@ const UT={
   rdrone:{n:'Verkenningsdrone',cat:'veh',air:true,alt:72,hp:120,spd:4,cost:500,sight:14,arm:'air',req:['factory','radar'],d:'Zweeft hoog boven de kaart en kijkt twee keer zo ver als een tank. Heeft geen wapen. Stuur hem vooruit om de vijandelijke basis te bekijken voordat je aanvalt. Luchtafweer haalt hem in twee treffers neer.'},
 };
 const WP={
-  rifle:{rng:4,dmg:20,rof:0.57,kind:'bullet',vs:{inf:1,veh:.25,bld:.22}},
-  rifled:{rng:5,dmg:15,rof:0.42,kind:'bullet',vs:{inf:1,veh:.25,bld:.22}},
+  rifle:{rng:4,dmg:20,rof:0.57,kind:'bullet',vs:{inf:1,veh:.25,bld:.22,jj:.25}},
+  rifled:{rng:5,dmg:15,rof:0.42,kind:'bullet',vs:{inf:1,veh:.25,bld:.22,jj:.25}},
   mg:{rng:5.5,dmg:13,rof:.32,kind:'bullet',vs:{inf:1,veh:.15,bld:.2}},
   wmg:{rng:5,dmg:12,rof:.3,kind:'bullet',vs:{inf:1,veh:.1}},
-  rpg:{rng:5.5,dmg:52,rof:2.2,kind:'rocket',spd:7,vs:{inf:.3,veh:1,bld:.65,air:.8}},
+  rpg:{rng:5.5,dmg:52,rof:2.2,kind:'rocket',spd:7,vs:{inf:.3,veh:1,bld:.65,air:.8,jj:2.2}},
   aa:{rng:9,dmg:75,rof:1.1,kind:'rocket',spd:15,vs:{air:1}},
-  jet:{rng:5,dmg:25,rof:.4,kind:'bullet',vs:{inf:1,veh:.3,bld:.2,air:.5,br:.5}},
+  jet:{rng:5,dmg:25,rof:.45,kind:'bullet',vs:{inf:1,veh:.15,bld:.2,air:.5,br:.5}},
   bombs:{rng:.7,dmg:250,rof:1.42,kind:'bomb',fall:.8,splash:1.6,vs:{inf:.8,veh:.9,bld:1.4}},
   crash:{dmg:320,kind:'bomb',fall:1.1,splash:1.8,vs:{inf:1,veh:.8,bld:1}},
   gun:{rng:5,dmg:65,rof:1.7,kind:'shell',spd:13,vs:{inf:.25,veh:1,bld:.8}},
@@ -516,7 +516,7 @@ const WP={
   zap:{rng:4,dmg:135,rof:1.06,kind:'zap',vs:{inf:1,veh:1,bld:.5}},
   prism:{rng:10,dmg:100,rof:2.83,kind:'beam',chain:2,vs:{inf:.8,veh:.7,bld:2}},
   rhinogun:{rng:5.75,dmg:90,rof:1.84,kind:'shell',spd:13,vs:{inf:.25,veh:1,bld:.8}},
-  conrifle:{rng:4,dmg:15,rof:0.71,kind:'bullet',vs:{inf:1,veh:.25,bld:.2}},
+  conrifle:{rng:4,dmg:15,rof:0.71,kind:'bullet',vs:{inf:1,veh:.25,bld:.2,jj:.12}},
   zapinf:{rng:3,dmg:50,rof:1.7,kind:'zap',vs:{inf:1,veh:.75,bld:.4}},
   flak:{rng:5,dmg:25,rof:0.71,kind:'bullet',vs:{inf:1,veh:.25,bld:.2}},
   ifvmsl:{rng:6,dmg:25,rof:1.42,kind:'rocket',spd:11,dbl:true,vs:{inf:.3,veh:.9,bld:.4,air:1}},
@@ -944,7 +944,8 @@ const cxE=e=>e.k==='b'?e.x+e.w/2:e.k==='br'?(e.ax+e.bx)/2:e.x, cyE=e=>e.k==='b'?
 function distPE(x,y,e){if(e.k==='br')return Math.max(0,segDist(x,y,e.ax,e.ay,e.bx,e.by)-e.w);if(e.k==='b'){const dx=Math.max(e.x-x,0,x-(e.x+e.w)),dy=Math.max(e.y-y,0,y-(e.y+e.h));return Math.hypot(dx,dy)}return Math.hypot(e.x-x,e.y-y)}
 // een geland toestel is een gewoon gronddoel; een brug telt als gebouw
 const armor=e=>e.k!=='u'?'bld':UT[e.type].air&&uz(e)<6?'veh':UT[e.type].arm;
-const vsOf=(W,e)=>{if(e.k==='br'&&W.vs.br!==undefined)return W.vs.br;const a=armor(e),v=W.vs[a];if(v!==undefined)return v;return a==='ship'?(W.vs.veh||0)*.8:0};
+// vs.jj geldt alleen voor de laagvliegende Rocketeer, zodat geweren hem wel raken maar geen vliegtuigen of luchtschepen
+const vsOf=(W,e)=>{if(e.k==='br'&&W.vs.br!==undefined)return W.vs.br;if(e.type==='rocketeer'&&W.vs.jj!==undefined)return W.vs.jj;const a=armor(e),v=W.vs[a];if(v!==undefined)return v;return a==='ship'?(W.vs.veh||0)*.8:0};
 const dock=b=>({x:b.x+1,y:b.y+b.h});
 function countB(o){const c={};for(const b of G.blds)if(b.o===o&&b.bt>=1)c[b.type]=(c[b.type]||0)+1;return c}
 function reqMet(o,req){if(!req)return true;for(const r of req)if(!G.blds.some(b=>b.o===o&&b.type===r&&b.bt>=1))return false;return true}
@@ -1093,7 +1094,7 @@ function moveAlong(u,dt){
 }
 function nearestEnemy(x,y,o,r,W){
   let best=null,bs=1e9;jungleUpdate();const sm=isAI(o)&&G.ai[o]&&!G.ai[o].old;
-  for(const e of G.units){if(!enemy(o,e.o)||e.hp<=0||jungleHid(e,o)||(e.type==='spy'&&W.kind!=='melee')||e.disg||e.st==='tele'||(W.kind==='latch'&&e.drone)||(W.kind==='melee'&&e.type==='drone')||(W.kind==='ivan'&&G.bombs.some(b=>b.id===e.id)))continue;const eff=W.vs[armor(e)]||0;if(eff===0)continue;const d=Math.hypot(e.x-x,e.y-y);if(d>r||(W.min&&d<W.min)||(W.kind==='bomb'&&e.moving&&d>1.5))continue;const s=d+(eff<.3?4:0)-(UT[e.type].wpn?.5:0)-(sm?eff*1.5+(1-e.hp/UT[e.type].hp)*1.5:0);if(s<bs){bs=s;best=e}}
+  for(const e of G.units){if(!enemy(o,e.o)||e.hp<=0||jungleHid(e,o)||(e.type==='spy'&&W.kind!=='melee')||e.disg||e.st==='tele'||(W.kind==='latch'&&e.drone)||(W.kind==='melee'&&e.type==='drone')||(W.kind==='ivan'&&G.bombs.some(b=>b.id===e.id)))continue;const eff=(e.type==='rocketeer'&&W.vs.jj!==undefined?W.vs.jj:W.vs[armor(e)])||0;if(eff===0)continue;const d=Math.hypot(e.x-x,e.y-y);if(d>r||(W.min&&d<W.min)||(W.kind==='bomb'&&e.moving&&d>1.5))continue;const s=d+(eff<.3?4:0)-(UT[e.type].wpn?.5:0)-(sm?eff*1.5+(1-e.hp/UT[e.type].hp)*1.5:0);if(s<bs){bs=s;best=e}}
   if(!W.vs.bld)return best;
   for(const e of G.blds){if(!enemy(o,e.o)||e.hp<=0||BT[e.type].wall||(W.kind==='ivan'&&G.bombs.some(b=>b.id===e.id)))continue;const d=distPE(x,y,e);if(d>r||(W.min&&d<W.min))continue;const s=d+(W.kind==='bomb'?-1:2.5)-(BT[e.type].wpn?1.5:0);if(s<bs){bs=s;best=e}}
   return best;
@@ -1647,8 +1648,8 @@ function aiTick(o,dt){
   if(!P.q.def.length&&G.t>[150,90,50][G.diff]){const t=next('def');if(t)P.q.def.push({type:t,spent:0})}
   const mine=G.units.filter(u=>u.o===o);
   // wat heeft de vijand? Gemeten in geld, zodat tien honden niet zwaarder wegen dan drie tanks
-  if(!A.old){let i=0,v=0,a=0;for(const u of G.units){if(u.dead||u.o>=PMAX||!enemy(o,u.o))continue;const T=UT[u.type];if(T.air)a+=T.cost;else if(T.cat==='inf')i+=T.cost;else if(!T.sea&&u.type!=='harv'&&u.type!=='mcv')v+=T.cost}const sum=i+v+a||1;A.mix={inf:i/sum,veh:v/sum,air:a>2500?a/sum:0}}
-  if(!A.old&&A.mix&&A.mix.air>.25&&!P.q.def.length&&(cnt.aa||0)<2&&sideOk(o,BT.aa)&&reqMet(o,BT.aa.req))P.q.def.push({type:'aa',spent:0});
+  if(!A.old){let i=0,v=0,a=0;for(const u of G.units){if(u.dead||u.o>=PMAX||!enemy(o,u.o))continue;const T=UT[u.type];if(T.air)a+=T.cost;else if(T.cat==='inf')i+=T.cost;else if(!T.sea&&u.type!=='harv'&&u.type!=='mcv')v+=T.cost}const sum=i+v+a||1;A.mix={inf:i/sum,veh:v/sum,air:a>1100?a/sum:0}}
+  if(!A.old&&A.mix&&A.mix.air>.15&&!P.q.def.length&&(cnt.aa||0)<2&&sideOk(o,BT.aa)&&reqMet(o,BT.aa.req))P.q.def.push({type:'aa',spent:0});
   // uitbreiden: met een tweede MCV naar een rijk ertsveld dat dichter bij huis ligt dan bij de vijand
   if(!A.old&&G.diff>0&&!A.exp&&G.t>[0,600,420][G.diff]&&cnt.factory&&cnt.yard===1&&P.credits>4000&&reqMet(o,UT.mcv.req)&&!mine.some(u=>u.type==='mcv')){const sp=aiExpSpot(o);A.exp=sp?{x:sp.x,y:sp.y,yard:0,ref:0,def:0}:{none:true};if(sp)P.q.veh.unshift({type:'mcv',spent:0})}
   // bouwwerf kwijt? Dan een nieuwe MCV uit de fabriek, net als in RA2
@@ -1659,7 +1660,7 @@ function aiTick(o,dt){
   if(cnt.barracks&&P.q.inf.length<2&&P.credits>300+reserve){
     const hasC=mine.some(u=>u.type==='cmdo')||P.q.inf.some(i=>i.type==='cmdo');
     const r=Math.random(),spec={uk:cnt.radar&&'sniper',iraq:cnt.radar&&'desolator',cuba:'terror'}[P.nat];
-    const base=sov?'conscript':'gi',mx=!A.old&&A.mix,cnr=mx&&r<.45?(mx.veh>.5||mx.air>.25?'rocket':mx.inf>.6?base:null):null;P.q.inf.push({type:cnr||(sov&&cnt.radar&&r<.07?'ivan':!sov&&cnt.lab&&r<.08?'chrono':cnt.lab&&!hasC&&P.credits>1500&&sideOk(o,UT.cmdo)?'cmdo':spec&&r<.3?spec:sov&&cnt.radar&&r<.42?'tesltrp':!sov&&cnt.radar&&r<.4?'rocketeer':r<.6?base:r<.85?'rocket':'dog'),spent:0})}
+    const base=sov?'conscript':'gi',mx=!A.old&&A.mix,cnr=mx&&r<.45?(mx.veh>.5||mx.air>.15?'rocket':mx.inf>.6?base:null):null;P.q.inf.push({type:cnr||(sov&&cnt.radar&&r<.07?'ivan':!sov&&cnt.lab&&r<.08?'chrono':cnt.lab&&!hasC&&P.credits>1500&&sideOk(o,UT.cmdo)?'cmdo':spec&&r<.3?spec:sov&&cnt.radar&&r<.42?'tesltrp':!sov&&cnt.radar&&r<.4?'rocketeer':r<.6?base:r<.85?'rocket':'dog'),spent:0})}
   if(cnt.factory&&P.q.veh.length<2&&P.credits>800+reserve){
     const opts=['tank','tank','rhino','rhino','ifv','flak'];if(cnt.radar)opts.push('mirage');if(cnt.radar)opts.push('arty','tesla','tesla','rhino');if(cnt.lab)opts.push('prism','prism','mammoth','mammoth');
     const nk=mine.filter(u=>u.type==='kirov').length;
@@ -1668,7 +1669,7 @@ function aiTick(o,dt){
     if(cnt.airfield&&jetCount(o)+P.q.veh.filter(i=>UT[i.type].jet).length<padCount(o))opts.push('harrier','harrier','eagle','eagle');
     if(P.nat==='germany')opts.push('tdest','tdest');if(P.nat==='netherlands'&&cnt.radar)opts.push('pzh','pzh');if(P.nat==='italy')opts.push('bers','bers');if(P.nat==='sweden')opts.push('stank','stank','stank');if(cnt.radar&&P.nat==='libya')opts.push('demo');
     if(!A.old)opts.push('kdrone');
-    if(!A.old&&A.mix){const mx=A.mix;if(mx.air>.25)opts.push(...(sov?['flak','flak']:['ifv','ifv']));if(mx.inf>.5)opts.push(...(sov?['flak','tesla','tesla']:['mirage','ifv','prism']));if(mx.veh>.5)opts.push(...(sov?['rhino','rhino','tesla']:['tank','tank','mirage']),'kdrone','kdrone')}
+    if(!A.old&&A.mix){const mx=A.mix;if(mx.air>.15)opts.push(...(sov?['flak','flak']:['ifv','ifv']));if(mx.inf>.5)opts.push(...(sov?['flak','tesla','tesla']:['mirage','ifv','prism']));if(mx.veh>.5)opts.push(...(sov?['rhino','rhino','tesla']:['tank','tank','mirage']),'kdrone','kdrone')}
     const ok=opts.filter(t=>sideOk(o,UT[t])&&(A.old||reqMet(o,UT[t].req)));
     if(sov&&cnt.radar&&!nk&&G.t>[420,300,220][G.diff]&&!P.q.veh.some(i=>i.type==='kirov'))P.q.veh.push({type:'kirov',spent:0});
     else if(ok.length)P.q.veh.push({type:ok[Math.random()*ok.length|0],spent:0})}
