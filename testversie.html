@@ -443,7 +443,7 @@ const UT={
   chrono:{n:'Chrono-legionair',cat:'inf',side:'allies',hp:150,spd:1.4,cost:1500,sight:8,wpn:'chrono',arm:'inf',req:['barracks','lab'],d:'Loopt niet maar springt door de tijd naar zijn doel. Zijn straal bevriest een vijand en wist hem daarna uit; zware doelen duren langer. Een bevroren doel kan niet vuren en niet geraakt worden.'},
   gi:{n:'GI',cat:'inf',side:'allies',hp:150,spd:1.4,cost:200,sight:6,wpn:'rifle',dep:'rifled',arm:'inf',req:['barracks'],d:'Goedkoop en snel getraind. Sterk tegen infanterie. Druk op D om hem in te graven achter zandzakken: hij schiet dan harder en verder en houdt meer uit, maar kan niet lopen.'},
   rocket:{n:'Raketsoldaat',cat:'inf',hp:125,spd:1.2,cost:400,sight:7,wpn:'rpg',arm:'inf',req:['barracks'],d:'Draagt een raketwerper. Sterk tegen tanks en gebouwen, en kan ook op luchtdoelen schieten.'},
-  rocketeer:{n:'Rocketeer',cat:'inf',side:'allies',air:true,alt:34,hp:150,spd:2.7,cost:600,sight:8,wpn:'jet',arm:'air',req:['barracks','radar'],d:'Vliegt met een raketrugzak over water, bossen en rotsen. Schiet op infanterie en luchtschepen, en kan bruggen opblazen. Luchtafweer, de Flak-track, de IFV, raketsoldaten en andere rocketeers halen hem snel neer; GI's en Conscripts raken hem ook, maar doen weinig.'},
+  rocketeer:{n:'Rocketeer',cat:'inf',side:'allies',air:true,alt:34,hp:150,spd:2.7,cost:600,sight:8,wpn:'jet',arm:'air',req:['barracks','radar'],d:'Vliegt met een raketrugzak over water, bossen en rotsen. Schiet op infanterie en luchtschepen, en kan bruggen opblazen. Luchtafweer, de Flak-track, de IFV, raketsoldaten en andere rocketeers halen hem snel neer. Andere soldaten en tanks kunnen niet op hem schieten.'},
   dog:{n:'Aanvalshond',cat:'inf',hp:120,spd:1.75,cost:200,sight:7,wpn:'bite',arm:'inf',req:['barracks'],d:'Snel en vals. Schakelt soldaten met één beet uit, maar kan niets tegen voertuigen of gebouwen.'},
   eng:{n:'Ingenieur',cat:'inf',hp:90,spd:1.2,cost:500,sight:4,arm:'inf',req:['barracks'],d:'Klik op een vijandelijk gebouw om het over te nemen, of op een beschadigd eigen gebouw om het helemaal te herstellen. De ingenieur gaat erin op.'},
   spy:{n:'Spion',cat:'inf',side:'allies',hp:120,spd:1.7,cost:1000,sight:7,arm:'inf',req:['barracks','radar'],d:'Alleen Geallieerden. Voor de vijand ziet hij eruit als een van hun eigen soldaten; alleen honden prikken erdoorheen. Klik op een vijandelijk gebouw om het te saboteren: stroom eraf (centrale), krediet stelen (raffinaderij), radarkaart wissen (radarpost), veteraan-soldaten of -voertuigen (kazerne of fabriek), of de omgeving verkennen (andere gebouwen).'},
@@ -490,8 +490,8 @@ const UT={
   rdrone:{n:'Verkenningsdrone',cat:'veh',air:true,alt:72,hp:120,spd:4,cost:500,sight:14,arm:'air',req:['factory','radar'],d:'Zweeft hoog boven de kaart en kijkt twee keer zo ver als een tank. Heeft geen wapen. Stuur hem vooruit om de vijandelijke basis te bekijken voordat je aanvalt. Luchtafweer haalt hem in twee treffers neer.'},
 };
 const WP={
-  rifle:{rng:4,dmg:20,rof:0.57,kind:'bullet',vs:{inf:1,veh:.25,bld:.22,jj:.25}},
-  rifled:{rng:5,dmg:15,rof:0.42,kind:'bullet',vs:{inf:1,veh:.25,bld:.22,jj:.25}},
+  rifle:{rng:4,dmg:20,rof:0.57,kind:'bullet',vs:{inf:1,veh:.25,bld:.22}},
+  rifled:{rng:5,dmg:15,rof:0.42,kind:'bullet',vs:{inf:1,veh:.25,bld:.22}},
   mg:{rng:5.5,dmg:13,rof:.32,kind:'bullet',vs:{inf:1,veh:.15,bld:.2}},
   wmg:{rng:5,dmg:12,rof:.3,kind:'bullet',vs:{inf:1,veh:.1}},
   rpg:{rng:5.5,dmg:52,rof:2.2,kind:'rocket',spd:7,vs:{inf:.3,veh:1,bld:.65,air:.8,jj:2.2}},
@@ -516,7 +516,7 @@ const WP={
   zap:{rng:4,dmg:135,rof:1.06,kind:'zap',vs:{inf:1,veh:1,bld:.5}},
   prism:{rng:10,dmg:100,rof:2.83,kind:'beam',chain:2,vs:{inf:.8,veh:.7,bld:2}},
   rhinogun:{rng:5.75,dmg:90,rof:1.84,kind:'shell',spd:13,vs:{inf:.25,veh:1,bld:.8}},
-  conrifle:{rng:4,dmg:15,rof:0.71,kind:'bullet',vs:{inf:1,veh:.25,bld:.2,jj:.12}},
+  conrifle:{rng:4,dmg:15,rof:0.71,kind:'bullet',vs:{inf:1,veh:.25,bld:.2}},
   zapinf:{rng:3,dmg:50,rof:1.7,kind:'zap',vs:{inf:1,veh:.75,bld:.4}},
   flak:{rng:5,dmg:25,rof:0.71,kind:'bullet',vs:{inf:1,veh:.25,bld:.2}},
   ifvmsl:{rng:6,dmg:25,rof:1.42,kind:'rocket',spd:11,dbl:true,vs:{inf:.3,veh:.9,bld:.4,air:1}},
