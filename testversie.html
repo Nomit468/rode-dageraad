@@ -1732,10 +1732,8 @@ const AI_VAL={refinery:14,nukepow:13,power:10,factory:10,yard:9,radar:7,lab:7,ba
 function aiKirov(o,A,mine,army){
   const ks=mine.filter(u=>u.type==='kirov'&&!u.dead&&u.hp>0),kv=A.kv,r=aiRally(o);
   if(kv){
-    let live=ks.filter(u=>kv.ids.includes(u.id));const esc=kv.esc.map(id=>ents.get(id)).filter(u=>u&&!u.dead&&u.hp>0&&u.o===o);
-    // een zwaar beschadigde Kirov keert alleen terug, de rest vliegt door
-    for(const u of live)if(u.hp<UT.kirov.hp*.3){u.mission=false;orderMove(u,r.x,r.y,false)}
-    live=live.filter(u=>u.mission);kv.ids=live.map(u=>u.id);
+    // geen terugtocht: thuis wordt een Kirov niet gerepareerd, en neergestort boven de vijand doet hij nog schade
+    const live=ks.filter(u=>kv.ids.includes(u.id)),esc=kv.esc.map(id=>ents.get(id)).filter(u=>u&&!u.dead&&u.hp>0&&u.o===o);
     if(!live.length){for(const u of esc)u.mission=false;if(esc.length)orderGroup(esc,r.x,r.y,false);A.kv=null;A.kvT=G.t;return}
     const cx=live.reduce((a,u)=>a+u.x,0)/live.length,cy=live.reduce((a,u)=>a+u.y,0)/live.length;
     // luchtafweer in de buurt eerst, anders schiet die de Kirovs onderweg neer
@@ -1749,7 +1747,7 @@ function aiKirov(o,A,mine,army){
     esc.forEach((e,i)=>{if(e.st==='attack'&&Math.hypot(e.x-cx,e.y-cy)<9)return;const a=i/Math.max(1,esc.length)*6.283,px=cx+Math.cos(a)*1.6,py=cy+Math.sin(a)*1.6,d=Math.hypot(e.x-cx,e.y-cy);
       if(d>2.5&&(e.st!=='move'||Math.hypot(e.dx-px,e.dy-py)>1.5)){orderMove(e,px,py,true);if(d<7)e.gspd=UT.kirov.spd*1.15}});
     return}
-  const free=ks.filter(u=>!u.mission&&u.hp>UT.kirov.hp*.6);if(!free.length){A.kvW=0;return}
+  const free=ks.filter(u=>!u.mission);if(!free.length){A.kvW=0;return}
   A.kvW=A.kvW||G.t;
   if(free.length<(G.diff===2?3:2)&&G.t-A.kvW<90)return;
   if(G.t-(A.kvT||-1e9)<20)return;
