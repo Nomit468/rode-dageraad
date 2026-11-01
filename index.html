@@ -463,7 +463,7 @@ const UT={
   tank:{n:'Grizzly-tank',cat:'veh',side:'allies',hp:360,spd:2.38,cost:700,sight:7,wpn:'gun',arm:'veh',req:['factory'],d:'Geallieerde tank. Snel en wendbaar, maar lichter gepantserd dan de Rhino.'},
   rhino:{n:'Rhino-tank',cat:'veh',side:'soviet',hp:480,spd:2.04,cost:900,sight:7,wpn:'rhinogun',arm:'veh',req:['factory'],d:'Sovjettank. Langzamer dan de Grizzly, maar met dikker pantser en een zwaarder kanon.'},
   mirage:{n:'Mirage-tank',cat:'veh',side:'allies',hp:240,spd:2.38,cost:1000,sight:7,wpn:'mirage',arm:'veh',req:['factory','radar'],d:'Staat hij even stil, dan ziet de vijand alleen een boom. Vijanden vallen hem dan niet aan. Na elk schot is hij even zichtbaar.'},
-  ifv:{n:'IFV',cat:'veh',side:'allies',hp:240,spd:3.2,cost:600,sight:8,wpn:'ifvmsl',arm:'veh',req:['factory'],d:'Snel gevechtsvoertuig met raketten tegen voertuigen en vliegtuigen. Laat een soldaat instappen en het wapen verandert: GI = mitrailleur, raketsoldaat = zware raketten, sluipschutter = scherpschuttersgeweer, ingenieur = repareert voertuigen in de buurt, Chrono-legionair = tijdstraal die vijanden uitwist. D laat hem weer uitstappen.'},
+  ifv:{n:'IFV',cat:'veh',side:'allies',hp:240,spd:3.2,cost:600,sight:8,wpn:'ifvmsl',arm:'veh',req:['factory'],d:'Snel gevechtsvoertuig met raketten tegen voertuigen en vliegtuigen. Laat een soldaat instappen en het wapen verandert: GI = mitrailleur, raketsoldaat = zware raketten, sluipschutter = scherpschuttersgeweer, ingenieur = reparatievoertuig dat zelf naar beschadigde voertuigen rijdt (schiet dan niet meer), Chrono-legionair = tijdstraal die vijanden uitwist. D laat hem weer uitstappen.'},
   flak:{n:'Flak-track',cat:'veh',side:'soviet',hp:216,spd:2.72,cost:500,sight:9,aa:'flakaa',wpn:'flak',arm:'veh',req:['factory'],d:'Rijdende luchtafweer. Schiet vliegtuigen, luchtschepen en rocketeers uit de lucht, en houdt soldaten op afstand.'},
   heavy:{n:'Zware tank',side:'none',cat:'veh',hp:700,spd:1.4,cost:1400,sight:7,wpn:'heavygun',arm:'veh',req:['factory','radar'],d:'Dubbele loop en dik pantser. Langzaam maar taai.'},
   arty:{n:'V3-raketwerper',cat:'veh',side:'soviet',hp:220,spd:1.6,cost:800,sight:8,wpn:'arty',arm:'veh',req:['factory','radar'],d:'Vuurt van grote afstand op een gebied. Kwetsbaar van dichtbij.'},
@@ -1062,7 +1062,7 @@ function orderGroup(us,tx,ty,am){
   {const gr=us.filter(u=>!UT[u.type].air&&!UT[u.type].sea),mn=Math.min(...gr.map(u=>UT[u.type].spd*RANKS[u.rank||0]));for(const u of gr)u.gspd=gr.length>1?mn:0}
   for(const u of left)orderMove(u,tx,ty,am);
 }
-const canHit=(u,t)=>{const k=wkOf(u,t);if(!k)return false;const W=WP[k];if(t.k==='br'&&(t.down||W.kind==='chrono'||W.kind==='latch'))return false;if(W.kind==='melee'&&t.type==='drone')return false;return vsOf(W,t)>0||(W.c4&&(t.k!=='u'||UT[t.type].sea))};
+const canHit=(u,t)=>{if(u.type==='ifv'&&u.pass==='eng')return false;const k=wkOf(u,t);if(!k)return false;const W=WP[k];if(t.k==='br'&&(t.down||W.kind==='chrono'||W.kind==='latch'))return false;if(W.kind==='melee'&&t.type==='drone')return false;return vsOf(W,t)>0||(W.c4&&(t.k!=='u'||UT[t.type].sea))};
 function orderEng(us,t){for(const u of us){u.st='eng';u.tid=t.id;u.path=null;u.repath=0;u.am=false;u.resume=null}}
 function orderAttack(us,t){for(const u of us){if(!canHit(u,t))continue;u.home=null;u.st='attack';u.tid=t.id;u.auto=false;u.resume=null;u.am=false;u.path=null;u.repath=0}}
 // net als in RA2 rijden tanks soldaten plat; ingegraven GI's, Tesla-soldaten en Desolators niet
@@ -1114,7 +1114,14 @@ function updUnit0(u,dt){
     if(!t||t.dead||t.o!==u.o||(multi?(t.pax||[]).length>=UT[t.type].cap:t.pass)){u.st='idle';u.path=null;return}
     if(Math.hypot(u.x-t.x,u.y-t.y)<(boat?1.7:1)&&(!hawk||uz(t)<8)){if(multi)(t.pax=t.pax||[]).push({type:u.type,hp:u.hp,rank:u.rank||0,xp:u.xp||0});else{t.pass=u.type;t.passHp=u.hp;t.passRank=u.rank||0}u.dead=true;u.hp=0;G.anyDead=true;sayTo(u.o,'Ingestapt','board',1);return}
     u.repath-=dt;if(!u.path||u.repath<=0){u.repath=.6;setPath(u,t.x,t.y)}moveAlong(u,dt);if(T.cat==='inf')u.tur=u.face;return}
-  if(u.type==='ifv'&&u.pass==='eng')for(const v of G.units)if(v!==u&&v.o===u.o&&!v.dead&&UT[v.type].cat==='veh'&&v.hp<UT[v.type].hp&&Math.hypot(v.x-u.x,v.y-u.y)<3)v.hp=Math.min(UT[v.type].hp,v.hp+15*dt);
+  // zoals in RA2: een IFV met ingenieur is een reparatievoertuig. Hij schiet niet meer, repareert voertuigen binnen 3 vakjes
+  // en rijdt uit zichzelf naar beschadigde eigen voertuigen in de buurt
+  if(u.type==='ifv'&&u.pass==='eng'){u.repFx=(u.repFx||0)-dt;u.repScan=(u.repScan||0)-dt;let fixing=false;
+    for(const v of G.units)if(v!==u&&v.o===u.o&&!v.dead&&UT[v.type].cat==='veh'&&!UT[v.type].air&&v.hp<UT[v.type].hp&&Math.hypot(v.x-u.x,v.y-u.y)<3){v.hp=Math.min(UT[v.type].hp,v.hp+15*dt);fixing=true;
+      if(u.repFx<=0)fx({k:'rep',x:u.x,y:u.y,z:14,x2:v.x,y2:v.y,z2:10,life:.5})}
+    if(fixing&&u.repFx<=0)u.repFx=.45;
+    if(u.st==='idle'&&!fixing&&u.repScan<=0){u.repScan=1;let best=null,bd=8;for(const v of G.units){if(v===u||v.o!==u.o||v.dead||UT[v.type].cat!=='veh'||UT[v.type].air||v.hp>UT[v.type].hp*.9)continue;const d=Math.hypot(v.x-u.x,v.y-u.y);if(d>2.2&&d<bd){bd=d;best=v}}
+      if(best){const a=Math.atan2(u.y-best.y,u.x-best.x);orderMove(u,best.x+Math.cos(a)*1.5,best.y+Math.sin(a)*1.5,false)}}}
   if(u.type==='harv'){updHarv(u,dt);return}
   if(u.frozen>G.t)return;
   if(T.heli){// helikopters landen om te laden, uit te laden of (Belegeringshelikopter) als kanon te staan
@@ -1153,7 +1160,7 @@ function updUnit0(u,dt){
   if(u.guard){const gd=Math.hypot(u.x-u.guard.x,u.y-u.guard.y);
     if(u.st==='attack'&&gd>T.sight+4){u.st='idle';u.tid=0;t=null;u.path=null}
     if(u.st==='idle'&&!t&&gd>1.5&&u.scan<=0){orderMove(u,u.guard.x,u.guard.y,true)}}
-  if((u.st==='idle'||(u.st==='move'&&u.am))&&u.scan<=0&&!(u.type==='yuri'&&u.ctrl&&(()=>{const m=ents.get(u.ctrl);return m&&!m.dead&&m.mc&&m.mc.by===u.id})())){
+  if((u.st==='idle'||(u.st==='move'&&u.am))&&u.scan<=0&&!(u.type==='ifv'&&u.pass==='eng')&&!(u.type==='yuri'&&u.ctrl&&(()=>{const m=ents.get(u.ctrl);return m&&!m.dead&&m.mc&&m.mc.by===u.id})())){
     u.scan=.35+Math.random()*.2;
     const r=u.dep?W.rng:u.guard?Math.max(T.sight,W.rng+2):u.st==='idle'?(holdsPos(u)||(G.t<(u.leashT||0)&&!isAI(u.o))?W.rng:W.rng+(isAI(u.o)?3:1.2)):T.sight;
     let e=nearestEnemy(u.x,u.y,u.o,r,W);
@@ -3069,6 +3076,9 @@ function drawFx(t){
         c.strokeStyle=T.main;c.lineWidth=2;for(const q of[ph,(ph+.5)%1]){c.globalAlpha=al*(1-q);c.beginPath();c.ellipse(gx_,gy_,10+q*26,(10+q*26)*.5,0,0,7);c.stroke()}
         c.globalAlpha=al*.8;const g=c.createLinearGradient(gx_,gy_-70,gx_,gy_);g.addColorStop(0,'rgba(255,255,255,0)');g.addColorStop(1,T.main);c.fillStyle=g;c.fillRect(gx_-2,gy_-70,4,70);
         c.globalAlpha=al;c.fillStyle=T.main;c.beginPath();c.moveTo(gx_,gy_-6);c.lineTo(gx_+5,gy_);c.lineTo(gx_,gy_+3);c.lineTo(gx_-5,gy_);c.closePath();c.fill();c.restore();break}
+      case'rep':{const b=w2s(f.x2,f.y2,f.z2);c.globalCompositeOperation='lighter';c.strokeStyle=`rgba(150,255,140,${(1-p)*.85})`;c.lineWidth=1.6;c.beginPath();c.moveTo(sx,sy);
+        for(let i=1;i<=8;i++){const q=i/8;c.lineTo(sx+(b[0]-sx)*q+(Math.random()-.5)*3*(1-q),sy+(b[1]-sy)*q+(Math.random()-.5)*3)}c.stroke();
+        c.fillStyle=`rgba(255,240,150,${1-p})`;for(let i=0;i<4;i++)c.fillRect(b[0]+(Math.random()-.5)*12,b[1]+(Math.random()-.5)*8,2,2);c.globalCompositeOperation='source-over';break}
       case'mnd':{const b=w2s(f.x2,f.y2,f.z2);c.globalCompositeOperation='lighter';c.strokeStyle=`rgba(190,110,255,${(1-p)*.9})`;c.lineWidth=2.2;c.beginPath();c.moveTo(sx,sy);
         for(let i=1;i<=12;i++){const q=i/12,x=sx+(b[0]-sx)*q,y=sy+(b[1]-sy)*q+Math.sin(q*14+f.t*30)*4*(1-q*.5);c.lineTo(x,y)}c.stroke();flash(c,b,8*(1-p)+3);c.globalCompositeOperation='source-over';break}
       case'son':{const b=w2s(f.x2,f.y2,f.z2);for(let i=0;i<3;i++){const q=(p*1.6+i*.3)%1,x=sx+(b[0]-sx)*q,y=sy+(b[1]-sy)*q;c.strokeStyle=`rgba(170,230,255,${(1-q)*.8})`;c.lineWidth=1.4;c.beginPath();c.ellipse(x,y,4+q*5,2+q*2.5,0,0,7);c.stroke()}break}
