@@ -231,7 +231,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
     <div id="msgs" aria-live="polite"></div>
     <div id="chatlog" aria-live="polite"></div>
     <div id="chatbar" hidden><button type="button" id="chatto" title="Tab wisselt tussen iedereen en je team">Iedereen</button><input id="chatin" maxlength="120" autocomplete="off" aria-label="Chatbericht" placeholder="Bericht, Enter verstuurt, Tab: iedereen of team, Esc sluit"></div>
-    <div id="legend"><kbd>Klik</kbd> selecteren en bevelen · <kbd>Sleep</kbd> kader · <kbd>2 vingers</kbd> schuiven · <kbd>A</kbd> aanval onderweg · <kbd>D</kbd> ingraven, uitstappen · <kbd>S</kbd> stop · <kbd>H</kbd> basis · <kbd>T</kbd> zelfde soort · <kbd>G</kbd> bewaken · <kbd>X</kbd> uiteen · <kbd>Shift+1–9</kbd> groep · <kbd>Enter</kbd> chat · <kbd>Rechtsklik</kbd> bouwknop annuleren · <kbd>P</kbd> pauze</div>
+    <div id="legend"><kbd>Klik</kbd> selecteren en bevelen · <kbd>Sleep</kbd> kader · <kbd>2 vingers</kbd> schuiven · <kbd>A</kbd> aanval onderweg · <kbd>D</kbd> ingraven, uitstappen · <kbd>S</kbd> stop · <kbd>H</kbd> basis · <kbd>T</kbd> zelfde soort · <kbd>G</kbd> bewaken · <kbd>X</kbd> uiteen · <kbd>Shift+1–9</kbd> groep · <kbd>− +</kbd> zoom · <kbd>Enter</kbd> chat · <kbd>Rechtsklik</kbd> bouwknop annuleren · <kbd>P</kbd> pauze</div>
     <div id="pausebar" hidden>GEPAUZEERD</div>
     <div id="roster" hidden aria-label="Spelers"></div>
 
@@ -272,6 +272,7 @@ body[data-fac="soviet"] #emblem .al{display:none}
           <dt>B</dt><dd>baken zetten op de plek van de muis, voor je teamgenoten</dd>
           <dt>Dubbelklik op gebouw</dt><dd>een kazerne, wapenfabriek of scheepswerf primair maken: daar komt de productie uit</dd>
           <dt>Tab</dt><dd>naar het volgende tabblad van de bouwbalk (Shift + Tab terug)</dd>
+          <dt>− en + (of knijpen op de touchpad)</dt><dd>uitzoomen en inzoomen: alles wordt kleiner en je ziet meer van de kaart, tot de helft van de normale grootte</dd>
           <dt>Rechtsklik op knop in bouwbalk</dt><dd>bouwen annuleren: één van die soort uit de wachtrij, je krijgt het geld terug dat er al in zat (op de touchpad: tik met twee vingers)</dd>
           <dt>Ctrl/Cmd + klik op eenheid in bouwbalk</dt><dd>die eenheid steeds opnieuw laten bouwen (∞); nog eens om te stoppen</dd>
           <dt>Rechtsklik op radar</dt><dd>de geselecteerde eenheden daarheen sturen</dd>
@@ -342,6 +343,9 @@ body[data-fac="soviet"] #emblem .al{display:none}
       <button class="op" id="b-snd" aria-pressed="false" title="Geluid en stemmen">Geluid</button>
       <button class="op" id="b-mus" aria-pressed="true" title="Muziek aan of uit (M)">Muziek</button>
       <button class="op" id="b-team" aria-pressed="false" title="Geld naar een teamgenoot sturen" disabled>Team</button>
+      <button class="op" id="b-zout" title="Uitzoomen (−): alles kleiner, meer van de kaart in beeld">−</button>
+      <button class="op" id="b-z0" aria-pressed="false" title="Zoom terug naar 100%">100%</button>
+      <button class="op" id="b-zin" title="Inzoomen (+)">+</button>
     </div>
     <div class="plate" id="teampanel" hidden>
     </div>
@@ -372,7 +376,8 @@ const $=s=>document.getElementById(s);
 const TW=64,TH=32,HW=32,HH=16;
 let MAP=80,OX=MAP*HW,N=MAP*MAP;
 const cv=$('game'),ctx=cv.getContext('2d');
-let DPR=1,VW=800,VH=600;
+// VW/VH zijn de afmetingen van het beeld in wereldpixels; uitzoomen (ZOOM<1) maakt dat groter dan het canvas
+let DPR=1,VW=800,VH=600,CW=800,CH=600,ZOOM=1,SC=1;const ZMIN=.5;
 const cam={x:0,y:0};
 const TEAM=[{main:'#3f8cff',dark:'#1d4fa8',light:'#a9cbff',n:'Blauw'},{main:'#e0402f',dark:'#8e1d14',light:'#ffab9d',n:'Rood'},{main:'#e8b02a',dark:'#8a6410',light:'#ffe08a',n:'Geel'},{main:'#3fbf5a',dark:'#1e6e30',light:'#a6f0b4',n:'Groen'},{main:'#f07a1f',dark:'#93430a',light:'#ffc08a',n:'Oranje'},{main:'#9a5ad8',dark:'#55288a',light:'#d6b6f5',n:'Paars'},{main:'#2fc4d4',dark:'#137480',light:'#a6eef5',n:'Cyaan'},{main:'#e05aa8',dark:'#8a2462',light:'#f6b4da',n:'Roze'},{main:'#a49c86',dark:'#5e584a',light:'#d6d0bc',n:'Neutraal'}];
 // maximaal acht spelers; de neutrale eigenaar (olieboortorens, huizen, bruggen) komt daarna
@@ -973,7 +978,7 @@ function newGame(s,cfg,populate=true){
     (G.pl[o].fac==='soviet'?['conscript','conscript','conscript','conscript','rhino','rhino']:['gi','gi','gi','tank','tank']).forEach((t,i)=>{const w=nearestWalkable(Math.floor(bx+(i%3)-1),Math.floor(by+Math.floor(i/3)),5);if(w){const u=mkUnit(o,t,w.x+.5,w.y+.5);u.face=u.tur=Math.atan2(dy,dx)}});
   }
   if(populate)reveal();const me=START[LOCAL];centerOn(me.x+1.5,me.y+1.5);
-  for(const b of document.querySelectorAll('.op'))b.setAttribute('aria-pressed',b.id==='b-snd'?String(S.on):b.id==='b-mus'?String(MUS.on):'false');
+  for(const b of document.querySelectorAll('.op'))if(b.id!=='b-zout'&&b.id!=='b-zin')b.setAttribute('aria-pressed',b.id==='b-snd'?String(S.on):b.id==='b-mus'?String(MUS.on):b.id==='b-z0'?String(ZOOM<1):'false');
   $('pausebar').hidden=true;
   {const sv=!!(G.pl&&G.pl[LOCAL]&&G.pl[LOCAL].fac==='soviet');for(const el of document.querySelectorAll('.cameo')){const T=BT[el.dataset.type];if(!T)continue;drawCameo(el.querySelector('canvas'),el.dataset.type);el.querySelector('.nm').textContent=sv&&T.ns||T.n}}
   // de grond rond je basis nu al tekenen en één beeld vooraf maken, dan hapert het spel niet in de eerste seconden
@@ -2694,7 +2699,7 @@ function drawProp(c,p,t){const pr=(x,y,z)=>w2s(p.x+x,p.y+y,z);
 }
 // ---------- dag en nacht (staat uit sinds 2026-10-30, toen de weerkeuze 'Wisselend' verdween; G.weather is altijd 'clear'): elke acht minuten valt de avond; dan branden lantaarns, ramen en koplampen
 function nightI(t){if(!G.weather||G.weather==='clear')return 0;const ph=t/480+.55;return clamp(Math.sin(ph*Math.PI*2)*1.3-.3,0,1)}
-function drawNight(t){const d=nightI(t);if(d<=.01)return;ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=`rgba(8,12,34,${d*.58})`;ctx.fillRect(0,0,VW,VH);ctx.globalCompositeOperation='lighter';
+function drawNight(t){const d=nightI(t);if(d<=.01)return;ctx.save();ctx.setTransform(SC,0,0,SC,0,0);ctx.fillStyle=`rgba(8,12,34,${d*.58})`;ctx.fillRect(0,0,VW,VH);ctx.globalCompositeOperation='lighter';
   const glow=(x,y,r,col,a)=>{const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,`rgba(${col},${a})`);g.addColorStop(1,`rgba(${col},0)`);ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y,r,r*.6,0,0,7);ctx.fill()};
   for(const b of G.blds){if(b.dead||b.bt<1||BT[b.type].wall||!visibleE(b))continue;const[sx,sy]=w2s(b.x+b.w/2,b.y+b.h/2,BT[b.type].ht*.5);if(sx<-80||sx>VW+80||sy<-80||sy>VH+80)continue;
     const off=b.o!==NEU&&G.pl[b.o]&&G.pl[b.o].low;if(!off)glow(sx,sy,28+(b.w+b.h)*10,'255,200,120',.22*d)}
@@ -2708,7 +2713,7 @@ function drawNight(t){const d=nightI(t);if(d<=.01)return;ctx.save();ctx.setTrans
 let thunderK=-1;
 function weatherI(t){if(!G.weather||G.weather==='clear')return 0;const ph=(seed%997)*.37;
   if(MAPS[MAPK].theme==='snow')return .35+.4*Math.max(0,Math.sin(t/80+ph));return clamp(Math.sin(t/75+ph)*1.7-.55,0,1)}
-function drawWeather(t){const I=weatherI(t);if(I<=.01)return;const snow=MAPS[MAPK].theme==='snow';ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);
+function drawWeather(t){const I=weatherI(t);if(I<=.01)return;const snow=MAPS[MAPK].theme==='snow';ctx.save();ctx.setTransform(SC,0,0,SC,0,0);
   if(!snow){ctx.fillStyle=`rgba(18,26,40,${I*.24})`;ctx.fillRect(0,0,VW,VH)}
   const n=Math.round((snow?220:320)*I),W=VW+60,H=VH+60;
   if(snow){ctx.fillStyle='rgba(255,255,255,.85)';for(let i=0;i<n;i++){const h1=hash(i,1,7),h2=hash(i,2,7),sp=24+h2*30,x=((h1*W+t*12+Math.sin(t*.8+i)*14)%W)-30,y=((h2*H+t*sp)%H)-30,r=.8+h1*1.4;ctx.fillRect(x,y,r,r)}}
@@ -2855,7 +2860,7 @@ function hull(pts){pts.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);const cr=(o,a,b)=>(a[0]
   up.pop();lo.pop();return lo.concat(up)}
 function render(t){
   let shx=0,shy=0;if(SHAKE>.2){shx=(Math.random()-.5)*SHAKE;shy=(Math.random()-.5)*SHAKE*.6;SHAKE*=.86}else SHAKE=0;
-  ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,VW,VH);ctx.setTransform(DPR,0,0,DPR,shx*DPR,shy*DPR);
+  ctx.setTransform(SC,0,0,SC,0,0);ctx.fillStyle='#000';ctx.fillRect(0,0,VW,VH);ctx.setTransform(SC,0,0,SC,shx*SC,shy*SC);
   gFrame++;let fresh=0;
   for(const ch of gch){const sx0=Math.max(ch.x,cam.x),sy0=Math.max(ch.y,cam.y),sx1=Math.min(ch.x+ch.w,cam.x+VW),sy1=Math.min(ch.y+ch.h,cam.y+VH);
     if(sx1>sx0&&sy1>sy0){if(!ch.c)fresh++;ctx.drawImage(chunkC(ch),sx0-ch.x+GP,sy0-ch.y+GP,sx1-sx0,sy1-sy0,sx0-cam.x,sy0-cam.y,sx1-sx0,sy1-sy0)}}
@@ -2942,7 +2947,7 @@ function render(t){
     ctx.setLineDash([]);ctx.globalAlpha=1;
   }
   // kleurtint: warm zonlicht, of koel winterlicht
-  ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);ctx.globalCompositeOperation='soft-light';ctx.fillStyle=MAPS[MAPK].theme==='snow'?'rgba(150,190,255,.16)':'rgba(255,196,130,.14)';ctx.fillRect(0,0,VW,VH);ctx.restore();
+  ctx.save();ctx.setTransform(SC,0,0,SC,0,0);ctx.globalCompositeOperation='soft-light';ctx.fillStyle=MAPS[MAPK].theme==='snow'?'rgba(150,190,255,.16)':'rgba(255,196,130,.14)';ctx.fillRect(0,0,VW,VH);ctx.restore();
   // drijvende wolkenschaduwen
   for(const c of CLOUDS){const span=MAP+24,wx=((c.x*span+t*.22)%span)-12,wy=((c.y*span+t*.09)%span)-12,[sx,sy]=w2s(wx,wy),R=c.r*45;
     if(sx<-R||sx>VW+R||sy<-R||sy>VH+R)continue;const g=ctx.createRadialGradient(sx,sy,0,sx,sy,R);g.addColorStop(0,`rgba(8,14,24,${c.a})`);g.addColorStop(.6,`rgba(8,14,24,${c.a*.6})`);g.addColorStop(1,'rgba(8,14,24,0)');
@@ -2953,7 +2958,7 @@ function render(t){
   drawWeather(t);
   // randen iets donkerder
   const vk=VW+'x'+VH;if(VIGK!==vk){VIGK=vk;const m=Math.max(VW,VH);VIG=ctx.createRadialGradient(VW/2,VH/2,m*.38,VW/2,VH/2,m*.78);VIG.addColorStop(0,'rgba(0,0,0,0)');VIG.addColorStop(1,'rgba(0,0,0,.34)')}
-  ctx.save();ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=VIG;ctx.fillRect(0,0,VW,VH);ctx.restore();
+  ctx.save();ctx.setTransform(SC,0,0,SC,0,0);ctx.fillStyle=VIG;ctx.fillRect(0,0,VW,VH);ctx.restore();
   // selectie & balken
   for(const id of sel){const u=ents.get(id);if(!u||u.dead)continue;const[sx,sy]=w2s(u.x,u.y,uzS(u));const inf=UT[u.type].cat==='inf',k=infS(u),r=(u.type==='kirov'?46:inf?8*k:17)*US,top=(inf?-21*k:-22)*US,bot=(inf?3*k:9)*US,L=6;
     ctx.strokeStyle='rgba(255,255,255,.9)';ctx.lineWidth=1.3;ctx.beginPath();
@@ -3092,8 +3097,12 @@ mm.addEventListener('pointermove',e=>{if(e.buttons&1&&radarOn())mmJump(e)});
 
 // ---------- camera
 function clampCam(){cam.x=clamp(cam.x,-120,MAP*TW-VW+120);cam.y=clamp(cam.y,-120,MAP*TH-VH+120)}
+// zoomen rond een punt op het canvas (ax,ay in CSS-pixels), zodat wat onder de muis staat blijft staan
+function setZoom(z,ax=CW/2,ay=CH/2){z=clamp(Math.round(z*100)/100,ZMIN,1);if(z===ZOOM)return;const wx=cam.x+ax/ZOOM,wy=cam.y+ay/ZOOM;
+  ZOOM=z;VW=CW/z;VH=CH/z;SC=DPR*z;cam.x=wx-ax/z;cam.y=wy-ay/z;clampCam();$('b-z0').textContent=Math.round(z*100)+'%';$('b-z0').setAttribute('aria-pressed',String(z<1));
+  try{localStorage.setItem('rd-zoom',String(z))}catch(e){}}
 function centerOn(x,y){cam.x=(x-y)*HW+OX-VW/2;cam.y=(x+y)*HH-VH/2;clampCam()}
-function resize(){DPR=Math.min(2,window.devicePixelRatio||1);const r=$('view').getBoundingClientRect();const cx=cam.x+VW/2,cy=cam.y+VH/2;VW=Math.max(1,r.width);VH=Math.max(1,r.height);cv.width=Math.round(VW*DPR);cv.height=Math.round(VH*DPR);cv.style.width=VW+'px';cv.style.height=VH+'px';cam.x=cx-VW/2;cam.y=cy-VH/2;clampCam();
+function resize(){DPR=Math.min(2,window.devicePixelRatio||1);const r=$('view').getBoundingClientRect();const cx=cam.x+VW/2,cy=cam.y+VH/2;CW=Math.max(1,r.width);CH=Math.max(1,r.height);VW=CW/ZOOM;VH=CH/ZOOM;SC=DPR*ZOOM;cv.width=Math.round(CW*DPR);cv.height=Math.round(CH*DPR);cv.style.width=CW+'px';cv.style.height=CH+'px';cam.x=cx-VW/2;cam.y=cy-VH/2;clampCam();
   // de chat schuift mee omhoog als de hulpregel onderin over twee regels loopt
   document.documentElement.style.setProperty('--lgh',Math.max(25,$('legend').offsetHeight)+'px');
   const m=mm.getBoundingClientRect();if(m.width){MMW=m.width;MMH=m.height;mm.width=Math.round(MMW*DPR);mm.height=Math.round(MMH*DPR);mmBase=null;mmShroud=null}}
@@ -3335,15 +3344,16 @@ function updCursor(){
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerdown',e=>{
   if(!started)return;audioInit();if(S.ac&&S.ac.state==='suspended')S.ac.resume();
-  const r=cv.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top;mouse.type=e.pointerType;cv.setPointerCapture(e.pointerId);
+  const r=cv.getBoundingClientRect();mouse.x=(e.clientX-r.left)/ZOOM;mouse.y=(e.clientY-r.top)/ZOOM;mouse.type=e.pointerType;cv.setPointerCapture(e.pointerId);
   if(e.button===0){mouse.left=true;mouse.drag=false;mouse.bx=mouse.x;mouse.by=mouse.y;mouse.cx=cam.x;mouse.cy=cam.y}
   else if(e.button===2||e.button===1){mouse.rdown=true;mouse.rpan=false;mouse.rx=mouse.x;mouse.ry=mouse.y;mouse.cx=cam.x;mouse.cy=cam.y}
 });
-// touchpad: met twee vingers schuiven verplaatst de kaart; een muiswiel schuift op en neer (Shift+wiel opzij). Knijpen doet niets, zodat de pagina niet inzoomt
-cv.addEventListener('wheel',e=>{e.preventDefault();if(!started||e.ctrlKey)return;const k=e.deltaMode===1?32:e.deltaMode===2?VH:1;
-  let dx=e.deltaX*k,dy=e.deltaY*k;if(e.shiftKey&&!dx){dx=dy;dy=0}cam.x+=dx*1.15;cam.y+=dy*1.15;clampCam()},{passive:false});
+// touchpad: met twee vingers schuiven verplaatst de kaart; een muiswiel schuift op en neer (Shift+wiel opzij). Knijpen (of Ctrl+wiel) zoomt het spel in en uit, niet de pagina
+cv.addEventListener('wheel',e=>{e.preventDefault();if(!started)return;const k=e.deltaMode===1?32:e.deltaMode===2?CH:1;
+  if(e.ctrlKey){const r=cv.getBoundingClientRect();setZoom(ZOOM*Math.exp(-clamp(e.deltaY*k,-50,50)*.01),e.clientX-r.left,e.clientY-r.top);return}
+  let dx=e.deltaX*k,dy=e.deltaY*k;if(e.shiftKey&&!dx){dx=dy;dy=0}cam.x+=dx*1.15/ZOOM;cam.y+=dy*1.15/ZOOM;clampCam()},{passive:false});
 cv.addEventListener('pointermove',e=>{
-  const r=cv.getBoundingClientRect();mouse.x=e.clientX-r.left;mouse.y=e.clientY-r.top;mouse.inside=true;mouse.type=e.pointerType;
+  const r=cv.getBoundingClientRect();mouse.x=(e.clientX-r.left)/ZOOM;mouse.y=(e.clientY-r.top)/ZOOM;mouse.inside=true;mouse.type=e.pointerType;
   if(mouse.left&&!mouse.drag&&Math.hypot(mouse.x-mouse.bx,mouse.y-mouse.by)>7)mouse.drag=true;
   if(mouse.left&&mouse.drag&&mouse.type==='touch'){cam.x=mouse.cx-(mouse.x-mouse.bx);cam.y=mouse.cy-(mouse.y-mouse.by);clampCam()}
   if(mouse.rdown){if(!mouse.rpan&&Math.hypot(mouse.x-mouse.rx,mouse.y-mouse.ry)>5)mouse.rpan=true;if(mouse.rpan){cam.x=mouse.cx-(mouse.x-mouse.rx);cam.y=mouse.cy-(mouse.y-mouse.ry);clampCam()}}
@@ -3372,6 +3382,7 @@ window.addEventListener('keydown',e=>{
     return;
   }
   if(e.ctrlKey||e.metaKey||e.altKey)return;
+  if(k==='-'||k==='_'){setZoom(ZOOM-.1);return}if(k==='+'||k==='='){setZoom(ZOOM+.1);return}
   if(k==='a'){if(selUnits().length)setMode({k:'am'})}
   else if(k==='d'){const iv=selUnits().filter(u=>(u.type==='ifv'&&u.pass)||((u.type==='hawk'||u.type==='amph')&&u.load>0));for(const u of iv)issue({t:'unload',id:u.id});const su=selUnits().filter(u=>UT[u.type].dep),mc=selUnits().filter(u=>u.type==='mcv');if(mc.length){issue({t:'mcv',ids:idsOf(mc)});sfx('click')}if(iv.length&&!su.length){sfx('click')}else if(su.length){issue({t:'dep',ids:idsOf(su)});sfx('click')}else if(!mc.length){const b=selB&&ents.get(selB);if(b&&b.o===LOCAL&&b.type==='yard'&&b.bt>=1){issue({t:'pack',id:b.id});sfx('click')}else if(b&&b.o===LOCAL&&garN(b)>0){issue({t:'evac',id:b.id});sfx('click')}}}
   else if(k==='t'){
@@ -3395,9 +3406,9 @@ window.addEventListener('keydown',e=>{
 });
 window.addEventListener('keyup',e=>{const k=e.key.toLowerCase();if(k.startsWith('arrow'))keys[k]=false});
 function scroll(dt){
-  if(!started)return;const sp=1000*dt;let dx=0,dy=0;
+  if(!started)return;const sp=1000*dt/ZOOM;let dx=0,dy=0;
   if(keys.arrowleft)dx-=sp;if(keys.arrowright)dx+=sp;if(keys.arrowup)dy-=sp;if(keys.arrowdown)dy+=sp;
-  if(mouse.inside&&mouse.type==='mouse'&&!mouse.rdown&&!mouse.left){const m=10;if(mouse.x<m)dx-=sp;if(mouse.x>VW-m)dx+=sp;if(mouse.y<m)dy-=sp;if(mouse.y>VH-m)dy+=sp}
+  if(mouse.inside&&mouse.type==='mouse'&&!mouse.rdown&&!mouse.left){const m=10/ZOOM;if(mouse.x<m)dx-=sp;if(mouse.x>VW-m)dx+=sp;if(mouse.y<m)dy-=sp;if(mouse.y>VH-m)dy+=sp}
   if(dx||dy){cam.x+=dx;cam.y+=dy;clampCam()}
 }
 function togglePause(){if(G.over||isGuest())return;G.paused=!G.paused;$('pausebar').hidden=!G.paused;$('b-pause').setAttribute('aria-pressed',String(G.paused))}
@@ -3449,6 +3460,8 @@ function buildUI(){
   }
   for(const t of document.querySelectorAll('.tab'))t.addEventListener('click',()=>{tab=t.dataset.cat;uiTick(1)});
   $('b-sell').addEventListener('click',()=>{audioInit();setMode(mode&&mode.k==='sell'?null:{k:'sell'})});
+  $('b-zout').addEventListener('click',()=>setZoom(ZOOM-.1));$('b-zin').addEventListener('click',()=>setZoom(ZOOM+.1));$('b-z0').addEventListener('click',()=>setZoom(1));
+  {let z=1;try{z=+localStorage.getItem('rd-zoom')||1}catch(e){}setZoom(z)}
   $('b-repair').addEventListener('click',()=>{audioInit();setMode(mode&&mode.k==='repair'?null:{k:'repair'})});
   $('b-pause').addEventListener('click',togglePause);
   $('b-sp').addEventListener('click',()=>{audioInit();if(G.pl[LOCAL].para===0)setMode(mode&&mode.k==='para'?null:{k:'para'})});
