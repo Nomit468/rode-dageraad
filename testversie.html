@@ -406,6 +406,13 @@ function setMapSize(sz,ring){
 const SPOT_N=['West','Oost','Noord','Zuid','Noordwest','Zuidoost','Noordoost','Zuidwest'];
 // buren langs de rand: Noord, Noordoost, Oost, Zuidoost, Zuid, Zuidwest, West, Noordwest
 const RING=[[2,6],[6,1],[1,5],[5,3],[3,7],[7,0],[0,4],[4,2]];
+// welke startplek elke speler krijgt: de kaart wordt per spel gedraaid of gespiegeld (een van 8 symmetrieën, uit het zaadgetal),
+// zodat je niet altijd linksonder begint maar tegenstanders wel even ver van elkaar blijven
+let SPOS=[0,1,2,3,4,5,6,7];
+function startPerm(s){const D=[[-1,1],[1,-1],[-1,-1],[1,1],[-1,0],[1,0],[0,-1],[0,1]],k=(mulberry(s^0x5bd1e995)()*8)|0;
+  const T=([x,y])=>[[x,y],[-x,y],[x,-y],[-x,-y],[y,x],[-y,x],[y,-x],[-y,-x]][k];
+  return D.map(d=>{const[x,y]=T(d);return D.findIndex(e=>e[0]===x&&e[1]===y)})}
+const startOf=o=>START[SPOS[o]];
 const HCAP=600,BR_HP=1200;
 
 // ---------- types
@@ -960,7 +967,7 @@ function producer(o,cat){
 
 // cfg: {diff, mode, slots:[{kind:'human'|'ai'|'off', name, fac, team} x4]}; populate=false voor gasten, die alles van de gastheer krijgen
 function newGame(s,cfg,populate=true){
-  genMap(s,cfg.map);renderGround();
+  genMap(s,cfg.map);renderGround();SPOS=startPerm(s);
   Object.assign(G,{t:0,diff:cfg.diff,mode:cfg.mode,weather:'clear',paused:false,over:null,
     pl:[...cfg.slots.map(c=>mkPlayer(c.kind==='ai'?[3500,6000,9000][cfg.diff]:5000,c)),mkPlayer(0,{kind:'neutral',team:99,nat:'usa'})],
     units:[],blds:[],proj:[],fx:[],pings:[],bombs:[],rads:[],drops:[],planes:[],crates:[],crateT:30,gemSeen:false,ai:{},
@@ -971,14 +978,14 @@ function newGame(s,cfg,populate=true){
   if(populate)for(const t of TECH)mkBld(NEU,t.type,t.x,t.y,true);
   if(populate)for(let o=0;o<PMAX;o++){
     if(!active(o))continue;
-    const st=START[o];mkBld(o,'yard',st.x,st.y,true);
+    const st=startOf(o);mkBld(o,'yard',st.x,st.y,true);
     // op grote kaarten duurt de reis naar de vijand lang; daarom vertrekt de eerste golf daar eerder
     // G.ai[o].old=true geeft de computer van vóór 2026-10-30, handig om in proefpotjes oud tegen nieuw te laten spelen
     if(isAI(o))G.ai[o]={think:2+o*.3,waveT:[230,160,105][cfg.diff]*(1-.4*bigK())+o*12,waveSize:[4,5,6][cfg.diff],waves:0,alert:null};
     const cx=st.x+1.5,cy=st.y+1.5,dx=MAP/2-cx,dy=MAP/2-cy,l=Math.hypot(dx,dy),bx=cx+dx/l*4.5,by=cy+dy/l*4.5;
     (G.pl[o].fac==='soviet'?['conscript','conscript','conscript','conscript','rhino','rhino']:['gi','gi','gi','tank','tank']).forEach((t,i)=>{const w=nearestWalkable(Math.floor(bx+(i%3)-1),Math.floor(by+Math.floor(i/3)),5);if(w){const u=mkUnit(o,t,w.x+.5,w.y+.5);u.face=u.tur=Math.atan2(dy,dx)}});
   }
-  if(populate)reveal();const me=START[LOCAL];centerOn(me.x+1.5,me.y+1.5);
+  if(populate)reveal();const me=startOf(LOCAL);centerOn(me.x+1.5,me.y+1.5);
   for(const b of document.querySelectorAll('.op'))if(b.id!=='b-zout'&&b.id!=='b-zin')b.setAttribute('aria-pressed',b.id==='b-snd'?String(S.on):b.id==='b-mus'?String(MUS.on):b.id==='b-z0'?String(ZOOM<1):'false');
   $('pausebar').hidden=true;
   {const sv=!!(G.pl&&G.pl[LOCAL]&&G.pl[LOCAL].fac==='soviet');for(const el of document.querySelectorAll('.cameo')){const T=BT[el.dataset.type];if(!T)continue;drawCameo(el.querySelector('canvas'),el.dataset.type);el.querySelector('.nm').textContent=sv&&T.ns||T.n}}
@@ -3656,7 +3663,7 @@ function chatOpen(){if(!started)return;$('chatbar').hidden=false;$('chatto').tex
 function chatClose(){$('chatbar').hidden=true;$('chatin').blur()}
 
 // ---------- netwerk: de gastheer rekent, gasten sturen bevelen en krijgen de spelstand terug
-const PEER_PREFIX='rodedageraad-test13-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const PEER_PREFIX='rodedageraad-test14-',CODE_CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
 const UTL=Object.keys(UT),BTL=Object.keys(BT),WPL=Object.keys(WP);
 let peer=null;
 const L={code:'',mode:'ffa',diff:1,map:'river',weather:'clear',seed:1,online:false,slots:[],pending:[]};
@@ -3853,7 +3860,7 @@ function renderLobby(){
     const info=document.createElement('div');info.className='who';
     const nm=document.createElement('b');nm.textContent=s.kind==='human'?(s.name||'Speler')+((host&&i===0)||(!host&&i===LOCAL)?' (jij)':''):s.kind==='ai'?'Computer':s.kind==='open'?'Wacht op een vriend…':'Gesloten';
     const sub=document.createElement('span');const team=teamFor(L.mode,i,s.kind);
-    const nt=NATIONS[s.nat];sub.textContent=SPOT_N[i]+' · '+TEAM[i].n+(s.kind==='off'||s.kind==='open'?'':(L.mode==='ffa'?'':' · Team '+(team===0?'A':'B'))+(nt?' · '+nt.x:''));
+    const nt=NATIONS[s.nat];sub.textContent=SPOT_N[SPOS[i]]+' · '+TEAM[i].n+(s.kind==='off'||s.kind==='open'?'':(L.mode==='ffa'?'':' · Team '+(team===0?'A':'B'))+(nt?' · '+nt.x:''));
     info.append(nm,sub);row.appendChild(info);
     if(s.kind==='human'||s.kind==='ai'){
       const mineRow=(host&&(i===0||s.kind==='ai'))||(!host&&i===LOCAL);
@@ -3915,7 +3922,7 @@ function drawMapPreview(){const cv=$('map-pv');if(!cv||!terr||terr.length!==N)re
   tg.putImageData(im,0,0);const k=Math.min(W/(MAP*TW),H/(MAP*TH)),ox=(W-MAP*TW*k)/2,oy=(H-MAP*TH*k)/2;c.fillStyle='#05080c';c.fillRect(0,0,W,H);
   c.save();c.setTransform(d*HW*k,d*HH*k,-d*HW*k,d*HH*k,d*(ox+OX*k),d*oy);c.imageSmoothingEnabled=true;c.drawImage(tc,0,0);c.restore();
   const tp=(x,y)=>[ox+((x-y)*HW+OX)*k,oy+(x+y)*HH*k];
-  L.slots.forEach((sl,i)=>{const st=START[i];if(!st)return;const[a,b]=tp(st.x+1.5,st.y+1.5);const on=sl.kind==='human'||sl.kind==='ai',open=sl.kind==='open';if(!on&&!open)return;
+  L.slots.forEach((sl,i)=>{const st=startOf(i);if(!st)return;const[a,b]=tp(st.x+1.5,st.y+1.5);const on=sl.kind==='human'||sl.kind==='ai',open=sl.kind==='open';if(!on&&!open)return;
     c.beginPath();c.arc(a,b,on?5:4,0,7);c.fillStyle=on?TEAM[i].main:'rgba(0,0,0,.4)';c.fill();c.lineWidth=1.5;c.strokeStyle=on?'#fff':TEAM[i].main;c.stroke()})}
 function previewMap(k){const l=LOCAL;LOCAL=0;newGame(seed,{diff:1,mode:'ffa',map:k,slots:PREVIEW_SLOTS});LOCAL=l;resize()}
 
